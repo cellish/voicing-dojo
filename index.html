@@ -1,0 +1,3523 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="modern">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Voicing Dojo - コード＆ボイスリーディング練習</title>
+    <script>
+        // 保存済みテーマを描画前に反映（ちらつき防止）
+        try {
+            var savedPrefs = JSON.parse(localStorage.getItem('chord_master_prefs_v1') || '{}');
+            if (savedPrefs && savedPrefs.theme === 'retro') document.documentElement.dataset.theme = 'retro';
+        } catch (e) {}
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        :root {
+            --bg: #0a0b12;
+            --surface: #141624;
+            --surface-2: #1d2033;
+            --border: #2b2f4a;
+            --primary: #00e5ff;
+            --smooth: #ff3df0;
+            --degree: #ffcc00;
+            --green: #10b981;
+            --orange: #f59e0b;
+            --danger: #ff4d5a;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --key-height: clamp(88px, 19dvh, 130px);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            overscroll-behavior: none;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', 'Hiragino Sans', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+            touch-action: none;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* =====================================================================
+           オーバーレイ画面（ホーム / コース選択 / フリー設定 / リザルト）
+           ===================================================================== */
+        .overlay-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 40;
+            background: radial-gradient(circle at 50% 0%, #161b33 0%, var(--bg) 68%);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
+            padding: calc(18px + env(safe-area-inset-top, 0px)) 16px calc(28px + env(safe-area-inset-bottom, 0px));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .overlay-modal {
+            background: rgba(8, 9, 16, 0.88);
+            backdrop-filter: blur(8px);
+            justify-content: center;
+        }
+
+        .screen-inner {
+            width: 100%;
+            max-width: 960px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* ステータスバッジ */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--muted);
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--orange);
+        }
+        .status-dot.connected {
+            background: var(--primary);
+            box-shadow: 0 0 8px var(--primary);
+        }
+
+        /* ホーム画面 */
+        .hero-title {
+            margin: 18px 0 8px;
+            font-size: clamp(2.1rem, 6vw, 3.4rem);
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            text-align: center;
+            background: linear-gradient(135deg, #00e5ff 0%, #60a5fa 50%, #ff3df0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-sub {
+            color: var(--muted);
+            font-size: 0.94rem;
+            text-align: center;
+            margin: 0 0 30px;
+            line-height: 1.6;
+        }
+
+        .home-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 18px;
+            width: 100%;
+            max-width: 720px;
+        }
+        .mode-card {
+            background: linear-gradient(160deg, var(--surface-2) 0%, var(--surface) 100%);
+            border: 2px solid var(--border);
+            border-radius: 18px;
+            padding: 26px 22px;
+            text-align: left;
+            cursor: pointer;
+            transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            color: var(--text);
+        }
+        .mode-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+            box-shadow: 0 12px 28px rgba(0, 229, 255, 0.15);
+        }
+        .mode-card.course {
+            border-color: rgba(255, 61, 240, 0.55);
+        }
+        .mode-card.course:hover {
+            border-color: var(--smooth);
+            box-shadow: 0 12px 28px rgba(255, 61, 240, 0.2);
+        }
+        .card-pill {
+            display: inline-block;
+            align-self: flex-start;
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 3px 10px;
+            border-radius: 999px;
+            background: rgba(0, 229, 255, 0.14);
+            color: var(--primary);
+        }
+        .mode-card.course .card-pill {
+            background: rgba(255, 61, 240, 0.16);
+            color: #ff8ef7;
+        }
+        .mode-card h2 {
+            margin: 2px 0 0;
+            font-size: 1.32rem;
+            font-weight: 800;
+        }
+        .mode-card p {
+            margin: 0;
+            font-size: 0.87rem;
+            color: var(--muted);
+            line-height: 1.55;
+        }
+
+        /* サブ画面ヘッダー・共通ボタン */
+        .sub-header {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .sub-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .btn {
+            background: var(--surface-2);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 9px 14px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.14s, border-color 0.14s, transform 0.1s;
+        }
+        .btn:hover { background: #272b45; border-color: #4b527a; }
+        .btn:active { transform: scale(0.97); }
+        .btn-primary {
+            background: var(--primary);
+            color: #05131a;
+            border: none;
+            font-weight: 900;
+        }
+        .btn-primary:hover { background: #38ecff; }
+        .btn-smooth {
+            background: var(--smooth);
+            color: #160416;
+            border: none;
+            font-weight: 900;
+        }
+        .btn-smooth:hover { background: #ff6cf4; }
+
+        /* コース設定バー（クリア周回数選択） */
+        .course-toolbar {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin-bottom: 18px;
+        }
+        .course-toolbar-info {
+            font-size: 0.82rem;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+        .course-toolbar-info strong { color: var(--orange); }
+        .laps-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .laps-selector select {
+            width: auto;
+            min-width: 110px;
+            padding: 6px 10px;
+        }
+
+        /* コース選択画面（Phase別カテゴリ見出し） */
+        .phase-section {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .phase-heading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 10px;
+            font-size: 0.92rem;
+            font-weight: 800;
+            color: var(--degree);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 6px;
+        }
+        .phase-tag {
+            background: rgba(255, 204, 0, 0.15);
+            border: 1px solid rgba(255, 204, 0, 0.4);
+            color: var(--degree);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+        }
+        .course-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 11px;
+            width: 100%;
+        }
+        .step-card {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 14px 15px;
+            cursor: pointer;
+            transition: transform 0.14s, border-color 0.14s, box-shadow 0.14s;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            text-align: left;
+            color: var(--text);
+        }
+        .step-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+        .step-card.recommended {
+            border-color: var(--primary);
+            box-shadow: 0 0 16px rgba(0, 229, 255, 0.16);
+            background: linear-gradient(160deg, #162336 0%, var(--surface) 100%);
+        }
+        .step-card.cleared {
+            border-color: rgba(16, 185, 129, 0.65);
+        }
+        .step-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .step-num {
+            font-size: 0.74rem;
+            font-weight: 900;
+            color: var(--primary);
+            letter-spacing: 0.04em;
+        }
+        .step-status {
+            font-size: 0.69rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 999px;
+        }
+        .step-status.cleared {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+        .step-status.next {
+            background: rgba(0, 229, 255, 0.18);
+            color: var(--primary);
+        }
+        .step-title {
+            margin: 0;
+            font-size: 0.98rem;
+            font-weight: 800;
+        }
+        .step-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .meta-pill {
+            font-size: 0.71rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 6px;
+            background: var(--surface-2);
+            color: #cbd5e1;
+            border: 1px solid var(--border);
+        }
+        .meta-pill.deg {
+            color: var(--degree);
+            border-color: rgba(255, 204, 0, 0.3);
+        }
+        .step-desc {
+            margin: 2px 0 0;
+            font-size: 0.79rem;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+
+        /* フリー練習設定画面 */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 14px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .settings-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 13px;
+        }
+        .settings-card h3 {
+            margin: 0;
+            font-size: 0.92rem;
+            font-weight: 800;
+            color: var(--primary);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .field label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #cbd5e1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        select, input[type="range"] {
+            width: 100%;
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 0.87rem;
+            font-weight: 600;
+            outline: none;
+        }
+        select:focus { border-color: var(--primary); }
+        input[type="range"] { padding: 4px 0; accent-color: var(--primary); }
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 9px 12px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .toggle-row input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        /* リザルトモーダル */
+        .result-box {
+            background: var(--surface);
+            border: 2px solid var(--smooth);
+            border-radius: 20px;
+            padding: 28px 24px;
+            width: 100%;
+            max-width: 430px;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(255, 61, 240, 0.22);
+        }
+        .result-box h2 {
+            margin: 0 0 8px;
+            font-size: 1.95rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00e5ff, #ff3df0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .result-box p {
+            margin: 0 0 22px;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            line-height: 1.55;
+        }
+        .result-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .result-actions .btn {
+            padding: 13px 16px;
+            font-size: 0.94rem;
+        }
+
+        /* =====================================================================
+           ゲームプレイ画面（厳密な3行上部レイアウト → Canvas → 下部鍵盤）
+           1行目：ミッション＆解説バー
+           2行目：操作メニューバー
+           3行目：12キー一覧トラッカー
+           ===================================================================== */
+        #game-shell {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-left: env(safe-area-inset-left, 0px);
+            padding-right: env(safe-area-inset-right, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        /* 1行目（最上段）：ミッション＆解説バー */
+        #mission-banner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 6px 14px;
+            padding: 8px 14px;
+            background: linear-gradient(90deg, #131b30 0%, #1d1533 100%);
+            border-bottom: 1px solid rgba(0, 229, 255, 0.35);
+            flex-shrink: 0;
+            text-align: center;
+            z-index: 16;
+        }
+        #mission-title {
+            font-size: 0.94rem;
+            font-weight: 900;
+            color: var(--primary);
+        }
+        #mission-degrees {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: var(--degree);
+            background: rgba(255, 204, 0, 0.13);
+            border: 1px solid rgba(255, 204, 0, 0.38);
+            border-radius: 6px;
+            padding: 2px 9px;
+        }
+        #mission-desc {
+            font-size: 0.87rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            line-height: 1.35;
+        }
+
+        /* 2行目（中段）：操作メニューバー */
+        #top-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px 10px;
+            padding: 7px 12px;
+            background: #10121e;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            z-index: 15;
+        }
+        .bar-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .ctrl-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 5px 10px;
+            font-size: 0.79rem;
+            font-weight: 700;
+            color: var(--text);
+            cursor: pointer;
+        }
+        .ctrl-chip:hover { border-color: var(--primary); }
+        .ctrl-chip.active-on {
+            background: rgba(0, 229, 255, 0.16);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        .ctrl-chip.paused-state {
+            background: rgba(255, 204, 0, 0.18);
+            border-color: var(--degree);
+            color: var(--degree);
+        }
+        .bpm-box {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 3px 6px;
+            font-size: 0.78rem;
+            font-weight: 800;
+        }
+        .bpm-btn {
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            width: 24px;
+            height: 24px;
+            font-weight: 900;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .bpm-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .bpm-val {
+            min-width: 58px;
+            text-align: center;
+            color: var(--primary);
+        }
+        .stat-pill {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            font-weight: 800;
+        }
+        .stat-pill .val { color: var(--primary); }
+        .stat-pill.lap .val { color: #ff8ef7; }
+
+        /* 3行目（下段）：12キー一覧トラッカー */
+        #key-tracker {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 5px;
+            padding: 6px 10px;
+            background: #0c0e18;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            z-index: 14;
+        }
+        .tracker-phase-pill {
+            font-size: 0.72rem;
+            font-weight: 900;
+            padding: 3px 9px;
+            border-radius: 999px;
+            background: rgba(245, 158, 11, 0.2);
+            border: 1px solid var(--orange);
+            color: #fbbf24;
+            margin-right: 4px;
+        }
+        .key-badge {
+            min-width: 40px;
+            text-align: center;
+            padding: 3px 8px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            background: var(--surface);
+            color: #64748b;
+            border: 1px solid var(--border);
+            transition: transform 0.15s, background 0.15s, border-color 0.15s;
+        }
+        .key-badge.perfect {
+            background: rgba(16, 185, 129, 0.22);
+            color: #34d399;
+            border-color: var(--green);
+        }
+        .key-badge.review {
+            background: rgba(245, 158, 11, 0.22);
+            color: #fbbf24;
+            border-color: var(--orange);
+        }
+        .key-badge.current {
+            background: var(--primary);
+            color: #04131a;
+            border-color: #ffffff;
+            box-shadow: 0 0 11px rgba(0, 229, 255, 0.6);
+            transform: scale(1.08);
+        }
+        .free-key-info {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.82rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        .free-key-sig {
+            color: var(--degree);
+            background: rgba(255, 204, 0, 0.12);
+            border: 1px solid rgba(255, 204, 0, 0.35);
+            padding: 2px 9px;
+            border-radius: 999px;
+            font-size: 0.76rem;
+        }
+
+        /* Canvas領域 */
+        #game-container {
+            flex: 1;
+            min-height: 0;
+            position: relative;
+            overflow: hidden;
+            background: var(--bg);
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 下部バーチャル鍵盤 */
+        #keyboard-wrapper {
+            flex-shrink: 0;
+            background: #10111a;
+            border-top: 2px solid var(--border);
+            position: relative;
+        }
+        #keyboard-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            height: var(--key-height);
+            margin: 0 auto;
+            display: flex;
+            touch-action: none;
+        }
+        .key-white {
+            position: relative;
+            flex: 1 1 0%;
+            height: 100%;
+            background: linear-gradient(180deg, #ffffff 0%, #e8edf5 90%, #cbd5e1 100%);
+            border-left: 1px solid #94a3b8;
+            border-right: 1px solid #94a3b8;
+            border-bottom: 3px solid #64748b;
+            border-radius: 0 0 6px 6px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 5px;
+            font-size: 10px;
+            font-weight: 800;
+            color: #64748b;
+        }
+        .key-white.active {
+            background: linear-gradient(180deg, #8cf4ff 0%, #00e5ff 100%);
+            border-bottom-width: 1px;
+            color: #062830;
+            box-shadow: inset 0 0 10px rgba(0, 229, 255, 0.8);
+        }
+        .key-black {
+            position: absolute;
+            top: 0;
+            left: 69%;
+            width: 62%;
+            height: 60%;
+            z-index: 10;
+            background: linear-gradient(180deg, #323244 0%, #15151f 86%, #07070b 100%);
+            border: 1px solid #050508;
+            border-bottom: 3px solid #000;
+            border-radius: 0 0 5px 5px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.65);
+        }
+        .key-black.active {
+            background: linear-gradient(180deg, #33ebff 0%, #0099cc 100%);
+            border-bottom-width: 1px;
+            box-shadow: 0 0 12px rgba(0, 229, 255, 0.85);
+        }
+        .oct-controls {
+            position: absolute;
+            top: -32px;
+            right: 10px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(16, 18, 30, 0.92);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 2px 6px;
+            z-index: 12;
+            font-size: 0.74rem;
+            font-weight: 800;
+        }
+        .oct-controls button {
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-weight: 900;
+            cursor: pointer;
+            padding: 2px 6px;
+        }
+        .oct-controls button:hover { color: var(--primary); }
+
+        /* 著作権表示（ホーム画面の一番下） */
+        .app-foot {
+            margin-top: 40px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 2px 14px;
+            font-size: 12px;
+            line-height: 1.6;
+            color: var(--muted);
+            opacity: 0.85;
+            text-align: center;
+        }
+        .field-note {
+            margin: 0;
+            font-size: 0.74rem;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+        .field-note.warn { color: #fbbf24; }
+        .phase-count {
+            margin-left: auto;
+            font-size: 0.74rem;
+            color: var(--muted);
+            font-weight: 700;
+        }
+        @media (hover: none) {
+            .kbd-hint { display: none; }
+        }
+        /* キーボード操作時のフォーカス表示（マウス・タッチでは出さない） */
+        button:focus-visible, select:focus-visible, input:focus-visible, .toggle-row:focus-within {
+            outline: 3px solid var(--degree);
+            outline-offset: 2px;
+        }
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            padding: 0;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        @media (max-height: 520px) {
+            :root { --key-height: clamp(68px, 26dvh, 92px); }
+            #mission-banner { padding: 4px 10px; gap: 4px 10px; }
+            #mission-title, #mission-degrees, #mission-desc { font-size: 0.76rem; }
+            #top-bar { padding: 4px 8px; gap: 4px; }
+            #key-tracker { padding: 4px 8px; gap: 3px; }
+            .key-badge { font-size: 0.68rem; padding: 2px 5px; min-width: 30px; }
+        }
+
+        /* =====================================================================
+           ホーム画面のテーマ切替
+           ===================================================================== */
+        .home-topbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .theme-picker {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--muted);
+        }
+        .theme-picker select {
+            width: auto;
+            padding: 5px 8px;
+            font-size: 0.8rem;
+        }
+
+        /* =====================================================================
+           モダンテーマ（ネオン・グロー・グラデーション文字・絵文字を使わないフラットなデザイン）
+           ライト/ダークは OS の設定に追従。色はすべて変数経由で指定する。
+           ===================================================================== */
+        html[data-theme="modern"] {
+            --bg: #f5f6f8;
+            --surface: #ffffff;
+            --surface-2: #f0f2f5;
+            --border: #e2e5ea;
+            --border-strong: #cbd0d8;
+            --primary: #2563eb;
+            --primary-soft: rgba(37, 99, 235, 0.09);
+            --on-primary: #ffffff;
+            --smooth: #7c3aed;
+            --degree: #b45309;
+            --green: #047857;
+            --green-soft: rgba(4, 120, 87, 0.1);
+            --orange: #b45309;
+            --orange-soft: rgba(217, 119, 6, 0.12);
+            --danger: #dc2626;
+            --text: #111827;
+            --muted: #6b7280;
+            --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.08);
+            --shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.14);
+            --key-white: #ffffff;
+            --key-white-active: #bfdbfe;
+            --key-black: #1f2937;
+            --key-black-active: #2563eb;
+            --scrim: rgba(17, 24, 39, 0.35);
+            color-scheme: light;
+        }
+        @media (prefers-color-scheme: dark) {
+            html[data-theme="modern"] {
+                --bg: #0f1115;
+                --surface: #171a21;
+                --surface-2: #1f232c;
+                --border: #2a2f3a;
+                --border-strong: #3a404d;
+                --primary: #60a5fa;
+                --primary-soft: rgba(96, 165, 250, 0.12);
+                --on-primary: #0b1220;
+                --smooth: #a78bfa;
+                --degree: #fbbf24;
+                --green: #34d399;
+                --green-soft: rgba(52, 211, 153, 0.12);
+                --orange: #f59e0b;
+                --orange-soft: rgba(245, 158, 11, 0.14);
+                --danger: #f87171;
+                --text: #e5e7eb;
+                --muted: #9ca3af;
+                --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+                --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+                --key-white: #f3f4f6;
+                --key-white-active: #93c5fd;
+                --key-black: #111318;
+                --key-black-active: #3b82f6;
+                --scrim: rgba(0, 0, 0, 0.55);
+                color-scheme: dark;
+            }
+        }
+
+        html[data-theme="modern"] body,
+        html[data-theme="modern"] {
+            font-family: system-ui, -apple-system, 'Hiragino Sans', 'Noto Sans JP', 'Segoe UI', sans-serif;
+        }
+        html[data-theme="modern"] .ico { display: none; }
+
+        html[data-theme="modern"] .overlay-screen { background: var(--bg); }
+        html[data-theme="modern"] .overlay-modal { background: var(--scrim); backdrop-filter: blur(4px); }
+        html[data-theme="modern"] .status-badge { box-shadow: var(--shadow); }
+        html[data-theme="modern"] .status-dot.connected { background: var(--green); box-shadow: none; }
+
+        html[data-theme="modern"] .hero-title {
+            background: none;
+            -webkit-text-fill-color: currentColor;
+            color: var(--text);
+            font-weight: 800;
+            letter-spacing: -0.025em;
+        }
+        html[data-theme="modern"] .mode-card,
+        html[data-theme="modern"] .mode-card.course {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        html[data-theme="modern"] .mode-card:hover,
+        html[data-theme="modern"] .mode-card.course:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+            box-shadow: var(--shadow-lg);
+        }
+        html[data-theme="modern"] .card-pill,
+        html[data-theme="modern"] .mode-card.course .card-pill {
+            background: var(--primary-soft);
+            color: var(--primary);
+            font-weight: 700;
+        }
+        html[data-theme="modern"] .mode-card h2 { font-weight: 700; }
+
+        html[data-theme="modern"] .sub-header h2 { color: var(--text); font-weight: 700; }
+        html[data-theme="modern"] .btn { background: var(--surface); box-shadow: var(--shadow); font-weight: 600; }
+        html[data-theme="modern"] .btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
+        html[data-theme="modern"] .btn-primary { background: var(--primary); color: var(--on-primary); border: none; font-weight: 700; }
+        html[data-theme="modern"] .btn-primary:hover { background: var(--primary); filter: brightness(1.08); }
+        html[data-theme="modern"] .btn-smooth { background: var(--surface); color: var(--text); border: 1px solid var(--border); font-weight: 600; }
+        html[data-theme="modern"] .btn-smooth:hover { background: var(--surface-2); }
+
+        html[data-theme="modern"] .course-toolbar,
+        html[data-theme="modern"] .settings-card { box-shadow: var(--shadow); }
+        html[data-theme="modern"] .phase-heading { color: var(--text); font-weight: 700; }
+        html[data-theme="modern"] .phase-tag { background: var(--surface-2); border-color: var(--border); color: var(--muted); }
+        html[data-theme="modern"] .step-card { border: 1px solid var(--border); box-shadow: var(--shadow); }
+        html[data-theme="modern"] .step-card:hover { transform: translateY(-1px); border-color: var(--primary); }
+        html[data-theme="modern"] .step-card.recommended {
+            background: var(--surface);
+            border: 2px solid var(--primary);
+            box-shadow: var(--shadow-lg);
+        }
+        html[data-theme="modern"] .step-card.cleared { border-color: var(--green); }
+        html[data-theme="modern"] .step-num { font-weight: 700; color: var(--muted); }
+        html[data-theme="modern"] .step-status.cleared { background: var(--green-soft); color: var(--green); }
+        html[data-theme="modern"] .step-status.next { background: var(--primary-soft); color: var(--primary); }
+        html[data-theme="modern"] .step-title { font-weight: 700; }
+        html[data-theme="modern"] .meta-pill { background: var(--surface-2); color: var(--muted); border-color: var(--border); }
+        html[data-theme="modern"] .meta-pill.deg { color: var(--text); border-color: var(--border); }
+
+        html[data-theme="modern"] .settings-card h3 { color: var(--text); font-weight: 700; }
+        html[data-theme="modern"] .field label { color: var(--text); font-weight: 600; }
+        html[data-theme="modern"] select { background: var(--surface); }
+        html[data-theme="modern"] .toggle-row { background: var(--surface); font-weight: 600; }
+        html[data-theme="modern"] .field-note.warn { color: var(--orange); }
+
+        html[data-theme="modern"] .result-box { border: 1px solid var(--border); box-shadow: var(--shadow-lg); }
+        html[data-theme="modern"] .result-box h2 {
+            background: none;
+            -webkit-text-fill-color: currentColor;
+            color: var(--text);
+            font-weight: 800;
+        }
+        html[data-theme="modern"] .result-box p { color: var(--muted); }
+
+        html[data-theme="modern"] #mission-banner { background: var(--surface); border-bottom: 1px solid var(--border); }
+        html[data-theme="modern"] #mission-title { color: var(--text); font-weight: 700; }
+        html[data-theme="modern"] #mission-degrees { background: var(--surface-2); border-color: var(--border); color: var(--degree); font-weight: 700; }
+        html[data-theme="modern"] #mission-desc { color: var(--muted); font-weight: 500; }
+        html[data-theme="modern"] #top-bar { background: var(--surface); }
+        html[data-theme="modern"] .ctrl-chip { background: var(--surface); font-weight: 600; }
+        html[data-theme="modern"] .ctrl-chip.active-on { background: var(--primary-soft); border-color: var(--primary); color: var(--primary); }
+        html[data-theme="modern"] .ctrl-chip.paused-state { background: var(--orange-soft); border-color: var(--orange); color: var(--orange); }
+        html[data-theme="modern"] .bpm-box { background: var(--surface); }
+        html[data-theme="modern"] .stat-pill { background: var(--surface-2); font-weight: 600; }
+        html[data-theme="modern"] .stat-pill .val { font-weight: 700; }
+        html[data-theme="modern"] .stat-pill.lap .val { color: var(--smooth); }
+        html[data-theme="modern"] #key-tracker { background: var(--bg); }
+        html[data-theme="modern"] .tracker-phase-pill { background: var(--orange-soft); border-color: var(--orange); color: var(--orange); font-weight: 700; }
+        html[data-theme="modern"] .key-badge { font-weight: 600; color: var(--muted); }
+        html[data-theme="modern"] .key-badge.perfect { background: var(--green-soft); color: var(--green); border-color: var(--green); }
+        html[data-theme="modern"] .key-badge.review { background: var(--orange-soft); color: var(--orange); border-color: var(--orange); }
+        html[data-theme="modern"] .key-badge.current {
+            background: var(--primary);
+            color: var(--on-primary);
+            border-color: var(--primary);
+            box-shadow: none;
+            transform: none;
+            font-weight: 700;
+        }
+
+        html[data-theme="modern"] #keyboard-wrapper { background: var(--surface-2); border-top: 1px solid var(--border); }
+        html[data-theme="modern"] .key-white {
+            background: var(--key-white);
+            border-left: 1px solid var(--border-strong);
+            border-right: 1px solid var(--border-strong);
+            border-bottom: 2px solid var(--border-strong);
+            color: #9ca3af;
+            font-weight: 600;
+        }
+        html[data-theme="modern"] .key-white.active {
+            background: var(--key-white-active);
+            border-bottom-width: 2px;
+            color: #1e3a8a;
+            box-shadow: none;
+        }
+        html[data-theme="modern"] .key-black {
+            background: var(--key-black);
+            border: 1px solid var(--key-black);
+            border-bottom: 2px solid #000;
+            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.25);
+        }
+        html[data-theme="modern"] .key-black.active { background: var(--key-black-active); box-shadow: none; }
+        html[data-theme="modern"] .oct-controls { background: var(--surface); box-shadow: var(--shadow); font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <!-- =====================================================================
+         1. ホーム画面
+         ===================================================================== -->
+    <section id="start-screen" class="overlay-screen">
+        <div class="screen-inner">
+            <div class="home-topbar">
+                <div class="status-badge">
+                    <span class="status-dot" id="midi-dot"></span>
+                    <span id="midi-text">MIDI未接続（画面鍵盤・PCキーボードで演奏可能）</span>
+                </div>
+                <label class="theme-picker">
+                    <span>テーマ</span>
+                    <select id="theme-select">
+                        <option value="modern">モダン</option>
+                        <option value="retro">ネオン</option>
+                    </select>
+                </label>
+            </div>
+
+            <h1 class="hero-title">VOICING DOJO</h1>
+            <p class="hero-sub">
+                落ちてくるコードを判定ラインで弾く、12キー対応のコード練習。<br>
+                MIDI鍵盤・画面鍵盤（マルチタッチ）・PCキーボード（A〜L）で演奏できます。
+            </p>
+
+            <div class="home-cards">
+                <button class="mode-card course" id="btn-open-course" type="button">
+                    <span class="card-pill">はじめての方はこちら・全13ステップ</span>
+                    <h2><span class="ico">🔰 </span>12キー制覇コース</h2>
+                    <p>3和音 → ガイドトーン → 4和音 → 5和音ルートレスの順に、6つの定番進行を全12キーで。ミスしたキーは最後に自動で復習します。</p>
+                </button>
+
+                <button class="mode-card" id="btn-open-free" type="button">
+                    <span class="card-pill">全6進行・自由設定</span>
+                    <h2><span class="ico">🎹 </span>フリー練習</h2>
+                    <p>進行・キー・難易度・ボイシング・テンポを選んで練習。コード名を隠す耳コピモードもあります。</p>
+                </button>
+            </div>
+
+            <footer class="app-foot">
+                <span>© 2026 jun　All rights reserved.</span>
+                <span>音の再生：Tone.js（MIT License）</span>
+                <span>収録している旋律は、著作権の保護期間が終わったもの、または作者自身の作品です。</span>
+            </footer>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         2. コース選択画面（全13ステップ・Phase別・周回数設定）
+         ===================================================================== -->
+    <section id="course-menu-screen" class="overlay-screen hidden">
+        <div class="screen-inner">
+            <div class="sub-header">
+                <button class="btn" id="btn-course-back" type="button">◀ ホームへ</button>
+                <h2><span class="ico">🔰 </span>12キー制覇コース（全13ステップ）</h2>
+                <span class="status-badge" id="course-clear-badge">クリア: 0 / 13</span>
+            </div>
+
+            <div class="course-toolbar">
+                <div class="course-toolbar-info">
+                    <span style="color:var(--green);font-weight:800;">✓ 緑</span> = 一発合格　<strong>↻ 橙</strong> = 要復習（12キー終了後に再出題）<br>
+                    ミスするとそのキーの1コード目からやり直しです。
+                </div>
+                <label class="laps-selector">
+                    <span>各キーのクリア周回数:</span>
+                    <select id="course-laps-select">
+                        <option value="1" selected>1周（デフォルト）</option>
+                        <option value="2">2周</option>
+                        <option value="3">3周</option>
+                    </select>
+                </label>
+                <label class="laps-selector">
+                    <span>コードの表示時間:</span>
+                    <select id="course-speed-select">
+                        <option value="3.5">ゆっくり（約3.5秒前に表示）</option>
+                        <option value="2.8" selected>ふつう（約2.8秒前）</option>
+                        <option value="2.2">はやい（約2.2秒前）</option>
+                    </select>
+                </label>
+            </div>
+
+            <div id="course-phases-container" style="width:100%;"></div>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         3. フリー練習設定画面
+         ===================================================================== -->
+    <section id="free-settings-screen" class="overlay-screen hidden">
+        <div class="screen-inner">
+            <div class="sub-header">
+                <button class="btn" id="btn-free-back" type="button">◀ ホームへ</button>
+                <h2><span class="ico">🎹 </span>フリー練習設定</h2>
+                <div style="width: 84px;"></div>
+            </div>
+
+            <div class="settings-grid">
+                <div class="settings-card">
+                    <h3><span class="ico">🎵 </span>楽曲とキー</h3>
+                    <div class="field">
+                        <label for="free-song">コード進行（全6曲）</label>
+                        <select id="free-song">
+                            <option value="ii_V_I_maj">メジャー ii-V-I（ii - V - I - I）</option>
+                            <option value="ii_V_i_min">マイナー ii-V-i（ii° - V - i - i）</option>
+                            <option value="pop">王道進行（IV - V - iii - vi）</option>
+                            <option value="canon">カノン進行・オンコード（I - V on 7 - vi …）</option>
+                            <option value="autumn">枯葉サイクル（iv - ♭VII - ♭III - ♭VI …）</option>
+                            <option value="citypop">丸サ進行（IV - III - vi - v・I）</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="free-key">キー（五度圏 12キー）</label>
+                        <select id="free-key"></select>
+                    </div>
+                    <div class="field">
+                        <label for="free-laps">クリア周回数</label>
+                        <select id="free-laps">
+                            <option value="1" selected>1周（デフォルト）</option>
+                            <option value="2">2周</option>
+                            <option value="3">3周</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <h3><span class="ico">🎯 </span>難易度とボイシング</h3>
+                    <div class="field">
+                        <label for="free-diff">難易度（音数）</label>
+                        <select id="free-diff">
+                            <option value="beginner">初級（3和音 / Triad）</option>
+                            <option value="intermediate">中級（4和音 / 7th）</option>
+                            <option value="advanced">上級（5和音 / 9th・完全5度省略可）</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="free-mode">ボイシングモード</label>
+                        <select id="free-mode">
+                            <option value="full">フル（全構成音・ベース一致で満点）</option>
+                            <option value="guide">ガイドトーン（3度・7度メイン）</option>
+                            <option value="rootless">ルートレス（ルート抜き）</option>
+                        </select>
+                        <p class="field-note" id="free-mode-note"></p>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <h3><span class="ico">⏱ </span>テンポとアシスト</h3>
+                    <div class="field">
+                        <label for="free-bpm"><span>テンポ (BPM)</span><span id="free-bpm-label" style="color:var(--primary)">85 BPM</span></label>
+                        <input type="range" id="free-bpm" min="60" max="140" step="5" value="85">
+                    </div>
+                    <div class="field">
+                        <label for="free-speed">コードの表示時間（落下の速さ）</label>
+                        <select id="free-speed">
+                        <option value="3.5">ゆっくり（約3.5秒前に表示）</option>
+                        <option value="2.8" selected>ふつう（約2.8秒前）</option>
+                        <option value="2.2">はやい（約2.2秒前）</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="free-blind">耳コピ（ブラインド）モード</label>
+                        <select id="free-blind">
+                            <option value="off">OFF（コード名を表示）</option>
+                            <option value="bass_melody">ON（ヒント：ベース＋メロディ）</option>
+                            <option value="chord">ON（ヒント：コード和音）</option>
+                        </select>
+                    </div>
+                    <label class="toggle-row">
+                        <span><span class="ico">🎵 </span>メロディ自動再生</span>
+                        <input type="checkbox" id="free-melody" checked>
+                    </label>
+                    <label class="toggle-row">
+                        <span><span class="ico">🥁 </span>ドラムビート</span>
+                        <input type="checkbox" id="free-beat" checked>
+                    </label>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" id="btn-start-free" type="button" style="width:100%; max-width:340px; padding:14px; font-size:1.05rem;">
+                ▶ セッション開始
+            </button>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         4. リザルト画面
+         ===================================================================== -->
+    <section id="result-screen" class="overlay-screen overlay-modal hidden" role="dialog" aria-modal="true" aria-labelledby="result-title" aria-describedby="result-desc">
+        <div class="result-box">
+            <h2 id="result-title">STAGE CLEAR!</h2>
+            <p id="result-desc">クリアおめでとうございます！</p>
+            <div class="result-actions">
+                <button class="btn btn-primary" id="btn-result-next" type="button">次のステップへ進む</button>
+                <button class="btn btn-smooth" id="btn-result-retry" type="button">もう一度同じ課題を練習</button>
+                <button class="btn" id="btn-result-back" type="button">コース一覧へ</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         5. ゲームプレイ画面（上部3行 → Canvas → 鍵盤）
+         ===================================================================== -->
+    <div id="game-shell">
+        <!-- 1行目（最上段）：ミッション＆解説バー -->
+        <div id="mission-banner">
+            <span id="mission-title">Step 1: メジャー ii-V-I</span>
+            <span id="mission-degrees">ii - V - I - I</span>
+            <span id="mission-desc">一番低い音を指定ベース音に合わせると満点です！</span>
+        </div>
+
+        <!-- 2行目（中段）：操作メニューバー -->
+        <header id="top-bar">
+            <div class="bar-group">
+                <button class="ctrl-chip" id="btn-nav-home" type="button">◀ ホーム</button>
+                <button class="ctrl-chip" id="btn-nav-sub" type="button">☰ コース一覧</button>
+            </div>
+
+            <div class="bar-group">
+                <button class="ctrl-chip" id="btn-play-pause" type="button" title="Spaceキーでも操作できます" aria-pressed="false">⏸ 一時停止</button>
+                <div class="bpm-box" aria-label="BPM変更">
+                    <button class="bpm-btn" id="btn-bpm-down" type="button" aria-label="テンポを5下げる">−</button>
+                    <span class="bpm-val" id="ingame-bpm-val">BPM 85</span>
+                    <button class="bpm-btn" id="btn-bpm-up" type="button" aria-label="テンポを5上げる">＋</button>
+                </div>
+                <button class="ctrl-chip active-on" id="btn-beat-toggle" type="button" aria-pressed="true"><span class="ico">🥁 </span>ビート: ON</button>
+                <button class="ctrl-chip active-on" id="btn-melody-toggle" type="button" aria-pressed="true"><span class="ico">🎵 </span>メロディ: ON</button>
+            </div>
+
+            <div class="bar-group">
+                <div class="stat-pill lap">周回: <span class="val" id="lap-display">1/1周 (0/4)</span></div>
+                <div class="stat-pill">Score: <span class="val" id="score-display">0</span></div>
+            </div>
+        </header>
+
+        <!-- 3行目（下段）：12キー一覧トラッカー -->
+        <div id="key-tracker" role="group" aria-label="12キーの進捗"></div>
+
+        <!-- メインCanvas領域 -->
+        <main id="game-container">
+            <canvas id="gameCanvas" role="img" aria-label="コード名のブロックが上から落ちてくる演奏画面。判定ラインに来たら表示のコードを弾きます"></canvas>
+            <div id="sr-live" class="sr-only" aria-live="polite"></div>
+        </main>
+
+        <!-- 下部バーチャル鍵盤 -->
+        <footer id="keyboard-wrapper">
+            <div class="oct-controls">
+                <button id="btn-oct-down" type="button" aria-label="鍵盤を1オクターブ下げる">Oct −</button>
+                <span id="oct-display" style="color:var(--primary)">C3</span>
+                <button id="btn-oct-up" type="button" aria-label="鍵盤を1オクターブ上げる">Oct ＋</button>
+            </div>
+            <div id="keyboard-container" role="group" aria-label="バーチャルピアノ鍵盤"></div>
+        </footer>
+    </div>
+
+<script>
+(() => {
+    'use strict';
+
+    /* =========================================================================
+       1. 定数・色定義・周波数テーブル（描画ループ内でのCSS参照・計算を排除）
+       ========================================================================= */
+    // 保存キーは旧名称（Chord Master）のまま維持：変更すると既存ユーザーの進捗・設定が失われるため
+    const STORAGE_KEY = 'chord_master_cleared_steps_v4';
+    const LEGACY_STORAGE_KEY = 'chord_master_cleared_steps_v3';
+    const PREFS_KEY = 'chord_master_prefs_v1';
+    const OVERLAY_IDS = ['start-screen', 'course-menu-screen', 'free-settings-screen', 'result-screen'];
+
+    // Canvas 用の配色（テーマ別）。描画ループ内で CSS を参照しないよう JS 側に保持する。
+    const CANVAS_THEMES = Object.freeze({
+        retro: Object.freeze({
+            family: 'Inter, "Noto Sans JP", sans-serif', wBold: 800, wBlack: 900, blockRadius: 10, blockStroke: 2, hitLineW: 3,
+            bg: '#0a0b12', laneBg: 'rgba(20, 22, 36, 0.92)', laneBorder: '#2b2f4a', hitZone: 'rgba(0, 229, 255, 0.09)',
+            primary: '#00e5ff', smooth: '#ff3df0', degree: '#ffcc00', green: '#10b981', orange: '#f59e0b', danger: '#ff4d5a',
+            blockNormal: 'rgba(0, 178, 214, 0.9)', blockNormalStroke: '#7df3ff',
+            blockBlind: 'rgba(138, 43, 226, 0.88)', blockBlindStroke: '#d896ff',
+            blockMissed: 'rgba(255, 77, 90, 0.38)', blockMissedStroke: '#ff4d5a',
+            blockText: '#ffffff', blockSub: '#e0f7ff', missedText: '#ffffff', missedSub: '#ffe4e6',
+            badgeBg: 'rgba(0, 0, 0, 0.3)', badgeText: '#ffcc00', missedBadgeBg: 'rgba(0, 0, 0, 0.3)', missedBadgeText: '#ffcc00',
+            textStrong: '#ffffff', textSub: '#e0f7ff', textMuted: '#94a3b8',
+            hudBg: 'rgba(14, 16, 28, 0.9)', hudText: '#00e5ff', pauseOverlay: 'rgba(8, 9, 16, 0.65)', bannerBg: 'rgba(10, 12, 24, 0.76)',
+            previewBg: 'rgba(0, 229, 255, 0.18)', previewText: '#00e5ff', previewReviewBg: 'rgba(245, 158, 11, 0.22)', previewReviewText: '#fbbf24'
+        }),
+        modernLight: Object.freeze({
+            family: 'system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif', wBold: 700, wBlack: 700, blockRadius: 8, blockStroke: 1, hitLineW: 2,
+            bg: '#f5f6f8', laneBg: '#ffffff', laneBorder: '#e2e5ea', hitZone: 'rgba(37, 99, 235, 0.07)',
+            primary: '#2563eb', smooth: '#7c3aed', degree: '#b45309', green: '#047857', orange: '#b45309', danger: '#dc2626',
+            blockNormal: '#2563eb', blockNormalStroke: '#1d4ed8',
+            blockBlind: '#7c3aed', blockBlindStroke: '#6d28d9',
+            blockMissed: '#fee2e2', blockMissedStroke: '#dc2626',
+            blockText: '#ffffff', blockSub: 'rgba(255, 255, 255, 0.86)', missedText: '#991b1b', missedSub: '#b91c1c',
+            badgeBg: 'rgba(255, 255, 255, 0.2)', badgeText: '#ffffff', missedBadgeBg: 'rgba(220, 38, 38, 0.12)', missedBadgeText: '#991b1b',
+            textStrong: '#111827', textSub: '#374151', textMuted: '#6b7280',
+            hudBg: 'rgba(255, 255, 255, 0.94)', hudText: '#2563eb', pauseOverlay: 'rgba(245, 246, 248, 0.78)', bannerBg: 'rgba(255, 255, 255, 0.96)',
+            previewBg: 'rgba(37, 99, 235, 0.08)', previewText: '#2563eb', previewReviewBg: 'rgba(217, 119, 6, 0.1)', previewReviewText: '#b45309'
+        }),
+        modernDark: Object.freeze({
+            family: 'system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif', wBold: 700, wBlack: 700, blockRadius: 8, blockStroke: 1, hitLineW: 2,
+            bg: '#0f1115', laneBg: '#161920', laneBorder: '#2a2f3a', hitZone: 'rgba(96, 165, 250, 0.08)',
+            primary: '#60a5fa', smooth: '#a78bfa', degree: '#fbbf24', green: '#34d399', orange: '#f59e0b', danger: '#f87171',
+            blockNormal: '#2563eb', blockNormalStroke: '#3b82f6',
+            blockBlind: '#6d28d9', blockBlindStroke: '#8b5cf6',
+            blockMissed: 'rgba(248, 113, 113, 0.16)', blockMissedStroke: '#f87171',
+            blockText: '#ffffff', blockSub: 'rgba(255, 255, 255, 0.86)', missedText: '#fecaca', missedSub: '#fca5a5',
+            badgeBg: 'rgba(255, 255, 255, 0.16)', badgeText: '#ffffff', missedBadgeBg: 'rgba(248, 113, 113, 0.16)', missedBadgeText: '#fecaca',
+            textStrong: '#f3f4f6', textSub: '#d1d5db', textMuted: '#9ca3af',
+            hudBg: 'rgba(22, 25, 32, 0.94)', hudText: '#60a5fa', pauseOverlay: 'rgba(15, 17, 21, 0.72)', bannerBg: 'rgba(22, 25, 32, 0.96)',
+            previewBg: 'rgba(96, 165, 250, 0.12)', previewText: '#60a5fa', previewReviewBg: 'rgba(245, 158, 11, 0.14)', previewReviewText: '#fbbf24'
+        })
+    });
+    let COLORS = CANVAS_THEMES.retro;
+    let currentTheme = 'modern'; // 既定テーマ（保存済みの設定があればそちらを優先）
+    let fontVersion = 0; // フォント・配色が変わるたびに増やす（ブロックごとの度数フォント再計算用）
+
+    // MIDIノート番号(0〜127) -> 周波数(Hz) 事前計算テーブル
+    const MIDI_FREQ_TABLE = new Float32Array(128);
+    for (let i = 0; i < 128; i++) {
+        MIDI_FREQ_TABLE[i] = 440 * Math.pow(2, (i - 69) / 12);
+    }
+
+    const NOTE_NAMES_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const NOTE_NAMES_FLAT  = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+    const PC_NAMES_SHARP   = ['ド', 'ド#', 'レ', 'レ#', 'ミ', 'ファ', 'ファ#', 'ソ', 'ソ#', 'ラ', 'ラ#', 'シ'];
+    const PC_NAMES_FLAT    = ['ド', 'レb', 'レ', 'ミb', 'ミ', 'ファ', 'ソb', 'ソ', 'ラb', 'ラ', 'シb', 'シ'];
+    const NOTE_TO_PC = {
+        C: 0, 'C#': 1, Db: 1, D: 2, 'D#': 3, Eb: 3, E: 4,
+        F: 5, 'F#': 6, Gb: 6, G: 7, 'G#': 8, Ab: 8, A: 9, 'A#': 10, Bb: 10, B: 11
+    };
+
+    // 五度圏12キー定義（メジャー / マイナー両方の正確な調号・フラット判定を保持）
+    const CIRCLE_OF_FIFTHS = Object.freeze([
+        { tonicPc: 0,  maj: 'C',  majFull: 'C Major',  majSig: '調号なし', majFlat: false, min: 'Cm',  minFull: 'C Minor',  minSig: '♭3',     minFlat: true  },
+        { tonicPc: 5,  maj: 'F',  majFull: 'F Major',  majSig: '♭1',     majFlat: true,  min: 'Fm',  minFull: 'F Minor',  minSig: '♭4',     minFlat: true  },
+        { tonicPc: 10, maj: 'Bb', majFull: 'Bb Major', majSig: '♭2',     majFlat: true,  min: 'Bbm', minFull: 'Bb Minor', minSig: '♭5',     minFlat: true  },
+        { tonicPc: 3,  maj: 'Eb', majFull: 'Eb Major', majSig: '♭3',     majFlat: true,  min: 'Ebm', minFull: 'Eb Minor', minSig: '♭6',     minFlat: true  },
+        { tonicPc: 8,  maj: 'Ab', majFull: 'Ab Major', majSig: '♭4',     majFlat: true,  min: 'G#m', minFull: 'G# Minor', minSig: '♯5',     minFlat: false },
+        { tonicPc: 1,  maj: 'Db', majFull: 'Db Major', majSig: '♭5',     majFlat: true,  min: 'C#m', minFull: 'C# Minor', minSig: '♯4',     minFlat: false },
+        { tonicPc: 6,  maj: 'Gb', majFull: 'Gb Major', majSig: '♭6',     majFlat: true,  min: 'F#m', minFull: 'F# Minor', minSig: '♯3',     minFlat: false },
+        { tonicPc: 11, maj: 'B',  majFull: 'B Major',  majSig: '♯5',     majFlat: false, min: 'Bm',  minFull: 'B Minor',  minSig: '♯2',     minFlat: false },
+        { tonicPc: 4,  maj: 'E',  majFull: 'E Major',  majSig: '♯4',     majFlat: false, min: 'Em',  minFull: 'E Minor',  minSig: '♯1',     minFlat: false },
+        { tonicPc: 9,  maj: 'A',  majFull: 'A Major',  majSig: '♯3',     majFlat: false, min: 'Am',  minFull: 'A Minor',  minSig: '調号なし', minFlat: false },
+        { tonicPc: 2,  maj: 'D',  majFull: 'D Major',  majSig: '♯2',     majFlat: false, min: 'Dm',  minFull: 'D Minor',  minSig: '♭1',     minFlat: true  },
+        { tonicPc: 7,  maj: 'G',  majFull: 'G Major',  majSig: '♯1',     majFlat: false, min: 'Gm',  minFull: 'G Minor',  minSig: '♭2',     minFlat: true  }
+    ]);
+
+    // 枯葉サイクル(Am基準)用の五度圏順（Am → Dm → Gm → Cm → ... で白鍵中心から自然に進む）
+    const AM_START_ORDER = Object.freeze([9, 10, 11, 0, 1, 2, 3, 4, 5, 6, 7, 8]);
+    const C_START_ORDER  = Object.freeze([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+
+    // ルート・クオリティ・スラッシュ後のベース音を正確に分離する正規表現
+    const CHORD_LABEL_REGEX = /^([A-G][#b]?)(.*?)(?:\/([A-G][#b]?))?$/;
+
+    /* =========================================================================
+       2. 楽曲データ（全6曲・音楽理論的に正確なボイシング）
+       ========================================================================= */
+    // 度数表記は PROGRESSIONS の deg / deg_int / deg_adv から難易度別に自動生成する（getDegreeText）
+    const SONG_META = Object.freeze({
+        ii_V_I_maj: { name: 'メジャー ii-V-I',         isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER },
+        ii_V_i_min: { name: 'マイナー ii-V-i',         isMinor: true,  baseTonicPc: 0, keyOrder: C_START_ORDER },
+        pop:        { name: '王道進行',                isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER },
+        canon:      { name: 'カノン進行（オンコード）', isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER },
+        autumn:     { name: '枯葉サイクル',            isMinor: true,  baseTonicPc: 9, keyOrder: AM_START_ORDER },
+        citypop:    { name: '丸サ進行',                isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER }
+    });
+
+    // 伴奏の音域（キーごとに進行全体を同じオクターブだけずらし、旋律・ベースの輪郭を保つ）
+    const BASS_RANGE = Object.freeze([36, 55]);
+    const MELODY_RANGE = Object.freeze([55, 79]);
+
+    const PROGRESSIONS = Object.freeze({
+        // 必ず I を2回繰り返す4コード構成
+        ii_V_I_maj: [
+            { label: 'Dm', label_int: 'Dm7',   label_adv: 'Dm9',   deg: 'ii', deg_int: 'ii7',   deg_adv: 'ii9',   bassMidi: 50, root: 2, notes: [2, 5, 9],  seventh: [2, 5, 9, 0],  ninth: [2, 5, 9, 0, 4],  melMidi: 65 },
+            { label: 'G',  label_int: 'G7',    label_adv: 'G9',    deg: 'V',  deg_int: 'V7',    deg_adv: 'V9',    bassMidi: 43, root: 7, notes: [7, 11, 2], seventh: [7, 11, 2, 5], ninth: [7, 11, 2, 5, 9], melMidi: 65 },
+            { label: 'C',  label_int: 'Cmaj7', label_adv: 'Cmaj9', deg: 'I',  deg_int: 'Imaj7', deg_adv: 'Imaj9', bassMidi: 48, root: 0, notes: [0, 4, 7],  seventh: [0, 4, 7, 11], ninth: [0, 4, 7, 11, 2], melMidi: 64 },
+            { label: 'C',  label_int: 'C6',    label_adv: 'C6(9)', deg: 'I',  deg_int: 'I6',    deg_adv: 'I6(9)', bassMidi: 48, root: 0, notes: [0, 4, 7],  seventh: [0, 4, 7, 9],  ninth: [0, 4, 7, 9, 2],  melMidi: 64 }
+        ],
+        // 必ず i を2回繰り返す4コード構成
+        ii_V_i_min: [
+            { label: 'Ddim', label_int: 'Dm7(b5)', label_adv: 'Dm11(b5)', deg: 'ii°', deg_int: 'iiø7',   deg_adv: 'iiø11',  bassMidi: 50, root: 2, notes: [2, 5, 8],  seventh: [2, 5, 8, 0],  ninth: [2, 5, 8, 0, 7],  melMidi: 65, isHalfDim: true },
+            { label: 'G',    label_int: 'G7(b9)',  label_adv: 'G7(b9)',   deg: 'V',   deg_int: 'V7(b9)', deg_adv: 'V7(b9)', bassMidi: 43, root: 7, notes: [7, 11, 2], seventh: [7, 11, 2, 5, 8], ninth: [7, 11, 2, 5, 8], melMidi: 65 },
+            { label: 'Cm',   label_int: 'Cm7',     label_adv: 'Cm9',      deg: 'i',   deg_int: 'im7',    deg_adv: 'im9',    bassMidi: 48, root: 0, notes: [0, 3, 7],  seventh: [0, 3, 7, 10], ninth: [0, 3, 7, 10, 2], melMidi: 63 },
+            { label: 'Cm',   label_int: 'Cm6',     label_adv: 'Cm6(9)',   deg: 'i',   deg_int: 'im6',    deg_adv: 'im6(9)', bassMidi: 48, root: 0, notes: [0, 3, 7],  seventh: [0, 3, 7, 9],  ninth: [0, 3, 7, 9, 2],  melMidi: 63 }
+        ],
+        // 王道進行
+        pop: [
+            { label: 'F',  label_int: 'Fmaj7', label_adv: 'Fmaj9',  deg: 'IV',  deg_int: 'IVmaj7', deg_adv: 'IVmaj9', bassMidi: 41, root: 5, notes: [5, 9, 0],  seventh: [5, 9, 0, 4],  ninth: [5, 9, 0, 4, 7],  melMidi: 69 },
+            { label: 'G',  label_int: 'G7',    label_adv: 'G9sus4', deg: 'V',   deg_int: 'V7',     deg_adv: 'V9sus4', bassMidi: 43, root: 7, notes: [7, 11, 2], seventh: [7, 11, 2, 5], ninth: [7, 0, 2, 5, 9],  melMidi: 71, melMidi_adv: 72 },
+            { label: 'Em', label_int: 'Em7',   label_adv: 'Em11',   deg: 'iii', deg_int: 'iiim7',  deg_adv: 'iiim11', bassMidi: 40, root: 4, notes: [4, 7, 11], seventh: [4, 7, 11, 2], ninth: [4, 7, 11, 2, 9], melMidi: 67 },
+            { label: 'Am', label_int: 'Am7',   label_adv: 'Am9',    deg: 'vi',  deg_int: 'vim7',   deg_adv: 'vim9',   bassMidi: 45, root: 9, notes: [9, 0, 4],  seventh: [9, 0, 4, 7],  ninth: [9, 0, 4, 7, 11], melMidi: 72 }
+        ],
+        // カノン進行（オンコード）
+        // 度数の「on 7」はベースが音階の第7音という意味（ローマ数字の V/VII は「VIIへのV＝二次ドミナント」と紛らわしいため使わない）
+        canon: [
+            { label: 'C',    label_int: 'Cmaj7',   label_adv: 'Cmaj9',   deg: 'I',     deg_int: 'Imaj7',    deg_adv: 'Imaj9',    bassMidi: 48, root: 0, notes: [0, 4, 7],  seventh: [0, 4, 7, 11], ninth: [0, 4, 7, 11, 2], melMidi: 64 },
+            { label: 'G/B',  label_int: 'Gadd9/B', label_adv: 'Gadd9/B', deg: 'V on 7', deg_int: 'Vadd9 on 7', deg_adv: 'Vadd9 on 7',bassMidi: 47, root: 7, notes: [7, 11, 2], seventh: [7, 11, 2, 9], ninth: [7, 11, 2, 9],    melMidi: 62 },
+            { label: 'Am',   label_int: 'Am7',     label_adv: 'Am9',     deg: 'vi',    deg_int: 'vim7',     deg_adv: 'vim9',     bassMidi: 45, root: 9, notes: [9, 0, 4],  seventh: [9, 0, 4, 7],  ninth: [9, 0, 4, 7, 11], melMidi: 60 },
+            { label: 'Em/G', label_int: 'Em7/G',   label_adv: 'Em11/G',  deg: 'iii on 5', deg_int: 'iiim7 on 5', deg_adv: 'iiim11 on 5', bassMidi: 43, root: 4, notes: [4, 7, 11], seventh: [4, 7, 11, 2], ninth: [4, 7, 11, 2, 9], melMidi: 59 },
+            { label: 'F',    label_int: 'Fmaj7',   label_adv: 'Fmaj9',   deg: 'IV',    deg_int: 'IVmaj7',   deg_adv: 'IVmaj9',   bassMidi: 41, root: 5, notes: [5, 9, 0],  seventh: [5, 9, 0, 4],  ninth: [5, 9, 0, 4, 7],  melMidi: 57 },
+            { label: 'C/E',  label_int: 'Cadd9/E', label_adv: 'Cadd9/E', deg: 'I on 3', deg_int: 'Iadd9 on 3', deg_adv: 'Iadd9 on 3',bassMidi: 40, root: 0, notes: [0, 4, 7],  seventh: [0, 4, 7, 2],  ninth: [0, 4, 7, 2],     melMidi: 55 },
+            { label: 'F',    label_int: 'Dm7',     label_adv: 'Dm9',     deg: 'IV',    deg_int: 'iim7',     deg_adv: 'iim9',     bassMidi: 41, bassMidi_int: 38, bassMidi_adv: 38, root: 5, root_int: 2, root_adv: 2, notes: [5, 9, 0], seventh: [2, 5, 9, 0], ninth: [2, 5, 9, 0, 4], melMidi: 57 },
+            { label: 'G',    label_int: 'G7sus4',  label_adv: 'G9sus4',  deg: 'V',     deg_int: 'V7sus4',   deg_adv: 'V9sus4',   bassMidi: 43, root: 7, notes: [7, 11, 2], seventh: [7, 0, 2, 5],  ninth: [7, 0, 2, 5, 9],  melMidi: 59, melMidi_int: 60, melMidi_adv: 60 }
+        ],
+        // 枯葉サイクル（Am基準）：iv7 - ♭VII7 - ♭IIImaj7 - ♭VImaj7（平行長調の ii-V-I-IV）→ iiø7 - V7 - im7 - im7（短調の ii-V-i）
+        // 旋律は3度・7度を半音/全音で繋ぐオリジナルのガイドトーン・ライン（原曲旋律は不使用）
+        autumn: [
+            { label: 'Dm',   label_int: 'Dm7',     label_adv: 'Dm9',      deg: 'iv',  deg_int: 'ivm7',    deg_adv: 'ivm9',    bassMidi: 50, root: 2,  notes: [2, 5, 9],  seventh: [2, 5, 9, 0],  ninth: [2, 5, 9, 0, 4],  melMidi: 65 },
+            { label: 'G',    label_int: 'G7',      label_adv: 'G9',       deg: '♭VII', deg_int: '♭VII7',  deg_adv: '♭VII9',   bassMidi: 43, root: 7,  notes: [7, 11, 2], seventh: [7, 11, 2, 5], ninth: [7, 11, 2, 5, 9], melMidi: 65 },
+            { label: 'C',    label_int: 'Cmaj7',   label_adv: 'Cmaj9',    deg: '♭III', deg_int: '♭IIImaj7', deg_adv: '♭IIImaj9', bassMidi: 48, root: 0, notes: [0, 4, 7], seventh: [0, 4, 7, 11], ninth: [0, 4, 7, 11, 2], melMidi: 64 },
+            { label: 'F',    label_int: 'Fmaj7',   label_adv: 'Fmaj9',    deg: '♭VI', deg_int: '♭VImaj7', deg_adv: '♭VImaj9', bassMidi: 41, root: 5,  notes: [5, 9, 0],  seventh: [5, 9, 0, 4],  ninth: [5, 9, 0, 4, 7],  melMidi: 64 },
+            { label: 'Bdim', label_int: 'Bm7(b5)', label_adv: 'Bm11(b5)', deg: 'ii°', deg_int: 'iiø7',    deg_adv: 'iiø11',   bassMidi: 47, root: 11, notes: [11, 2, 5], seventh: [11, 2, 5, 9], ninth: [11, 2, 5, 9, 4], melMidi: 62, isHalfDim: true },
+            { label: 'E',    label_int: 'E7',      label_adv: 'E7(b9)',   deg: 'V',   deg_int: 'V7',      deg_adv: 'V7(b9)',  bassMidi: 40, root: 4,  notes: [4, 8, 11], seventh: [4, 8, 11, 2], ninth: [4, 8, 11, 2, 5], melMidi: 62 },
+            { label: 'Am',   label_int: 'Am7',     label_adv: 'Am9',      deg: 'i',   deg_int: 'im7',     deg_adv: 'im9',     bassMidi: 45, root: 9,  notes: [9, 0, 4],  seventh: [9, 0, 4, 7],  ninth: [9, 0, 4, 7, 11], melMidi: 60 },
+            { label: 'Am',   label_int: 'Am7',     label_adv: 'Am9',      deg: 'i',   deg_int: 'im7',     deg_adv: 'im9',     bassMidi: 45, root: 9,  notes: [9, 0, 4],  seventh: [9, 0, 4, 7],  ninth: [9, 0, 4, 7, 11], melMidi: 67 }
+        ],
+        // 丸サ進行：4小節ループ（vm7 と I7 は最終小節を2拍ずつ分け合う＝ IV へ戻る ii-V）
+        citypop: [
+            { label: 'F',  label_int: 'Fmaj7', label_adv: 'Fmaj9',  deg: 'IV',  deg_int: 'IVmaj7', deg_adv: 'IVmaj9',  bassMidi: 41, root: 5, notes: [5, 9, 0],  seventh: [5, 9, 0, 4],  ninth: [5, 9, 0, 4, 7],  melMidi: 69 },
+            { label: 'E',  label_int: 'E7',    label_adv: 'E7(b9)', deg: 'III', deg_int: 'III7',   deg_adv: 'III7(b9)',bassMidi: 40, root: 4, notes: [4, 8, 11], seventh: [4, 8, 11, 2], ninth: [4, 8, 11, 2, 5], melMidi: 68 },
+            { label: 'Am', label_int: 'Am7',   label_adv: 'Am9',    deg: 'vi',  deg_int: 'vim7',   deg_adv: 'vim9',    bassMidi: 45, root: 9, notes: [9, 0, 4],  seventh: [9, 0, 4, 7],  ninth: [9, 0, 4, 7, 11], melMidi: 67 },
+            { label: 'Gm', label_int: 'Gm7',   label_adv: 'Gm9',    deg: 'v',   deg_int: 'vm7',    deg_adv: 'vm9',     bassMidi: 43, root: 7, notes: [7, 10, 2], seventh: [7, 10, 2, 5], ninth: [7, 10, 2, 5, 9], melMidi: 65, beats: 2 },
+            { label: 'C',  label_int: 'C7',    label_adv: 'C9',     deg: 'I',   deg_int: 'I7',     deg_adv: 'I9',      bassMidi: 48, root: 0, notes: [0, 4, 7],  seventh: [0, 4, 7, 10], ninth: [0, 4, 7, 10, 2], melMidi: 64, beats: 2 }
+        ]
+    });
+
+    /* =========================================================================
+       3. 12キー制覇コース（枯葉サイクル復活・全13ステップ・4フェーズ）
+       ========================================================================= */
+    const COURSE_PHASES = Object.freeze([
+        { id: 1, tag: 'Phase 1', title: '3和音で一通りマスター（Triad・フル）' },
+        { id: 2, tag: 'Phase 2', title: 'ガイドトーン（3度・7度の2音で滑らかに繋ぐ）' },
+        { id: 3, tag: 'Phase 3', title: '4和音・7thを習得（4和音・フル）' },
+        { id: 4, tag: 'Phase 4', title: '5和音・ルートレス（プロ仕様の洗練ボイシング）' }
+    ]);
+
+    // key は保存用の安定ID（並び替えても進捗がずれない）。度数表記は進行データから自動生成。
+    const COURSE_STEPS = Object.freeze([
+        // Phase 1（3和音・フル）
+        { id: 0, key: 'p1-maj', phase: 1, title: 'メジャー ii-V-I', song: 'ii_V_I_maj', diff: 'beginner', mode: 'full', badge: '3和音・フル', bpm: 80,
+          goal: '曲の終わりで最もよく使う「ii-V-I」の解決を12キーで（Iは2回）',
+          mission: '一番低い音を指定ベース（＝ルート）にすると Perfect +100' },
+        { id: 1, key: 'p1-min', phase: 1, title: 'マイナー ii°-V-i', song: 'ii_V_i_min', diff: 'beginner', mode: 'full', badge: '3和音・フル', bpm: 80,
+          goal: '減三和音 ii° と、導音を含む V（和声的短音階）で短調に解決する響き',
+          mission: 'V の3度（導音）は短調でも半音上げた音。最低音をルートにすると Perfect +100' },
+        { id: 2, key: 'p1-pop', phase: 1, title: '王道進行', song: 'pop', diff: 'beginner', mode: 'full', badge: '3和音・フル', bpm: 85,
+          goal: 'J-POP定番。IV→V で盛り上げ、トニックに行かず iii→vi へ逃げる切なさ',
+          mission: '共通音を残して近い形で移ろう。最低音をルートにすると Perfect +100' },
+        { id: 3, key: 'p1-canon', phase: 1, title: 'カノン進行（オンコード）', song: 'canon', diff: 'beginner', mode: 'full', badge: '3和音・オンコード', bpm: 80,
+          goal: 'ベースが C-B-A-G-F-E と順次下行するオンコードを習得',
+          mission: 'G/B なら「シ」、C/E なら「ミ」を一番低く弾くと Perfect +100' },
+
+        // Phase 2（ガイドトーン）
+        { id: 4, key: 'p2-maj', phase: 2, title: 'メジャー ii-V-I（ガイドトーン）', song: 'ii_V_I_maj', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
+          goal: '7度が半音下がって次の3度になる、ii-V-I の声部進行を体感',
+          mission: 'ベースは自動。3度＋7度の2音を近い鍵盤で繋ぐと Smooth +100' },
+        { id: 5, key: 'p2-pop', phase: 2, title: '王道進行（ガイドトーン）', song: 'pop', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
+          goal: '最小の指移動で J-POP 進行を伴奏する',
+          mission: '3度＋7度の2音。平均2.5半音以内の移動で Smooth +100' },
+        { id: 6, key: 'p2-autumn', phase: 2, title: '枯葉サイクル（ガイドトーン）', song: 'autumn', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2〜3音）', bpm: 85,
+          goal: '4度上行（5度下行）の連鎖で、3度と7度が交互に入れ替わる流れを体感',
+          mission: '3度＋7度（iiø7 は♭5も）を最小移動で繋ぐと Smooth +100' },
+
+        // Phase 3（4和音・フル）
+        { id: 7, key: 'p3-maj', phase: 3, title: 'メジャー ii7-V7-Imaj7', song: 'ii_V_I_maj', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+          goal: '7thコードの全構成音を12キーで（2回目のIは I6）',
+          mission: '7th（I6 は6度）まで押さえ、最低音をルートにすると Perfect +100' },
+        { id: 8, key: 'p3-min', phase: 3, title: 'マイナー iiø7-V7(b9)-im7', song: 'ii_V_i_min', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+          goal: 'ハーフディミニッシュと♭9で作る本格的な短調の ii-V-i（2回目は im6）',
+          mission: 'V7(b9) は5度省略OK（4音でも可）。最低音をルートにすると Perfect +100' },
+        { id: 9, key: 'p3-pop', phase: 3, title: '王道進行（4和音）', song: 'pop', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 85,
+          goal: 'IVmaj7 の浮遊感と iiim7・vim7 の切なさを4和音で',
+          mission: '7thまで押さえ、最低音をルートにすると Perfect +100' },
+        { id: 10, key: 'p3-autumn', phase: 3, title: '枯葉サイクル（4和音）', song: 'autumn', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+          goal: '平行長調の ii-V-I-IV と短調の ii-V-i を連結したジャズの定番サイクル',
+          mission: '8コードすべて7thまで。最低音をルートにすると Perfect +100' },
+        { id: 11, key: 'p3-citypop', phase: 3, title: '丸サ進行（4和音）', song: 'citypop', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 85,
+          goal: 'III7（vi へのセカンダリードミナント）と vm7-I7（IV への ii-V）で作るシティポップの循環',
+          mission: '最終小節は vm7・I7 が2拍ずつ。最低音をルートにすると Perfect +100' },
+
+        // Phase 4（5和音・ルートレス）
+        { id: 12, key: 'p4-citypop', phase: 4, title: '丸サ進行（5和音ルートレス）', song: 'citypop', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 85,
+          goal: 'ルートをベースに任せ、9th・♭9を含む4音で弾くプロ仕様の響き',
+          mission: 'ルート抜きの4音。転回して最小移動で繋ぐと Smooth +100' }
+    ]);
+
+    // 旧バージョン(v3: 数値ID)の進捗を新しい安定IDへ移行する対応表（旧Step5=枯葉3和音は廃止）
+    const LEGACY_STEP_KEYS = Object.freeze({
+        0: 'p1-maj', 1: 'p1-min', 2: 'p1-pop', 3: 'p1-canon',
+        5: 'p2-maj', 6: 'p2-pop', 7: 'p2-autumn',
+        8: 'p3-maj', 9: 'p3-min', 10: 'p3-autumn', 11: 'p3-citypop', 12: 'p4-citypop'
+    });
+
+    /* =========================================================================
+       4. 音源（Tone.js 遅延初期化 + try/catch安全ガード）
+       ========================================================================= */
+    let audioReady = false;
+    let audioInitPromise = null;
+    let userSynth = null;
+    let melodySynth = null;
+    let bassSynth = null;
+    let hintSynth = null;
+    let kickSynth = null;
+    let hatSynth = null;
+
+    // 多重呼び出し（タッチ＋セッション開始が同時など）でシンセが二重生成されないよう Promise を共有
+    function initAudio() {
+        if (audioReady) return Promise.resolve(true);
+        if (!audioInitPromise) {
+            audioInitPromise = createAudioGraph().then(ok => {
+                if (!ok) audioInitPromise = null; // 失敗時は次のユーザー操作で再試行
+                return ok;
+            });
+        }
+        return audioInitPromise;
+    }
+
+    async function createAudioGraph() {
+        try {
+            if (typeof Tone === 'undefined') return false;
+            await Tone.start();
+            // Tone.js 既定の lookAhead(0.1秒) は演奏音・伴奏が描画より100ms遅れる原因になるため0にする。
+            // 伴奏・ドラムは描画ループ側で数十ms先の正確な時刻へ自前でスケジュールする。
+            Tone.getContext().lookAhead = 0;
+
+            userSynth = new Tone.PolySynth(Tone.Synth, {
+                maxPolyphony: 12,
+                oscillator: { type: 'triangle' },
+                envelope: { attack: 0.015, decay: 0.24, sustain: 0.45, release: 0.5 }
+            }).toDestination();
+            userSynth.volume.value = -6;
+
+            melodySynth = new Tone.Synth({
+                oscillator: { type: 'triangle' },
+                envelope: { attack: 0.03, decay: 0.2, sustain: 0.35, release: 0.65 }
+            }).toDestination();
+            melodySynth.volume.value = -4;
+
+            bassSynth = new Tone.FMSynth({
+                harmonicity: 1,
+                modulationIndex: 1.2,
+                envelope: { attack: 0.03, decay: 0.25, sustain: 0.45, release: 0.7 }
+            }).toDestination();
+            bassSynth.volume.value = -1;
+
+            hintSynth = new Tone.PolySynth(Tone.Synth, {
+                maxPolyphony: 8,
+                oscillator: { type: 'sine' },
+                envelope: { attack: 0.04, decay: 0.3, sustain: 0.25, release: 0.6 }
+            }).toDestination();
+            hintSynth.volume.value = -10;
+
+            kickSynth = new Tone.MembraneSynth({
+                pitchDecay: 0.04,
+                octaves: 6,
+                envelope: { attack: 0.002, decay: 0.22, sustain: 0, release: 0.1 }
+            }).toDestination();
+            kickSynth.volume.value = -6;
+
+            hatSynth = new Tone.NoiseSynth({
+                noise: { type: 'white' },
+                envelope: { attack: 0.001, decay: 0.045, sustain: 0, release: 0.01 }
+            }).toDestination();
+            hatSynth.volume.value = -18;
+
+            audioReady = true;
+            return true;
+        } catch (err) {
+            console.warn('Audio init skipped:', err);
+            return false;
+        }
+    }
+
+    /* =========================================================================
+       5. 状態変数・DOMキャッシュ
+       ========================================================================= */
+    let activeOverlayId = 'start-screen';
+    let isCourseMode = true;
+    let currentStepIdx = 0;
+    let clearedSteps = loadClearedSteps();
+
+    const config = {
+        song: 'ii_V_I_maj',
+        cofIdx: 0,      // CIRCLE_OF_FIFTHS の実インデックス（0..11）
+        diff: 'beginner',
+        mode: 'full',
+        bpm: 80,
+        lapsToClear: 1, // デフォルト1周
+        lookaheadSec: 2.8, // コードが出現してから判定ラインに届くまでの秒数
+        melodyOn: true,
+        beatOn: true,
+        blindMode: 'off'
+    };
+
+    // コースモード用12キー＆自動復習ステート
+    let courseOrderPos = 0;         // 現在の五度圏進行位置（0..11）
+    let keyStatuses = [];           // 各位置(0..11)の状態: 'pending' | 'perfect' | 'review'
+    let isReviewPhase = false;      // 1周終了後の復習フェーズか
+    let reviewQueue = [];           // 復習待ちの位置インデックス配列
+    let currentReviewPos = -1;      // 復習フェーズ中に現在プレイ中の位置インデックス
+    let hadMissInCurrentKey = false;// 現在のキーで一度でもミスしたか
+
+    // ゲームループ＆タイムライン状態
+    let isRunning = false;
+    let isPaused = false;
+    let rafId = null;
+    let lastFrameTime = 0;
+
+    const BEATS_PER_CHORD = 4;      // 既定の1コード拍数（コード定義の beats で上書き可）
+    const COUNT_IN_MIN_BEATS = 4;   // 開始時のカウントイン（最低1小節）
+    const BLOCK_GAP_RATIO = 1.15;   // 連続するブロックの中心間隔はブロック高さの1.15倍以上
+    let minChordBeats = 4;          // 現在の進行で最も短いコードの拍数（間隔保証に使う）
+
+    // 画面に見えている拍数。表示時間(秒)で決めるので、画面の高さやBPMが変わっても「読める時間」は一定。
+    // ただし低い画面で短いコードが続くとブロックが重なるため、その場合だけ表示時間を縮める。
+    function getLookaheadBeats() {
+        const byTime = config.lookaheadSec * config.bpm / 60;
+        const maxBySpacing = minChordBeats * hitY / (blockH * BLOCK_GAP_RATIO);
+        return Math.max(1, Math.min(byTime, maxBySpacing));
+    }
+    // 判定幅：基本は ±1/3拍（三連8分音符ぶん）。音楽的には「隣の細かい拍より狙った拍に近い」範囲。
+    // ただし和音は押し終わりで判定されるため最低 ±180ms を確保し、遅いテンポで緩くなりすぎないよう ±350ms を上限にする。
+    // （どのテンポでも隣のコードの判定幅とは重ならない：最短2拍のコードでも ±0.52拍以内）
+    const HIT_WINDOW_BEAT_RATIO = 1 / 3;
+    const HIT_WINDOW_MIN_SEC = 0.18;
+    const HIT_WINDOW_MAX_SEC = 0.35;
+    const HIT_WINDOW_MAX_BEATS = 0.52;
+    const JUST_TIMING_SEC = 0.07;     // ±70ms 以内なら「Just」
+    const JUST_BONUS = 20;            // Just のボーナス点（和音の正しさ 100/50 より小さく、音の選び方を最優先にする）
+    function getHitWindowBeats() {
+        const spb = 60 / config.bpm;
+        const sec = Math.min(HIT_WINDOW_MAX_SEC, Math.max(HIT_WINDOW_MIN_SEC, HIT_WINDOW_BEAT_RATIO * spb));
+        return Math.min(HIT_WINDOW_MAX_BEATS, sec / spb);
+    }
+    const AUDIO_SCHEDULE_AHEAD_SEC = 0.06; // 伴奏・ドラムを先行スケジュールする時間
+    let currentBeat = 0;
+    let nextChordBeat = 4;
+    let chordSeqIndex = 0;
+    let nextClickBeat = 0;          // 次にドラムを鳴らす拍（整数）
+    let resultPending = false;      // クリア確定〜リザルト表示までの判定停止フラグ
+    let resultTimer = null;
+
+    let score = 0;
+    let hitCount = 0;               // 成功したコード数（ジャスト率の分母）
+    let justCount = 0;              // タイミング Just（またはタイでの保持）の数
+    let lastNoteOnBeat = -Infinity; // 最後に新しく鍵盤を押した拍（タイミング評価用）
+    let pressVersion = 0;           // 押鍵状態が変わるたびに増える（不足音の再計算を間引く）
+    let hitStreak = 0;
+    let targetStreak = 4;
+    let blocks = [];
+    let particles = [];
+    let lastPlayedMidiNotes = [];
+
+    // 転調バナーアニメーション状態（約2.5秒間）
+    let keyChangeBanner = null; // { title, sub, isReview, elapsed, duration }
+    let nextKeyPreview = null;  // NEXT KEY 予告（状態変化時のみ再計算）
+    let pressedLabel = '';      // 押下中ノート表示文字列（押鍵変化時のみ再計算）
+    let keyChip = { cacheKey: '', main: '', sig: '', w: 0 }; // 左上のキー表示（キー・フォント変更時のみ再計算）
+    let pressedLabelDirty = false;
+    let rangeCache = { sig: '', bassShift: 0, melShift: 0 };
+    const fonts = { labelSize: 20, hintSize: 12, degSize: 14, bannerSub: '', bannerTitle: '', small: '', hud: '', pauseTitle: '', pauseSub: '', keyLabel: '', keyMain: '', keySig: '' };
+
+    // 入力・鍵盤状態
+    const noteSources = new Map();
+    const keyElements = new Map();
+    const activePitchClasses = new Set();
+    const activePointers = new Map();
+    const activePcKeys = new Map();
+    let baseOctave = 3;
+    let isMouseDown = false;
+    let renderedOctaveKey = '';
+
+    // DOMキャッシュ
+    const dom = {
+        canvas: document.getElementById('gameCanvas'),
+        gameContainer: document.getElementById('game-container'),
+        keyboardContainer: document.getElementById('keyboard-container'),
+        keyTracker: document.getElementById('key-tracker'),
+        missionTitle: document.getElementById('mission-title'),
+        missionDegrees: document.getElementById('mission-degrees'),
+        missionDesc: document.getElementById('mission-desc'),
+        scoreDisplay: document.getElementById('score-display'),
+        lapDisplay: document.getElementById('lap-display'),
+        ingameBpmVal: document.getElementById('ingame-bpm-val'),
+        btnPlayPause: document.getElementById('btn-play-pause'),
+        btnBeatToggle: document.getElementById('btn-beat-toggle'),
+        btnMelodyToggle: document.getElementById('btn-melody-toggle'),
+        btnNavSub: document.getElementById('btn-nav-sub'),
+        octDisplay: document.getElementById('oct-display'),
+        midiDot: document.getElementById('midi-dot'),
+        midiText: document.getElementById('midi-text'),
+        coursePhasesContainer: document.getElementById('course-phases-container'),
+        courseClearBadge: document.getElementById('course-clear-badge'),
+        courseLapsSelect: document.getElementById('course-laps-select'),
+        courseSpeedSelect: document.getElementById('course-speed-select'),
+        freeSpeed: document.getElementById('free-speed'),
+        freeSong: document.getElementById('free-song'),
+        freeKey: document.getElementById('free-key'),
+        freeLaps: document.getElementById('free-laps'),
+        freeDiff: document.getElementById('free-diff'),
+        freeMode: document.getElementById('free-mode'),
+        freeBpm: document.getElementById('free-bpm'),
+        freeBpmLabel: document.getElementById('free-bpm-label'),
+        freeBlind: document.getElementById('free-blind'),
+        freeMelody: document.getElementById('free-melody'),
+        freeBeat: document.getElementById('free-beat'),
+        resultTitle: document.getElementById('result-title'),
+        resultDesc: document.getElementById('result-desc'),
+        btnResultNext: document.getElementById('btn-result-next'),
+        btnResultBack: document.getElementById('btn-result-back'),
+        gameShell: document.getElementById('game-shell'),
+        srLive: document.getElementById('sr-live')
+    };
+
+    // 読み上げ（スクリーンリーダー）向けの短い通知
+    function announce(text) {
+        dom.srLive.textContent = '';
+        requestAnimationFrame(() => { dom.srLive.textContent = text; });
+    }
+
+    const ctx = dom.canvas.getContext('2d', { alpha: false });
+    let canvasW = 0, canvasH = 0, laneW = 400, laneX = 0, hitY = 300, blockH = 54;
+    let keyTrackerBadges = [];
+    let trackerPhasePill = null;
+
+    /* =========================================================================
+       6. オーバーレイ制御
+       ========================================================================= */
+    function hideAllOverlays() {
+        for (let i = 0; i < OVERLAY_IDS.length; i++) {
+            document.getElementById(OVERLAY_IDS[i]).classList.add('hidden');
+        }
+        activeOverlayId = null;
+        dom.gameShell.inert = false;
+    }
+
+    function showOverlay(id, moveFocus = true) {
+        stopGameLoop();
+        releaseAllNotes();
+        for (let i = 0; i < OVERLAY_IDS.length; i++) {
+            const oid = OVERLAY_IDS[i];
+            document.getElementById(oid).classList.toggle('hidden', oid !== id);
+        }
+        activeOverlayId = id;
+        // 背後のゲーム画面にTabで移動できないようにする
+        dom.gameShell.inert = true;
+        if (id === 'course-menu-screen') {
+            renderCourseMenu();
+        }
+        // キーボード利用者のためにフォーカスを画面内へ移す（結果画面は主ボタン）
+        if (!moveFocus) return;
+        const scr = document.getElementById(id);
+        const first = id === 'result-screen'
+            ? scr.querySelector('.result-actions .btn:not(.hidden)')
+            : (scr.querySelector('.step-card.recommended') || scr.querySelector('button, select'));
+        if (first) first.focus({ preventScroll: true });
+    }
+
+    /* =========================================================================
+       7. 音楽理論・移調・キー情報ユーティリティ
+       ========================================================================= */
+    function loadClearedSteps() {
+        const validKeys = new Set(COURSE_STEPS.map(s => s.key));
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                return new Set(JSON.parse(raw).filter(k => validKeys.has(k)));
+            }
+            // v3（数値ID）からの移行
+            const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+            if (legacy) {
+                const migrated = new Set();
+                for (const id of JSON.parse(legacy)) {
+                    const k = LEGACY_STEP_KEYS[id];
+                    if (k) migrated.add(k);
+                }
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(migrated)));
+                return migrated;
+            }
+        } catch {}
+        return new Set();
+    }
+
+    function saveClearedSteps() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(clearedSteps)));
+        } catch {}
+    }
+
+    function mod12(n) {
+        return ((n % 12) + 12) % 12;
+    }
+
+    function getSongKeyOrder(songId) {
+        return SONG_META[songId].keyOrder;
+    }
+
+    function getCofInfoByPos(songId, pos) {
+        const order = getSongKeyOrder(songId);
+        return CIRCLE_OF_FIFTHS[order[pos]];
+    }
+
+    function getCurrentKeyInfo() {
+        return CIRCLE_OF_FIFTHS[config.cofIdx] || CIRCLE_OF_FIFTHS[0];
+    }
+
+    // キー名の表示用：先頭の音名の b/# を ♭/♯ 記号にする（例 Bb Major → B♭ Major）
+    function prettyKeyName(name) {
+        return name.replace(/^([A-G])b/, '$1♭').replace(/^([A-G])#/, '$1♯');
+    }
+
+    function getKeyDisplayParts(cofInfo, isMinor) {
+        return isMinor
+            ? { short: prettyKeyName(cofInfo.min), full: prettyKeyName(cofInfo.minFull), sig: cofInfo.minSig, useFlat: cofInfo.minFlat }
+            : { short: prettyKeyName(cofInfo.maj), full: prettyKeyName(cofInfo.majFull), sig: cofInfo.majSig, useFlat: cofInfo.majFlat };
+    }
+
+    function getActivePosInCourse() {
+        return isReviewPhase ? currentReviewPos : courseOrderPos;
+    }
+
+    // 現在のキーの次に予定されているキー情報を取得（予告表示用）
+    function getNextKeyPreview() {
+        if (!isCourseMode) return null;
+        const isMinor = SONG_META[config.song].isMinor;
+
+        if (!isReviewPhase) {
+            if (courseOrderPos + 1 < 12) {
+                const nextInfo = getCofInfoByPos(config.song, courseOrderPos + 1);
+                const p = getKeyDisplayParts(nextInfo, isMinor);
+                return { label: `${p.full} (${p.sig})`, isReview: false };
+            }
+            // 12キー目（最後）の後は、復習リストがあれば復習フェーズへ
+            const willReview = reviewQueue.length > 0 || hadMissInCurrentKey;
+            if (willReview) {
+                const nextPos = reviewQueue.length > 0 ? reviewQueue[0] : courseOrderPos;
+                const nextInfo = getCofInfoByPos(config.song, nextPos);
+                const p = getKeyDisplayParts(nextInfo, isMinor);
+                return { label: `REVIEW: ${p.full} (${p.sig})`, isReview: true };
+            }
+            return { label: 'FINAL CLEAR!', isReview: false };
+        } else {
+            if (reviewQueue.length > 0) {
+                const nextInfo = getCofInfoByPos(config.song, reviewQueue[0]);
+                const p = getKeyDisplayParts(nextInfo, isMinor);
+                return { label: `REVIEW: ${p.full} (${p.sig})`, isReview: true };
+            }
+            if (hadMissInCurrentKey) {
+                const nextInfo = getCofInfoByPos(config.song, currentReviewPos);
+                const p = getKeyDisplayParts(nextInfo, isMinor);
+                return { label: `RETRY: ${p.full} (${p.sig})`, isReview: true };
+            }
+            return { label: 'FINAL CLEAR!', isReview: false };
+        }
+    }
+
+    function getPcName(pc, useFlat) {
+        return useFlat ? PC_NAMES_FLAT[mod12(pc)] : PC_NAMES_SHARP[mod12(pc)];
+    }
+
+    // 音名を「調の主音からの文字（度数）」で綴る：例 G♭メジャーの IV は B ではなく C♭。
+    // 原調（C / Am）の文字間隔を新しい主音の文字に当てはめ、必要な♯/♭を付ける。±2以上になる場合は通常表記に戻す。
+    const LETTERS = 'CDEFGAB';
+    const LETTER_PC = [0, 2, 4, 5, 7, 9, 11];
+    function spellInKey(noteToken, shift, keyTonicName, baseTonicLetter, useFlat) {
+        const basePc = NOTE_TO_PC[noteToken];
+        if (basePc === undefined) return noteToken;
+        const targetPc = mod12(basePc + shift);
+        const li = (LETTERS.indexOf(noteToken[0]) - LETTERS.indexOf(baseTonicLetter) + LETTERS.indexOf(keyTonicName[0]) + 14) % 7;
+        const acc = mod12(targetPc - LETTER_PC[li] + 6) - 6;
+        if (acc === 0) return LETTERS[li];
+        if (acc === 1) return LETTERS[li] + '#';
+        if (acc === -1) return LETTERS[li] + 'b';
+        return useFlat ? NOTE_NAMES_FLAT[targetPc] : NOTE_NAMES_SHARP[targetPc];
+    }
+
+    function transposeRootName(noteToken, shift, useFlat) {
+        const basePc = NOTE_TO_PC[noteToken];
+        if (basePc === undefined) return noteToken;
+        const shifted = mod12(basePc + shift);
+        return useFlat ? NOTE_NAMES_FLAT[shifted] : NOTE_NAMES_SHARP[shifted];
+    }
+
+    function transposeChordLabel(label, shift, useFlat, keyTonicName, baseTonicLetter) {
+        if (shift === 0) return label;
+        const m = CHORD_LABEL_REGEX.exec(label);
+        if (!m) return label;
+        const spell = (tok) => keyTonicName
+            ? spellInKey(tok, shift, keyTonicName, baseTonicLetter, useFlat)
+            : transposeRootName(tok, shift, useFlat);
+        const rootPart = spell(m[1]);
+        const qualityPart = m[2] || '';
+        const bassPart = m[3] ? '/' + spell(m[3]) : '';
+        return rootPart + qualityPart + bassPart;
+    }
+
+    // 難易度別のコード定義（ラベル・構成音・ルート・ベース・旋律）を解決する
+    function resolveChordDef(chordDef, diff) {
+        const r = {
+            label: chordDef.label, notes: chordDef.notes, deg: chordDef.deg,
+            bassMidi: chordDef.bassMidi, root: chordDef.root, melMidi: chordDef.melMidi,
+            beats: chordDef.beats || BEATS_PER_CHORD
+        };
+        const suffix = diff === 'intermediate' ? '_int' : (diff === 'advanced' ? '_adv' : '');
+        if (suffix) {
+            r.label = chordDef['label' + suffix];
+            r.notes = suffix === '_int' ? chordDef.seventh : chordDef.ninth;
+            r.deg = chordDef['deg' + suffix] || chordDef.deg;
+            for (const k of ['bassMidi', 'root', 'melMidi']) {
+                if (chordDef[k + suffix] !== undefined) r[k] = chordDef[k + suffix];
+            }
+        }
+        return r;
+    }
+
+    function getDegreeText(songId, diff) {
+        return PROGRESSIONS[songId].map(c => {
+            const r = resolveChordDef(c, diff);
+            return r.beats < BEATS_PER_CHORD ? `(${r.deg})` : r.deg;
+        }).join(' - ').replace(/\) - \(/g, ' ');
+    }
+
+    // 進行全体を同じオクターブだけ動かして音域 [lo, hi] に最も収まる移動量（12の倍数）を求める
+    function fitOctaveShift(values, lo, hi) {
+        let mn = Infinity, mx = -Infinity;
+        for (const v of values) { if (v < mn) mn = v; if (v > mx) mx = v; }
+        const center = (lo + hi) * 0.5;
+        let best = 0, bestPenalty = Infinity, bestDist = Infinity;
+        for (let k = -3; k <= 3; k++) {
+            const a = mn + 12 * k, b = mx + 12 * k;
+            const penalty = Math.max(0, lo - a) + Math.max(0, b - hi);
+            const dist = Math.abs((a + b) * 0.5 - center);
+            if (penalty < bestPenalty || (penalty === bestPenalty && dist < bestDist)) {
+                best = 12 * k; bestPenalty = penalty; bestDist = dist;
+            }
+        }
+        return best;
+    }
+
+    function getRangeShifts(shift) {
+        const sig = `${config.song}|${config.diff}|${shift}`;
+        if (rangeCache.sig !== sig) {
+            const defs = PROGRESSIONS[config.song].map(c => resolveChordDef(c, config.diff));
+            rangeCache = {
+                sig,
+                bassShift: fitOctaveShift(defs.map(d => d.bassMidi + shift), BASS_RANGE[0], BASS_RANGE[1]),
+                melShift: fitOctaveShift(defs.map(d => d.melMidi + shift), MELODY_RANGE[0], MELODY_RANGE[1])
+            };
+        }
+        return rangeCache;
+    }
+
+    // ガイドトーン：ルートからの音程で判定（配列の並び順に依存しない）
+    // 3度（無ければsus4/sus2）＋ 7度（無ければ6度 → 9度 → 5度）。ハーフディミニッシュは♭5も加える。
+    function pickGuideTones(notes, root, isHalfDim) {
+        const byInt = new Map(notes.map(pc => [mod12(pc - root), pc]));
+        const pick = (cands) => { for (const i of cands) if (byInt.has(i)) return byInt.get(i); return null; };
+        const out = [];
+        const third = pick([4, 3, 5, 2]);
+        const seventh = pick([10, 11, 9, 2, 7]);
+        if (third !== null) out.push(third);
+        if (isHalfDim && byInt.has(6)) out.push(byInt.get(6));
+        if (seventh !== null && seventh !== third) out.push(seventh);
+        return out;
+    }
+
+    function buildChordTarget(chordDef) {
+        const meta = SONG_META[config.song];
+        const keyInfo = getCurrentKeyInfo();
+        const keyParts = getKeyDisplayParts(keyInfo, meta.isMinor);
+        const shift = mod12(keyInfo.tonicPc - meta.baseTonicPc);
+        const useFlat = keyParts.useFlat;
+        const def = resolveChordDef(chordDef, config.diff);
+
+        const label = transposeChordLabel(def.label, shift, useFlat, keyParts.short, meta.isMinor ? (meta.baseTonicPc === 9 ? 'A' : 'C') : 'C');
+        const notes = def.notes.map(pc => mod12(pc + shift));
+        const root = mod12(def.root + shift);
+
+        // 音ごとにオクターブを折り返すとベースの順次下行や旋律の輪郭が崩れるため、進行単位で一括シフト
+        const shifts = getRangeShifts(shift);
+        const bassMidi = def.bassMidi + shift + shifts.bassShift;
+        const melMidi = def.melMidi + shift + shifts.melShift;
+
+        let required = [];
+        let optional = [];
+
+        if (config.mode === 'rootless') {
+            required = notes.filter(pc => pc !== root);
+        } else if (config.mode === 'guide') {
+            required = pickGuideTones(notes, root, !!chordDef.isHalfDim);
+        } else {
+            // フルモード：5音以上のコードでは完全5度の省略を許容（♭5は必須）
+            const p5 = mod12(root + 7);
+            if (notes.length >= 5 && notes.includes(p5)) {
+                required = notes.filter(pc => pc !== p5);
+                optional = [p5];
+            } else {
+                required = notes.slice();
+            }
+        }
+
+        const requiredSet = new Set(required);
+        const optionalSet = new Set(optional);
+        const hintParts = required.map(pc => getPcName(pc, useFlat));
+        if (optional.length > 0) {
+            hintParts.push(`(${getPcName(optional[0], useFlat)})`);
+        }
+
+        return {
+            label,
+            degree: def.deg,
+            beats: def.beats,
+            root,
+            required,
+            requiredSet,
+            optionalSet,
+            fullNotes: notes,
+            hintText: hintParts.join('・'),
+            bassMidi,
+            bassPc: mod12(bassMidi),
+            melMidi
+        };
+    }
+
+    /* =========================================================================
+       8. コース選択画面・12キートラッカー描画
+       ========================================================================= */
+    function renderCourseMenu() {
+        dom.courseClearBadge.textContent = `クリア: ${clearedSteps.size} / ${COURSE_STEPS.length}`;
+        const container = dom.coursePhasesContainer;
+        container.innerHTML = '';
+
+        let recIdx = COURSE_STEPS.findIndex(s => !clearedSteps.has(s.key));
+        if (recIdx === -1) recIdx = COURSE_STEPS.length - 1;
+
+        const frag = document.createDocumentFragment();
+
+        for (let p = 0; p < COURSE_PHASES.length; p++) {
+            const phase = COURSE_PHASES[p];
+            const section = document.createElement('div');
+            section.className = 'phase-section';
+
+            const stepsInPhase = COURSE_STEPS.filter(s => s.phase === phase.id);
+            const clearedInPhase = stepsInPhase.filter(s => clearedSteps.has(s.key)).length;
+
+            const heading = document.createElement('h3');
+            heading.className = 'phase-heading';
+            heading.innerHTML = `<span class="phase-tag">${phase.tag}</span><span>${phase.title}</span>` +
+                `<span class="phase-count">${clearedInPhase} / ${stepsInPhase.length}</span>`;
+            section.appendChild(heading);
+
+            const grid = document.createElement('div');
+            grid.className = 'course-grid';
+
+            for (let s = 0; s < stepsInPhase.length; s++) {
+                const step = stepsInPhase[s];
+                const isCleared = clearedSteps.has(step.key);
+                const isRec = step.id === recIdx;
+
+                const card = document.createElement('button');
+                card.type = 'button';
+                if (isRec) card.setAttribute('aria-current', 'step');
+                card.className = 'step-card' + (isCleared ? ' cleared' : '') + (isRec ? ' recommended' : '');
+                card.innerHTML = `
+                    <div class="step-top">
+                        <span class="step-num">STEP ${step.id + 1}</span>
+                        ${isCleared
+                            ? '<span class="step-status cleared">★ 12キー制覇</span>'
+                            : (isRec ? '<span class="step-status next">▶ おすすめ</span>' : '')}
+                    </div>
+                    <h4 class="step-title">${step.title}</h4>
+                    <div class="step-meta">
+                        <span class="meta-pill">${step.badge}</span>
+                        <span class="meta-pill deg">${getDegreeText(step.song, step.diff)}</span>
+                    </div>
+                    <p class="step-desc">${step.goal}</p>
+                `;
+                card.addEventListener('click', (e) => {
+                    if (e.detail > 0) e.currentTarget.blur();
+                    startCourseStep(step.id);
+                });
+                grid.appendChild(card);
+            }
+
+            section.appendChild(grid);
+            frag.appendChild(section);
+        }
+
+        container.appendChild(frag);
+    }
+
+    function initKeyTrackerDOM() {
+        const meta = SONG_META[config.song];
+        rangeCache.sig = '';
+        dom.keyTracker.innerHTML = '';
+        keyTrackerBadges = [];
+        trackerPhasePill = null;
+
+        if (!isCourseMode) {
+            dom.keyTracker.classList.add('hidden');
+            return;
+        }
+        dom.keyTracker.classList.remove('hidden');
+
+        const frag = document.createDocumentFragment();
+
+        trackerPhasePill = document.createElement('span');
+        trackerPhasePill.className = 'tracker-phase-pill hidden';
+        trackerPhasePill.textContent = '↻ 復習フェーズ';
+        frag.appendChild(trackerPhasePill);
+
+        const order = meta.keyOrder;
+        for (let pos = 0; pos < order.length; pos++) {
+            const info = CIRCLE_OF_FIFTHS[order[pos]];
+            const shortName = prettyKeyName(meta.isMinor ? info.min : info.maj);
+            const el = document.createElement('span');
+            el.className = 'key-badge';
+            el.setAttribute('role', 'listitem');
+            el.dataset.baseName = shortName;
+            el.textContent = shortName;
+            keyTrackerBadges.push(el);
+            frag.appendChild(el);
+        }
+        dom.keyTracker.appendChild(frag);
+        updateKeyTrackerState();
+    }
+
+    function updateKeyTrackerState() {
+        if (!isCourseMode) return;
+        const activePos = getActivePosInCourse();
+
+        if (trackerPhasePill) {
+            trackerPhasePill.classList.toggle('hidden', !isReviewPhase);
+            if (isReviewPhase) {
+                trackerPhasePill.textContent = `↻ 復習フェーズ (残り${reviewQueue.length + 1})`;
+            }
+        }
+
+        for (let pos = 0; pos < keyTrackerBadges.length; pos++) {
+            const el = keyTrackerBadges[pos];
+            const base = el.dataset.baseName;
+            const st = keyStatuses[pos];
+            const isCurr = pos === activePos;
+
+            el.classList.toggle('current', isCurr);
+            el.classList.toggle('perfect', !isCurr && st === 'perfect');
+            el.classList.toggle('review', !isCurr && st === 'review');
+
+            el.setAttribute('aria-label', `${base}: ${isCurr ? '演奏中' : st === 'perfect' ? '一発合格' : st === 'review' ? '要復習' : '未挑戦'}`);
+            if (isCurr) {
+                el.textContent = base;
+            } else if (st === 'perfect') {
+                el.textContent = `${base} ✓`;
+            } else if (st === 'review') {
+                el.textContent = `${base} ↻`;
+            } else {
+                el.textContent = base;
+            }
+        }
+    }
+
+    /* =========================================================================
+       9. セッション開始・一時停止・UI更新
+       ========================================================================= */
+    async function startCourseStep(stepId) {
+        isCourseMode = true;
+        currentStepIdx = stepId;
+
+        const step = COURSE_STEPS[stepId];
+        config.song = step.song;
+        config.diff = step.diff;
+        config.mode = step.mode;
+        config.bpm = step.bpm;
+        config.lapsToClear = Number(dom.courseLapsSelect.value) || 1;
+        config.lookaheadSec = Number(dom.courseSpeedSelect.value) || 2.8;
+        config.blindMode = 'off';
+
+        // 12キー＆自動復習ステート初期化
+        courseOrderPos = 0;
+        keyStatuses = new Array(12).fill('pending');
+        isReviewPhase = false;
+        reviewQueue = [];
+        currentReviewPos = -1;
+        hadMissInCurrentKey = false;
+        config.cofIdx = getSongKeyOrder(config.song)[0];
+
+        dom.btnNavSub.textContent = '☰ コース一覧';
+        dom.missionTitle.textContent = `Step ${step.id + 1}: ${step.title}`;
+        dom.missionDegrees.textContent = getDegreeText(step.song, step.diff);
+        dom.missionDesc.textContent = step.mission;
+
+        await launchSession();
+    }
+
+    async function startFreeSession() {
+        isCourseMode = false;
+        config.song = dom.freeSong.value;
+        config.cofIdx = Number(dom.freeKey.value) || 0;
+        config.lapsToClear = Number(dom.freeLaps.value) || 1;
+        config.lookaheadSec = Number(dom.freeSpeed.value) || 2.8;
+        config.diff = dom.freeDiff.value;
+        config.mode = dom.freeMode.value;
+        config.bpm = Number(dom.freeBpm.value) || 85;
+        config.blindMode = dom.freeBlind.value;
+        config.melodyOn = dom.freeMelody.checked;
+        config.beatOn = dom.freeBeat.checked;
+        hadMissInCurrentKey = false;
+
+        const meta = SONG_META[config.song];
+        const parts = getKeyDisplayParts(getCurrentKeyInfo(), meta.isMinor);
+        const modeText = config.mode === 'full' ? 'フル' : (config.mode === 'guide' ? 'ガイドトーン' : 'ルートレス');
+
+        dom.btnNavSub.textContent = '☰ 設定変更';
+        dom.missionTitle.textContent = `${meta.name}（${parts.short} / ${modeText}）`;
+        dom.missionDegrees.textContent = getDegreeText(config.song, config.diff);
+        dom.missionDesc.textContent =
+            config.mode === 'full'
+                ? '最低音を指定ベースにすると Perfect +100（転回形は +50）'
+                : config.mode === 'guide'
+                    ? 'ベースは自動。3度＋7度を近い鍵盤で繋ぐと Smooth +100'
+                    : 'ルート抜きで弾き、平均2.5半音以内の移動で Smooth +100';
+
+        await launchSession();
+    }
+
+    async function launchSession() {
+        hideAllOverlays();
+        stopGameLoop();
+        releaseAllNotes();
+
+        initKeyTrackerDOM();
+        resetTimelineState();
+        resizeApp();
+        updateControlBarUI();
+
+        initAudio();
+        requestMIDI();
+
+        resultPending = false;
+        isRunning = true;
+        isPaused = false;
+        lastFrameTime = performance.now();
+        rafId = requestAnimationFrame(gameLoop);
+    }
+
+    function resetTimelineState() {
+        score = 0;
+        hitCount = 0;
+        justCount = 0;
+        hitStreak = 0;
+        targetStreak = PROGRESSIONS[config.song].length * config.lapsToClear;
+        blocks = [];
+        particles = [];
+        lastPlayedMidiNotes = [];
+        keyChangeBanner = null;
+        pressedLabelDirty = true;
+
+        currentBeat = 0;
+        // 最初のコードが画面上端から降りてくるよう、表示時間以上の長さを小節単位でカウントインする
+        minChordBeats = Math.min(...PROGRESSIONS[config.song].map(c => c.beats || BEATS_PER_CHORD));
+        nextChordBeat = Math.max(COUNT_IN_MIN_BEATS, Math.ceil(getLookaheadBeats() / 4) * 4);
+        nextClickBeat = 0;
+        chordSeqIndex = 0;
+        updateStatsUI();
+    }
+
+    function stopGameLoop() {
+        isRunning = false;
+        if (resultTimer !== null) {
+            clearTimeout(resultTimer);
+            resultTimer = null;
+        }
+        if (rafId !== null) {
+            cancelAnimationFrame(rafId);
+            rafId = null;
+        }
+    }
+
+    function togglePlayPause() {
+        if (!isRunning || activeOverlayId !== null) return;
+        isPaused = !isPaused;
+        if (isPaused) {
+            releaseAllNotes();
+            if (rafId !== null) {
+                cancelAnimationFrame(rafId);
+                rafId = null;
+            }
+            drawFrame();
+            announce('一時停止中');
+        } else {
+            lastFrameTime = performance.now();
+            if (rafId === null) {
+                rafId = requestAnimationFrame(gameLoop);
+            }
+        }
+        updateControlBarUI();
+    }
+
+    function changeBpm(delta) {
+        config.bpm = Math.max(60, Math.min(140, config.bpm + delta));
+        dom.ingameBpmVal.textContent = `BPM ${config.bpm}`;
+    }
+
+    function updateControlBarUI() {
+        dom.btnPlayPause.innerHTML = (isPaused ? '▶ 再開' : '⏸ 一時停止') + ' <span class="kbd-hint">(Space)</span>';
+        dom.btnPlayPause.classList.toggle('paused-state', isPaused);
+        dom.btnPlayPause.setAttribute('aria-pressed', String(isPaused));
+
+        dom.ingameBpmVal.textContent = `BPM ${config.bpm}`;
+
+        dom.btnBeatToggle.innerHTML = `<span class="ico">🥁 </span>ビート: ${config.beatOn ? 'ON' : 'OFF'}`;
+        dom.btnBeatToggle.classList.toggle('active-on', config.beatOn);
+        dom.btnBeatToggle.setAttribute('aria-pressed', String(config.beatOn));
+
+        dom.btnMelodyToggle.innerHTML = `<span class="ico">${config.melodyOn ? '🎵' : '🔇'} </span>メロディ: ${config.melodyOn ? 'ON' : 'OFF'}`;
+        dom.btnMelodyToggle.classList.toggle('active-on', config.melodyOn);
+        dom.btnMelodyToggle.setAttribute('aria-pressed', String(config.melodyOn));
+
+        dom.octDisplay.textContent = `C${baseOctave}`;
+    }
+
+    function updateStatsUI() {
+        const songLen = PROGRESSIONS[config.song].length;
+        const currentLap = Math.min(config.lapsToClear, Math.floor(hitStreak / songLen) + 1);
+        dom.scoreDisplay.textContent = String(score);
+        dom.lapDisplay.textContent = `${currentLap}/${config.lapsToClear}周 (${hitStreak}/${targetStreak})`;
+        // 予告表示は描画ループで毎フレーム作らず、状態が変わるここでだけ再計算する
+        const remain = targetStreak - hitStreak;
+        nextKeyPreview = (isCourseMode && remain > 0 && remain <= 2) ? getNextKeyPreview() : null;
+    }
+
+    function getJustRateText() {
+        return hitCount > 0 ? ` ／ ジャスト率 ${Math.round(justCount / hitCount * 100)}%` : '';
+    }
+
+    function openResultModal() {
+        if (isCourseMode) {
+            clearedSteps.add(COURSE_STEPS[currentStepIdx].key);
+            saveClearedSteps();
+            dom.resultTitle.textContent = '12 KEYS MASTERED!';
+            dom.btnResultBack.textContent = 'コース一覧へ';
+
+            if (currentStepIdx < COURSE_STEPS.length - 1) {
+                const nextStep = COURSE_STEPS[currentStepIdx + 1];
+                dom.btnResultNext.classList.remove('hidden');
+                dom.btnResultNext.textContent = `次へ ▶ Step ${nextStep.id + 1}: ${nextStep.title}`;
+                dom.resultDesc.textContent = `Step ${currentStepIdx + 1} の全12キー（復習含む）をノーミス制覇しました！（Score: ${score}${getJustRateText()}）`;
+            } else {
+                dom.btnResultNext.classList.add('hidden');
+                dom.resultDesc.textContent = `全13ステップ・12キー完全制覇おめでとうございます！（Score: ${score}${getJustRateText()}）`;
+            }
+        } else {
+            dom.resultTitle.textContent = 'STAGE CLEAR!';
+            dom.btnResultNext.classList.add('hidden');
+            dom.btnResultBack.textContent = 'フリー設定へ';
+            dom.resultDesc.textContent = `${config.lapsToClear}周ノーミス達成！（Score: ${score}${getJustRateText()}）`;
+        }
+        showOverlay('result-screen');
+    }
+
+    /* =========================================================================
+       10. BPM同期ゲームループ（転調・自動復習・描画・判定）
+       ========================================================================= */
+    function addParticle(text, y, color, fontSize = 26) {
+        particles.push({ text, x: canvasW * 0.5, y, life: 1.0, color, fontSize, font: `${fontSize >= 20 ? COLORS.wBlack : COLORS.wBold} ${fontSize}px ${COLORS.family}` });
+        if (particles.length > 24) particles.shift();
+    }
+
+    function triggerKeyChangeBanner(title, sub, isReview) {
+        keyChangeBanner = { title, sub, isReview, elapsed: 0, duration: 2.0 };
+    }
+
+    // 「現在の拍から beatOffset 拍後」の AudioContext 時刻（lookAhead=0 前提）
+    function audioTimeAtBeatOffset(beatOffset) {
+        return Tone.immediate() + Math.max(0, beatOffset) * 60 / config.bpm;
+    }
+
+    function spawnNextBlock() {
+        const songData = PROGRESSIONS[config.song];
+        const chordDef = songData[chordSeqIndex % songData.length];
+        const data = buildChordTarget(chordDef);
+        const isBlind = config.blindMode !== 'off';
+
+        blocks.push({
+            targetBeat: nextChordBeat,
+            beats: data.beats,
+            y: -blockH,
+            data,
+            isBlind,
+            hit: false,
+            missed: false,
+            audioScheduled: false
+        });
+
+        // 耳コピ：出現時（＝判定の1小節前）に予告ヒントを再生。
+        // 伴奏ベース（モノフォニック）と同時刻になるため、ヒントは和音用ポリシンセで鳴らす。
+        if (isBlind && audioReady) {
+            const hint = [MIDI_FREQ_TABLE[data.bassMidi]];
+            if (config.blindMode === 'bass_melody') {
+                hint.push(MIDI_FREQ_TABLE[data.melMidi]);
+            } else if (config.blindMode === 'chord') {
+                // ルートから上に積んだ基本形（C4〜B5の範囲）で提示
+                const rootMidi = 60 + data.root;
+                for (let i = 0; i < Math.min(4, data.fullNotes.length); i++) {
+                    hint.push(MIDI_FREQ_TABLE[rootMidi + mod12(data.fullNotes[i] - data.root)]);
+                }
+            }
+            hintSynth.triggerAttackRelease(hint, 1.4 * 60 / config.bpm);
+        }
+
+        nextChordBeat += data.beats;
+        chordSeqIndex++;
+    }
+
+    function spawnDueBlocks() {
+        const lookahead = getLookaheadBeats();
+        while (currentBeat >= nextChordBeat - lookahead) spawnNextBlock();
+    }
+
+    // 未判定の先読みブロックを破棄し、startBeat から進行の1コード目を出し直す
+    function restartProgressionAt(startBeat) {
+        blocks = blocks.filter(b => b.hit || b.missed || b.targetBeat < startBeat);
+        chordSeqIndex = 0;
+        nextChordBeat = startBeat;
+        spawnDueBlocks();
+    }
+
+    function transitionToCourseKey(nextPos, enteringReview, nextStartBeat) {
+        const meta = SONG_META[config.song];
+        config.cofIdx = meta.keyOrder[nextPos];
+        hitStreak = 0;
+        hadMissInCurrentKey = false;
+        lastPlayedMidiNotes = [];
+        pressedLabelDirty = true;
+
+        // 待機小節なしで、直前コードの次の拍から新キーの1コード目へシームレス接続
+        restartProgressionAt(nextStartBeat);
+
+        const parts = getKeyDisplayParts(getCurrentKeyInfo(), meta.isMinor);
+        triggerKeyChangeBanner(enteringReview ? 'REVIEW PHASE!' : 'KEY CHANGE!', `→ ${parts.full} (${parts.sig})`, enteringReview);
+        announce(`${enteringReview ? '復習' : '転調'}：${parts.full}`);
+
+        updateKeyTrackerState();
+        updateStatsUI();
+    }
+
+    function finishSession(delayMs) {
+        resultPending = true;
+        updateKeyTrackerState();
+        resultTimer = setTimeout(() => {
+            resultTimer = null;
+            openResultModal();
+        }, delayMs);
+    }
+
+    function handleKeyCleared(nextStartBeat) {
+        if (!isCourseMode) {
+            finishSession(320);
+            return;
+        }
+
+        if (!isReviewPhase) {
+            // 1周目（12キー巡回中）
+            if (hadMissInCurrentKey) {
+                keyStatuses[courseOrderPos] = 'review';
+                reviewQueue.push(courseOrderPos);
+            } else {
+                keyStatuses[courseOrderPos] = 'perfect';
+            }
+
+            if (courseOrderPos + 1 < 12) {
+                courseOrderPos++;
+                transitionToCourseKey(courseOrderPos, false, nextStartBeat);
+            } else if (reviewQueue.length > 0) {
+                // 12キー終了後、要復習キーがあれば復習フェーズへ自動移行
+                isReviewPhase = true;
+                currentReviewPos = reviewQueue.shift();
+                transitionToCourseKey(currentReviewPos, true, nextStartBeat);
+            } else {
+                finishSession(350);
+            }
+        } else {
+            // 復習フェーズ中：ミスがあれば末尾へ再投入、ノーミスなら緑に昇格
+            if (hadMissInCurrentKey) {
+                keyStatuses[currentReviewPos] = 'review';
+                reviewQueue.push(currentReviewPos);
+            } else {
+                keyStatuses[currentReviewPos] = 'perfect';
+            }
+
+            if (reviewQueue.length > 0) {
+                currentReviewPos = reviewQueue.shift();
+                transitionToCourseKey(currentReviewPos, true, nextStartBeat);
+            } else {
+                currentReviewPos = -1;
+                finishSession(350);
+            }
+        }
+    }
+
+    function currentUseFlat() {
+        return getKeyDisplayParts(getCurrentKeyInfo(), SONG_META[config.song].isMinor).useFlat;
+    }
+
+    // 押鍵が全必須音を満たしていれば採点して true を返す。
+    // 満たさない場合は「不足音・余分な音」を記録し、MISS 時に表示する（押鍵が変わったときだけ再計算）。
+    function tryJudgeHit(b) {
+        const { required, requiredSet, optionalSet } = b.data;
+        let missingCount = 0;
+        for (let r = 0; r < required.length; r++) {
+            if (!activePitchClasses.has(required[r])) missingCount++;
+        }
+        let wrongCount = 0;
+        for (const pc of activePitchClasses) {
+            if (!requiredSet.has(pc) && !optionalSet.has(pc)) wrongCount++;
+        }
+
+        if (missingCount > 0 || wrongCount > 1) {
+            if (activePitchClasses.size > 0 && b.attemptVersion !== pressVersion) {
+                b.attemptVersion = pressVersion;
+                const useFlat = currentUseFlat();
+                b.lastAttempt = {
+                    missing: required.filter(pc => !activePitchClasses.has(pc)).map(pc => getPcName(pc, useFlat)),
+                    extra: Array.from(activePitchClasses).filter(pc => !requiredSet.has(pc) && !optionalSet.has(pc)).map(pc => getPcName(pc, useFlat))
+                };
+            }
+            return false;
+        }
+
+        b.hit = true;
+        hitStreak++;
+        hitCount++;
+
+        const currentNotesArr = Array.from(noteSources.keys());
+        let pts, msg, col;
+
+        if (config.mode === 'full') {
+            let minNote = 128;
+            for (let k = 0; k < currentNotesArr.length; k++) {
+                if (currentNotesArr[k] < minNote) minNote = currentNotesArr[k];
+            }
+            if (mod12(minNote) === b.data.bassPc) {
+                pts = 100; msg = 'Perfect!'; col = COLORS.green;
+            } else {
+                pts = 50; msg = '転回形: Bass不一致'; col = COLORS.orange;
+            }
+        } else if (lastPlayedMidiNotes.length === 0) {
+            // 比較対象の前和音がない最初のコードは減点しない
+            pts = 100; msg = 'Start!'; col = COLORS.primary;
+        } else {
+            // ボイスリーディング：各音から前和音の最寄り音までの平均半音距離
+            let totalDist = 0;
+            for (let c = 0; c < currentNotesArr.length; c++) {
+                let minDist = 127;
+                for (let p = 0; p < lastPlayedMidiNotes.length; p++) {
+                    const d = Math.abs(currentNotesArr[c] - lastPlayedMidiNotes[p]);
+                    if (d < minDist) minDist = d;
+                }
+                totalDist += minDist;
+            }
+            if (totalDist / currentNotesArr.length <= 2.5) {
+                pts = 100; msg = 'Smooth!'; col = COLORS.smooth;
+            } else {
+                pts = 50; msg = 'Great!'; col = COLORS.primary;
+            }
+        }
+        if (currentNotesArr.length > 0) lastPlayedMidiNotes = currentNotesArr;
+
+        // タイミング評価：Just なら JUST_BONUS を加点し、ジャスト率にも数える。
+        // 判定幅が開く前から押さえ続けていた場合（同じ和音のタイ等）は Just 扱い。
+        const windowBeats = getHitWindowBeats();
+        let timing;
+        if (lastNoteOnBeat < b.targetBeat - windowBeats) {
+            timing = 'Just';
+        } else {
+            const offsetSec = (lastNoteOnBeat - b.targetBeat) * 60 / config.bpm;
+            timing = Math.abs(offsetSec) <= JUST_TIMING_SEC ? 'Just' : (offsetSec < 0 ? 'Early' : 'Late');
+        }
+        const bonus = timing === 'Just' ? JUST_BONUS : 0;
+        if (bonus) justCount++;
+
+        score += pts + bonus;
+        updateStatsUI();
+        const y = Math.max(40, hitY - blockH * 0.85);
+        addParticle(`${msg} +${pts}`, y, col, 26);
+        const sub = [bonus ? `Just +${bonus}` : timing];
+        if (wrongCount === 1) sub.push('余分な音1つ');
+        addParticle(sub.join(' ・ '), y + 26, timing === 'Just' ? COLORS.textSub : COLORS.degree, 15);
+        return true;
+    }
+
+    function scheduleAccompaniment(b) {
+        b.audioScheduled = true;
+        if (!audioReady) return;
+        const t = audioTimeAtBeatOffset(b.targetBeat - currentBeat);
+        const spb = 60 / config.bpm;
+        // ベースはコードの長さいっぱい（レガート）、旋律は最大3拍
+        bassSynth.triggerAttackRelease(MIDI_FREQ_TABLE[b.data.bassMidi], b.beats * spb * 0.95, t);
+        if (config.melodyOn) {
+            melodySynth.triggerAttackRelease(MIDI_FREQ_TABLE[b.data.melMidi], Math.min(3, b.beats) * spb * 0.9, t);
+        }
+    }
+
+    function updateTimeline(dt) {
+        currentBeat += (config.bpm / 60) * dt;
+        const aheadBeats = AUDIO_SCHEDULE_AHEAD_SEC * config.bpm / 60;
+
+        // ドラム：フレーム境界ではなく正確な拍の時刻へ先行スケジュール（描画ジッタを音に乗せない）
+        while (nextClickBeat <= currentBeat + aheadBeats) {
+            if (config.beatOn && audioReady) {
+                const t = audioTimeAtBeatOffset(nextClickBeat - currentBeat);
+                const beatInBar = nextClickBeat % 4;
+                if (beatInBar === 0 || beatInBar === 2) kickSynth.triggerAttackRelease('C1', 0.15, t);
+                hatSynth.triggerAttackRelease(0.03, t);
+            }
+            nextClickBeat++;
+        }
+
+        spawnDueBlocks();
+
+        const pixelsPerBeat = hitY / getLookaheadBeats();
+        const windowBeats = getHitWindowBeats();
+        let clearedBlock = null;
+        let missedBlock = null;
+
+        for (let i = blocks.length - 1; i >= 0; i--) {
+            const b = blocks[i];
+            const beatDiff = b.targetBeat - currentBeat;
+            b.y = hitY - beatDiff * pixelsPerBeat;
+
+            // 伴奏（ベース・旋律）は押鍵タイミングに関係なく常に拍ちょうどで鳴らす
+            if (!b.audioScheduled && beatDiff <= aheadBeats) scheduleAccompaniment(b);
+
+            if (!resultPending && !b.hit && !b.missed) {
+                if (Math.abs(beatDiff) <= windowBeats) {
+                    if (tryJudgeHit(b) && hitStreak >= targetStreak) clearedBlock = b;
+                } else if (beatDiff < -windowBeats) {
+                    b.missed = true;
+                    missedBlock = b;
+                }
+            }
+
+            if (b.y - blockH * 0.5 > canvasH) blocks.splice(i, 1);
+        }
+
+        // 配列を作り直す処理はループの外で行う
+        if (clearedBlock) {
+            handleKeyCleared(clearedBlock.targetBeat + clearedBlock.beats);
+        } else if (missedBlock) {
+            hitStreak = 0;
+            hadMissInCurrentKey = true;
+            // 仕様：ミスしたらそのキーの最初（1コード目）からやり直し
+            restartProgressionAt(missedBlock.targetBeat + missedBlock.beats);
+            updateStatsUI();
+            const y = Math.max(40, hitY - 22);
+            addParticle(
+                missedBlock.isBlind ? `正解: ${missedBlock.data.label}` : `MISS (${missedBlock.data.label})`,
+                y, COLORS.danger, 24
+            );
+            // 何が足りなかったか／余分だったかを示す（押鍵があった場合のみ）
+            const att = missedBlock.lastAttempt;
+            if (att) {
+                const parts = [];
+                if (att.missing.length) parts.push('不足: ' + att.missing.join('・'));
+                if (att.extra.length > 1) parts.push('余分: ' + att.extra.join('・'));
+                if (parts.length) addParticle(parts.join(' / '), y + 26, COLORS.textSub, 15);
+            }
+        }
+
+        if (keyChangeBanner) {
+            keyChangeBanner.elapsed += dt;
+            if (keyChangeBanner.elapsed >= keyChangeBanner.duration) keyChangeBanner = null;
+        }
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.y -= 44 * dt;
+            p.life -= 1.15 * dt;
+            if (p.life <= 0) particles.splice(i, 1);
+        }
+    }
+
+    function roundRectPath(x, y, w, h, r) {
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(x, y, w, h, r);
+        else ctx.rect(x, y, w, h);
+    }
+
+    function drawFrame() {
+        ctx.fillStyle = COLORS.bg;
+        ctx.fillRect(0, 0, canvasW, canvasH);
+
+        // レーン背景
+        ctx.fillStyle = COLORS.laneBg;
+        ctx.fillRect(laneX, 0, laneW, canvasH);
+        ctx.strokeStyle = COLORS.laneBorder;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(laneX, 0, laneW, canvasH);
+
+        const pixelsPerBeat = hitY / getLookaheadBeats();
+        const hitWindowPx = pixelsPerBeat * getHitWindowBeats();
+
+        // ヒットゾーン（実際の判定幅と一致させる）＆ライン
+        ctx.fillStyle = COLORS.hitZone;
+        ctx.fillRect(laneX, hitY - hitWindowPx, laneW, hitWindowPx * 2);
+        ctx.strokeStyle = COLORS.primary;
+        ctx.lineWidth = COLORS.hitLineW;
+        ctx.beginPath();
+        ctx.moveTo(laneX, hitY);
+        ctx.lineTo(laneX + laneW, hitY);
+        ctx.stroke();
+
+        const blockW = Math.max(150, laneW - 28);
+        const blockX = laneX + (laneW - blockW) * 0.5;
+        const cx = canvasW * 0.5;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // ブロック内レイアウト：左に度数バッジ（ii, V7 など）、右側にコード名と構成音
+        const pad = 6;
+        const badgeW = Math.max(58, Math.min(112, blockW * 0.27));
+        const badgeH = blockH - pad * 2;
+        const badgeX = blockX + pad;
+        const textAreaX = badgeX + badgeW + pad;
+        const textAreaW = blockX + blockW - pad - textAreaX;
+        const textCx = textAreaX + textAreaW * 0.5;
+
+        for (let i = blocks.length - 1; i >= 0; i--) {
+            const b = blocks[i];
+            if (b.hit) continue;
+            const topY = b.y - blockH * 0.5;
+            if (topY > canvasH || topY + blockH < 0) continue;
+
+            ctx.fillStyle = b.missed ? COLORS.blockMissed : (b.isBlind ? COLORS.blockBlind : COLORS.blockNormal);
+            ctx.strokeStyle = b.missed ? COLORS.blockMissedStroke : (b.isBlind ? COLORS.blockBlindStroke : COLORS.blockNormalStroke);
+            ctx.lineWidth = COLORS.blockStroke;
+            roundRectPath(blockX, topY, blockW, blockH, COLORS.blockRadius);
+            ctx.fill();
+            ctx.stroke();
+
+            const showAnswer = !b.isBlind || b.missed;
+            const degText = showAnswer ? b.data.degree : '?';
+            const labelText = showAnswer ? b.data.label : '???';
+            const hintText = showAnswer ? b.data.hintText : '音を聴いて当てよう';
+
+            // 文字幅に合わせたフォントはブロックごとに一度だけ計算（フォント・テーマ・表示内容が変わったら再計算）
+            const fk = fontVersion * 2 + (showAnswer ? 1 : 0);
+            if (b.fontKey !== fk) {
+                b.fontKey = fk;
+                b.fDeg = fitFont(degText, COLORS.wBold, fonts.degSize, badgeW - 8, 9);
+                b.fLabel = fitFont(labelText, COLORS.wBold, fonts.labelSize, textAreaW, 12);
+                b.fHint = fitFont(hintText, 600, fonts.hintSize, textAreaW, 9);
+            }
+
+            // 度数バッジ
+            ctx.fillStyle = b.missed ? COLORS.missedBadgeBg : COLORS.badgeBg;
+            roundRectPath(badgeX, topY + pad, badgeW, badgeH, Math.max(4, COLORS.blockRadius - 3));
+            ctx.fill();
+            ctx.fillStyle = b.missed ? COLORS.missedBadgeText : COLORS.badgeText;
+            ctx.font = b.fDeg;
+            ctx.fillText(degText, badgeX + badgeW * 0.5, b.y);
+
+            // コード名・構成音
+            ctx.fillStyle = b.missed ? COLORS.missedText : COLORS.blockText;
+            ctx.font = b.fLabel;
+            ctx.fillText(labelText, textCx, b.y - blockH * 0.15);
+
+            ctx.fillStyle = b.missed ? COLORS.missedSub : COLORS.blockSub;
+            ctx.font = b.fHint;
+            ctx.fillText(hintText, textCx, b.y + blockH * 0.24);
+        }
+
+        // 現在のキー（左上に常時表示）。度数はキーとセットで読むため、ブロックが降りてくる画面内に置く
+        const KEY_CHIP_X = 10, KEY_CHIP_Y = 10, KEY_CHIP_H = 46;
+        const keyCacheKey = `${config.song}|${config.cofIdx}|${fontVersion}`;
+        if (keyChip.cacheKey !== keyCacheKey) {
+            const parts = getKeyDisplayParts(getCurrentKeyInfo(), SONG_META[config.song].isMinor);
+            const main = parts.full;
+            ctx.font = fonts.keyMain;
+            const mainW = ctx.measureText(main).width;
+            ctx.font = fonts.keySig;
+            const sigW = ctx.measureText(parts.sig).width;
+            keyChip = { cacheKey: keyCacheKey, main, sig: parts.sig, mainW, w: Math.ceil(mainW + 8 + sigW + 24) };
+        }
+        const keyFlash = !!keyChangeBanner; // 転調直後はアクセント色で強調
+        const keyAccent = keyFlash && keyChangeBanner.isReview ? COLORS.orange : COLORS.primary;
+        roundRectPath(KEY_CHIP_X, KEY_CHIP_Y, keyChip.w, KEY_CHIP_H, 10);
+        ctx.fillStyle = COLORS.hudBg;   // 下を通るブロックに負けない不透明に近い背景
+        ctx.fill();
+        if (keyFlash) {                 // 転調直後はアクセント色を重ねる
+            ctx.fillStyle = keyChangeBanner.isReview ? COLORS.previewReviewBg : COLORS.previewBg;
+            ctx.fill();
+        }
+        ctx.strokeStyle = keyFlash ? keyAccent : COLORS.laneBorder;
+        ctx.lineWidth = keyFlash ? 2 : 1;
+        roundRectPath(KEY_CHIP_X, KEY_CHIP_Y, keyChip.w, KEY_CHIP_H, 10);
+        ctx.stroke();
+        ctx.textAlign = 'left';
+        ctx.fillStyle = keyFlash ? keyAccent : COLORS.textMuted;
+        ctx.font = fonts.keyLabel;
+        ctx.fillText('KEY', KEY_CHIP_X + 12, KEY_CHIP_Y + 12);
+        ctx.fillStyle = COLORS.textStrong;
+        ctx.font = fonts.keyMain;
+        ctx.fillText(keyChip.main, KEY_CHIP_X + 12, KEY_CHIP_Y + 30);
+        ctx.fillStyle = COLORS.textMuted;
+        ctx.font = fonts.keySig;
+        ctx.fillText(keyChip.sig, KEY_CHIP_X + 12 + keyChip.mainW + 8, KEY_CHIP_Y + 31);
+        ctx.textAlign = 'center';
+        const keyChipRight = KEY_CHIP_X + keyChip.w;
+        const keyChipBottom = KEY_CHIP_Y + KEY_CHIP_H;
+
+        // 最終コード付近の「NEXT KEY」予告バッジ（コースモード）。
+        // 中央に置くとキー表示と重なる狭い画面では、キー表示の右側の余白に収める
+        if (nextKeyPreview && !keyChangeBanner && !resultPending) {
+            const preview = nextKeyPreview;
+            const badgeH = 30;
+            let badgeW = Math.min(laneW - 24, 300);
+            let bx = (canvasW - badgeW) * 0.5;
+            if (bx < keyChipRight + 8) {
+                const avail = canvasW - 10 - (keyChipRight + 8);
+                badgeW = Math.min(300, avail);
+                bx = keyChipRight + 8;
+            }
+            const by = KEY_CHIP_Y + (KEY_CHIP_H - badgeH) * 0.5;
+            const text = `NEXT KEY: ${preview.label}`;
+            ctx.fillStyle = preview.isReview ? COLORS.previewReviewBg : COLORS.previewBg;
+            ctx.strokeStyle = preview.isReview ? COLORS.orange : COLORS.primary;
+            ctx.lineWidth = 1.5;
+            roundRectPath(bx, by, badgeW, badgeH, 15);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = preview.isReview ? COLORS.previewReviewText : COLORS.previewText;
+            ctx.font = preview.fitW === badgeW && preview.fitFV === fontVersion
+                ? preview.font
+                : (preview.font = fitFont(text, COLORS.wBold, 13, badgeW - 16, 9), preview.fitW = badgeW, preview.fitFV = fontVersion, preview.font);
+            ctx.fillText(text, bx + badgeW * 0.5, by + badgeH * 0.5);
+        }
+
+        // 転調確定時のバナー（約2秒・上部寄せ半透明でノーツ視認性を確保）
+        if (keyChangeBanner) {
+            const t = keyChangeBanner.elapsed / keyChangeBanner.duration;
+            let alpha = 0.86;
+            let scale = 1;
+            if (t < 0.14) {
+                const p = t / 0.14;
+                alpha = 0.86 * p;
+                scale = 0.9 + 0.1 * p;
+            } else if (t > 0.76) {
+                alpha = Math.max(0, 0.86 * ((1 - t) / 0.24));
+            }
+
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            const bw = Math.min(canvasW - 28, 420);
+            const bh = 68;
+            // キー表示の下から出す（キー表示と重ねない）
+            const bannerY = Math.max(keyChipBottom + 8 + bh * 0.5, Math.min(canvasH * 0.16, hitY - blockH * 2.2));
+            ctx.translate(cx, bannerY);
+            ctx.scale(scale, scale);
+
+            const accent = keyChangeBanner.isReview ? COLORS.orange : COLORS.primary;
+            ctx.fillStyle = COLORS.bannerBg;
+            ctx.strokeStyle = accent;
+            ctx.lineWidth = COLORS.blockStroke + 0.5;
+            roundRectPath(-bw * 0.5, -bh * 0.5, bw, bh, 14);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = accent;
+            ctx.font = fonts.bannerTitle;
+            ctx.fillText(keyChangeBanner.title, 0, -15);
+
+            ctx.fillStyle = COLORS.textStrong;
+            ctx.font = fonts.bannerSub;
+            ctx.fillText(keyChangeBanner.sub, 0, 12);
+            ctx.restore();
+        }
+
+        // パーティクル
+        for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+            ctx.globalAlpha = Math.max(0, p.life);
+            ctx.fillStyle = p.color;
+            ctx.font = p.font;
+            ctx.fillText(p.text, p.x, p.y);
+        }
+        ctx.globalAlpha = 1.0;
+
+        // 押下中ノート表示（文字列は押鍵が変わったときだけ作り直す）
+        if (pressedLabelDirty) {
+            pressedLabelDirty = false;
+            if (activePitchClasses.size > 0) {
+                const useFlat = getKeyDisplayParts(getCurrentKeyInfo(), SONG_META[config.song].isMinor).useFlat;
+                pressedLabel = '押下中: ' + Array.from(activePitchClasses).sort((a, b) => a - b).map(pc => getPcName(pc, useFlat)).join('・');
+            } else {
+                pressedLabel = '';
+            }
+        }
+        // 押下中の音は鍵盤に近い判定ラインの下（左下）に表示
+        if (pressedLabel) {
+            const hudY = canvasH - 36;
+            ctx.fillStyle = COLORS.hudBg;
+            roundRectPath(10, hudY, Math.min(canvasW - 20, 230), 26, 6);
+            ctx.fill();
+            ctx.fillStyle = COLORS.hudText;
+            ctx.font = fonts.hud;
+            ctx.textAlign = 'left';
+            ctx.fillText(pressedLabel, 18, hudY + 13);
+            ctx.textAlign = 'center';
+        }
+
+        // 一時停止オーバーレイ
+        if (isPaused && activeOverlayId === null) {
+            ctx.fillStyle = COLORS.pauseOverlay;
+            ctx.fillRect(0, 0, canvasW, canvasH);
+            ctx.fillStyle = COLORS.textStrong;
+            ctx.font = fonts.pauseTitle;
+            ctx.fillText('一時停止中', cx, canvasH * 0.45);
+            ctx.fillStyle = COLORS.textMuted;
+            ctx.font = fonts.pauseSub;
+            ctx.fillText('▶ 再開ボタン（または Space）で再開', cx, canvasH * 0.54);
+        }
+    }
+
+    function gameLoop(timestamp) {
+        if (!isRunning || isPaused || document.hidden) {
+            rafId = null;
+            return;
+        }
+        const dt = Math.min((timestamp - lastFrameTime) * 0.001, 0.05);
+        lastFrameTime = timestamp;
+
+        updateTimeline(dt);
+        if (!isRunning) { rafId = null; return; }
+        drawFrame();
+
+        rafId = (isRunning && !isPaused) ? requestAnimationFrame(gameLoop) : null;
+    }
+
+    /* =========================================================================
+       11. ノート発音・MIDI・マルチタッチ鍵盤・PCキーボード
+       ========================================================================= */
+    function pressNote(midiNote, sourceId) {
+        let sources = noteSources.get(midiNote);
+        if (!sources) {
+            sources = new Set();
+            noteSources.set(midiNote, sources);
+            lastNoteOnBeat = currentBeat;
+            if (audioReady && userSynth) {
+                userSynth.triggerAttack(MIDI_FREQ_TABLE[midiNote]);
+            }
+            const el = keyElements.get(midiNote);
+            if (el) el.classList.add('active');
+        }
+        sources.add(sourceId);
+        activePitchClasses.add(midiNote % 12);
+        pressedLabelDirty = true;
+        pressVersion++;
+    }
+
+    function releaseNote(midiNote, sourceId) {
+        const sources = noteSources.get(midiNote);
+        if (!sources) return;
+        sources.delete(sourceId);
+        if (sources.size === 0) {
+            noteSources.delete(midiNote);
+            if (audioReady && userSynth) {
+                userSynth.triggerRelease(MIDI_FREQ_TABLE[midiNote]);
+            }
+            const el = keyElements.get(midiNote);
+            if (el) el.classList.remove('active');
+
+            activePitchClasses.clear();
+            for (const m of noteSources.keys()) {
+                activePitchClasses.add(m % 12);
+            }
+            pressedLabelDirty = true;
+            pressVersion++;
+        }
+    }
+
+    function releaseAllNotes() {
+        for (const m of noteSources.keys()) {
+            if (audioReady && userSynth) {
+                userSynth.triggerRelease(MIDI_FREQ_TABLE[m]);
+            }
+            const el = keyElements.get(m);
+            if (el) el.classList.remove('active');
+        }
+        noteSources.clear();
+        activePitchClasses.clear();
+        activePointers.clear();
+        activePcKeys.clear();
+        isMouseDown = false;
+        pressedLabelDirty = true;
+    }
+
+    function getNoteFromPoint(x, y) {
+        const el = document.elementFromPoint(x, y);
+        const keyEl = el ? el.closest('[data-note]') : null;
+        return keyEl ? Number(keyEl.dataset.note) : null;
+    }
+
+    function handleTouchEvent(e) {
+        e.preventDefault();
+        if (!audioReady) initAudio();
+        const activeIds = new Set();
+        // targetTouches：鍵盤上で始まったタッチだけを扱う（他要素で始まったタッチが鍵盤上を通過しても鳴らさない）
+        for (let i = 0; i < e.targetTouches.length; i++) {
+            const t = e.targetTouches[i];
+            const id = 'touch-' + t.identifier;
+            activeIds.add(id);
+            const note = getNoteFromPoint(t.clientX, t.clientY);
+            const prev = activePointers.get(id);
+            if (prev !== note) {
+                if (prev !== undefined && prev !== null) releaseNote(prev, id);
+                if (note !== null) pressNote(note, id);
+                activePointers.set(id, note);
+            }
+        }
+        for (const [id, note] of activePointers.entries()) {
+            if (id.startsWith('touch-') && !activeIds.has(id)) {
+                if (note !== null) releaseNote(note, id);
+                activePointers.delete(id);
+            }
+        }
+    }
+
+    dom.keyboardContainer.addEventListener('touchstart', handleTouchEvent, { passive: false });
+    dom.keyboardContainer.addEventListener('touchmove', handleTouchEvent, { passive: false });
+    dom.keyboardContainer.addEventListener('touchend', handleTouchEvent, { passive: false });
+    dom.keyboardContainer.addEventListener('touchcancel', handleTouchEvent, { passive: false });
+
+    dom.keyboardContainer.addEventListener('mousedown', (e) => {
+        if (!audioReady) initAudio();
+        const note = getNoteFromPoint(e.clientX, e.clientY);
+        if (note !== null) {
+            isMouseDown = true;
+            activePointers.set('mouse', note);
+            pressNote(note, 'mouse');
+        }
+    });
+    window.addEventListener('mousemove', (e) => {
+        if (!isMouseDown) return;
+        const note = getNoteFromPoint(e.clientX, e.clientY);
+        const prev = activePointers.get('mouse');
+        if (prev !== note) {
+            if (prev !== undefined && prev !== null) releaseNote(prev, 'mouse');
+            if (note !== null) pressNote(note, 'mouse');
+            activePointers.set('mouse', note);
+        }
+    });
+    window.addEventListener('mouseup', () => {
+        if (!isMouseDown) return;
+        isMouseDown = false;
+        const prev = activePointers.get('mouse');
+        if (prev !== undefined && prev !== null) releaseNote(prev, 'mouse');
+        activePointers.delete('mouse');
+    });
+
+    // PCキーボード演奏（A〜L）＆ Spaceキー一時停止
+    const PC_KEY_OFFSETS = {
+        KeyA: 0, KeyW: 1, KeyS: 2, KeyE: 3, KeyD: 4, KeyF: 5, KeyT: 6,
+        KeyG: 7, KeyY: 8, KeyH: 9, KeyU: 10, KeyJ: 11, KeyK: 12, KeyO: 13, KeyL: 14
+    };
+
+    window.addEventListener('keydown', (e) => {
+        const tag = e.target ? e.target.tagName : '';
+        if (tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+        if (e.code === 'Space' && activeOverlayId === null && isRunning) {
+            e.preventDefault();
+            if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                document.activeElement.blur();
+            }
+            if (!e.repeat) togglePlayPause();
+            return;
+        }
+
+        if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+        if (activeOverlayId !== null) return;
+
+        const offset = PC_KEY_OFFSETS[e.code];
+        if (offset !== undefined) {
+            const midi = (baseOctave + 1) * 12 + offset;
+            activePcKeys.set(e.code, midi);
+            pressNote(midi, 'pc-' + e.code);
+        }
+    });
+
+    window.addEventListener('keyup', (e) => {
+        const midi = activePcKeys.get(e.code);
+        if (midi !== undefined) {
+            activePcKeys.delete(e.code);
+            releaseNote(midi, 'pc-' + e.code);
+        }
+    });
+
+    // Web MIDI API（ホットプラグ対応）
+    let midiInitialized = false;
+    function onMIDIMessage(event) {
+        const data = event.data;
+        if (!data || data.length < 2) return;
+        const cmd = data[0] >> 4;
+        const note = data[1];
+        const vel = data.length > 2 ? data[2] : 0;
+        if (cmd === 9 && vel > 0) pressNote(note, 'midi');
+        else if (cmd === 8 || (cmd === 9 && vel === 0)) releaseNote(note, 'midi');
+    }
+
+    function updateMidiDevices(access) {
+        let deviceName = null;
+        for (const input of access.inputs.values()) {
+            if (input.state === 'connected') {
+                input.onmidimessage = onMIDIMessage;
+                if (!deviceName) deviceName = input.name;
+            }
+        }
+        if (deviceName) {
+            dom.midiDot.classList.add('connected');
+            dom.midiText.textContent = `MIDI接続済み: ${deviceName}`;
+        } else {
+            dom.midiDot.classList.remove('connected');
+            dom.midiText.textContent = 'MIDI未接続（画面鍵盤・PCキーボードで演奏可能）';
+        }
+    }
+
+    function requestMIDI() {
+        if (midiInitialized || !navigator.requestMIDIAccess) return;
+        midiInitialized = true;
+        navigator.requestMIDIAccess().then(access => {
+            updateMidiDevices(access);
+            access.onstatechange = () => updateMidiDevices(access);
+        }).catch(() => {});
+    }
+
+    /* =========================================================================
+       12. リサイズ・鍵盤DOM構築
+       ========================================================================= */
+    function buildKeyboard(force = false) {
+        const w = window.innerWidth;
+        const span = w < 600 ? 16 : (w < 1100 ? 23 : 36); // 1.5 / 2 / 3 オクターブ
+        const keySig = `${baseOctave}-${span}`;
+        if (!force && renderedOctaveKey === keySig) return;
+        renderedOctaveKey = keySig;
+
+        const startMidi = (baseOctave + 1) * 12;
+        const endMidi = startMidi + span;
+
+        dom.keyboardContainer.innerHTML = '';
+        keyElements.clear();
+        const frag = document.createDocumentFragment();
+        const blacks = new Set([1, 3, 6, 8, 10]);
+
+        for (let m = startMidi; m <= endMidi; m++) {
+            if (blacks.has(m % 12)) continue;
+            const wKey = document.createElement('div');
+            wKey.className = 'key-white';
+            wKey.dataset.note = String(m);
+            if (m % 12 === 0) wKey.textContent = 'C' + (Math.floor(m / 12) - 1);
+            keyElements.set(m, wKey);
+
+            if (m < endMidi && blacks.has((m + 1) % 12)) {
+                const bKey = document.createElement('div');
+                bKey.className = 'key-black';
+                bKey.dataset.note = String(m + 1);
+                wKey.appendChild(bKey);
+                keyElements.set(m + 1, bKey);
+            }
+            frag.appendChild(wKey);
+        }
+        dom.keyboardContainer.appendChild(frag);
+    }
+
+    // フォント文字列はサイズ・テーマが変わるときだけ生成（毎フレームの文字列生成を排除）
+    function buildFonts() {
+        const f = COLORS.family;
+        fonts.labelSize = Math.round(blockH * 0.4);
+        fonts.hintSize = Math.round(blockH * 0.22);
+        fonts.degSize = Math.max(11, Math.round(blockH * 0.3));
+        fonts.bannerSub = `${COLORS.wBlack} ${Math.min(24, Math.round(Math.min(canvasW - 28, 420) * 0.062))}px ${f}`;
+        fonts.bannerTitle = `${COLORS.wBlack} 14px ${f}`;
+        fonts.small = `${COLORS.wBold} 13px ${f}`;
+        fonts.hud = `${COLORS.wBold} 12px ${f}`;
+        fonts.pauseTitle = `${COLORS.wBlack} 22px ${f}`;
+        fonts.pauseSub = `600 14px ${f}`;
+        fonts.keyLabel = `${COLORS.wBold} 10px ${f}`;
+        fonts.keyMain = `${COLORS.wBlack} 17px ${f}`;
+        fonts.keySig = `600 12px ${f}`;
+        fontVersion++;
+    }
+
+    // 指定幅に収まるようフォントサイズを縮めたフォント文字列を返す
+    function fitFont(text, weight, size, maxW, minSize) {
+        let font = `${weight} ${size}px ${COLORS.family}`;
+        ctx.font = font;
+        const w = ctx.measureText(text).width;
+        if (w > maxW && w > 0) {
+            const fitted = Math.max(minSize, Math.floor(size * maxW / w));
+            font = `${weight} ${fitted}px ${COLORS.family}`;
+        }
+        return font;
+    }
+
+    // ---- テーマ（ネオン / モダン）。モダンは OS のライト/ダーク設定に追従 ----
+    const darkMedia = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+    function applyTheme(name) {
+        currentTheme = name === 'modern' ? 'modern' : 'retro';
+        document.documentElement.dataset.theme = currentTheme;
+        COLORS = currentTheme === 'modern'
+            ? (darkMedia && darkMedia.matches ? CANVAS_THEMES.modernDark : CANVAS_THEMES.modernLight)
+            : CANVAS_THEMES.retro;
+        buildFonts();
+        if (isPaused && activeOverlayId === null) drawFrame();
+    }
+
+    function resizeApp() {
+        canvasW = Math.max(240, dom.gameContainer.clientWidth);
+        canvasH = Math.max(120, dom.gameContainer.clientHeight);
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+        dom.canvas.width = Math.round(canvasW * dpr);
+        dom.canvas.height = Math.round(canvasH * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        laneW = Math.min(440, canvasW * 0.9);
+        laneX = (canvasW - laneW) * 0.5;
+        hitY = canvasH * 0.78;
+        blockH = Math.max(44, Math.min(64, canvasH * 0.17));
+
+        buildFonts();
+
+        buildKeyboard(false);
+        if (isPaused && activeOverlayId === null) {
+            drawFrame();
+        }
+    }
+
+    /* =========================================================================
+       13. 初期化＆イベントバインド
+       ========================================================================= */
+    function populateFreeKeySelect() {
+        const songId = dom.freeSong.value;
+        const meta = SONG_META[songId];
+        const prevVal = dom.freeKey.value;
+        dom.freeKey.innerHTML = '';
+
+        const frag = document.createDocumentFragment();
+        const order = meta.keyOrder;
+        for (let i = 0; i < order.length; i++) {
+            const cofIdx = order[i];
+            const info = CIRCLE_OF_FIFTHS[cofIdx];
+            const parts = getKeyDisplayParts(info, meta.isMinor);
+            const opt = document.createElement('option');
+            opt.value = String(cofIdx);
+            opt.textContent = `${parts.full} (${parts.sig})`;
+            frag.appendChild(opt);
+        }
+        dom.freeKey.appendChild(frag);
+
+        // 以前選択していたキーがあれば維持、なければ先頭（原曲キー）を選択
+        if (prevVal && Array.from(dom.freeKey.options).some(o => o.value === prevVal)) {
+            dom.freeKey.value = prevVal;
+        } else {
+            dom.freeKey.selectedIndex = 0;
+        }
+    }
+
+    // ボイシングと難易度の組み合わせに応じた短い説明（不向きな組み合わせは注意表示）
+    function updateFreeModeNote() {
+        const el = document.getElementById('free-mode-note');
+        const mode = dom.freeMode.value;
+        const isTriad = dom.freeDiff.value === 'beginner';
+        let text = '';
+        let warn = false;
+        if (mode === 'full') {
+            text = '全構成音を弾き、一番低い音を指定ベースにすると満点（転回形は半分）。';
+        } else if (mode === 'guide') {
+            text = isTriad ? '3和音には7度がないため3度＋5度の練習になります（中級以上推奨）。'
+                           : '3度と7度（6度・9度で代用する場合あり）だけを弾き、前の和音から近い音へ繋ぎます。';
+            warn = isTriad;
+        } else {
+            text = isTriad ? '3和音からルートを抜くと2音だけになります（上級推奨）。'
+                           : 'ルートはベースに任せ、残りの音を転回して近い位置で繋ぎます（上級推奨）。';
+            warn = isTriad;
+        }
+        el.textContent = text;
+        el.classList.toggle('warn', warn);
+    }
+
+    // ---- 前回の設定（フリー練習・周回数・オクターブ・ビート/メロディ）の保存と復元 ----
+    function savePrefs() {
+        try {
+            localStorage.setItem(PREFS_KEY, JSON.stringify({
+                song: dom.freeSong.value, key: dom.freeKey.value, laps: dom.freeLaps.value,
+                diff: dom.freeDiff.value, mode: dom.freeMode.value, bpm: dom.freeBpm.value,
+                blind: dom.freeBlind.value, melody: config.melodyOn, beat: config.beatOn, speed: dom.freeSpeed.value,
+                courseLaps: dom.courseLapsSelect.value, octave: baseOctave, theme: currentTheme
+            }));
+        } catch {}
+    }
+
+    function loadPrefs() {
+        let pr = null;
+        try { pr = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null'); } catch {}
+        if (!pr || typeof pr !== 'object') return;
+        // 選択肢に存在する値だけを反映（古い保存値・不正値は無視）
+        const setSelect = (sel, v) => {
+            if (v !== undefined && Array.from(sel.options).some(o => o.value === String(v))) sel.value = String(v);
+        };
+        setSelect(dom.freeSong, pr.song);
+        populateFreeKeySelect();
+        setSelect(dom.freeKey, pr.key);
+        setSelect(dom.freeLaps, pr.laps);
+        setSelect(dom.freeDiff, pr.diff);
+        setSelect(dom.freeMode, pr.mode);
+        setSelect(dom.freeBlind, pr.blind);
+        setSelect(dom.courseLapsSelect, pr.courseLaps);
+        setSelect(dom.freeSpeed, pr.speed);
+        setSelect(dom.courseSpeedSelect, pr.speed);
+        const bpm = Number(pr.bpm);
+        if (bpm >= 60 && bpm <= 140) {
+            dom.freeBpm.value = String(bpm);
+            dom.freeBpmLabel.textContent = `${bpm} BPM`;
+        }
+        if (typeof pr.melody === 'boolean') config.melodyOn = dom.freeMelody.checked = pr.melody;
+        if (typeof pr.beat === 'boolean') config.beatOn = dom.freeBeat.checked = pr.beat;
+        const oct = Number(pr.octave);
+        if (oct >= 2 && oct <= 4) baseOctave = oct;
+        if (pr.theme === 'modern' || pr.theme === 'retro') applyTheme(pr.theme);
+    }
+
+    function bindButton(id, handler) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('click', (e) => {
+            // マウス・タッチのクリック時だけフォーカスを外す（Spaceキーでボタンが再実行されるのを防ぐ）。
+            // キーボード操作（detail===0）ではフォーカスを保持する。
+            if (e.detail > 0) e.currentTarget.blur();
+            handler(e);
+        });
+    }
+
+    function initApp() {
+        populateFreeKeySelect();
+        applyTheme(currentTheme); // 既定テーマ（モダン）を適用。保存済みテーマは loadPrefs で上書き
+        loadPrefs();
+        updateFreeModeNote();
+        dom.freeSong.addEventListener('change', populateFreeKeySelect);
+        for (const el of [dom.freeSong, dom.freeKey, dom.freeLaps, dom.freeDiff, dom.freeMode, dom.freeBpm, dom.freeBlind, dom.courseLapsSelect]) {
+            el.addEventListener('change', savePrefs);
+        }
+        dom.freeMelody.addEventListener('change', () => { config.melodyOn = dom.freeMelody.checked; savePrefs(); });
+        const themeSelect = document.getElementById('theme-select');
+        themeSelect.value = currentTheme;
+        themeSelect.addEventListener('change', () => { applyTheme(themeSelect.value); savePrefs(); });
+        if (darkMedia) {
+            const onScheme = () => { if (currentTheme === 'modern') applyTheme('modern'); };
+            if (darkMedia.addEventListener) darkMedia.addEventListener('change', onScheme);
+            else if (darkMedia.addListener) darkMedia.addListener(onScheme);
+        }
+        dom.freeBeat.addEventListener('change', () => { config.beatOn = dom.freeBeat.checked; savePrefs(); });
+        dom.freeMode.addEventListener('change', updateFreeModeNote);
+        dom.freeDiff.addEventListener('change', updateFreeModeNote);
+
+        // ナビゲーション
+        bindButton('btn-open-course', () => showOverlay('course-menu-screen'));
+        bindButton('btn-open-free', () => showOverlay('free-settings-screen'));
+        bindButton('btn-course-back', () => showOverlay('start-screen'));
+        bindButton('btn-free-back', () => showOverlay('start-screen'));
+        bindButton('btn-start-free', () => startFreeSession());
+
+        dom.freeBpm.addEventListener('input', (e) => {
+            dom.freeBpmLabel.textContent = `${e.target.value} BPM`;
+        });
+
+        // クリア周回数セレクトの連動（コース側変更時はフリー側にも反映）
+        // 表示時間はコース・フリー共通の設定として両方の選択を同期
+        dom.courseSpeedSelect.addEventListener('change', () => { dom.freeSpeed.value = dom.courseSpeedSelect.value; savePrefs(); });
+        dom.freeSpeed.addEventListener('change', () => { dom.courseSpeedSelect.value = dom.freeSpeed.value; savePrefs(); });
+        dom.courseLapsSelect.addEventListener('change', (e) => {
+            dom.freeLaps.value = e.target.value;
+            savePrefs();
+        });
+
+        // ゲーム中コントロール
+        bindButton('btn-nav-home', () => showOverlay('start-screen'));
+        bindButton('btn-nav-sub', () => showOverlay(isCourseMode ? 'course-menu-screen' : 'free-settings-screen'));
+        bindButton('btn-play-pause', () => togglePlayPause());
+        bindButton('btn-bpm-down', () => changeBpm(-5));
+        bindButton('btn-bpm-up', () => changeBpm(5));
+
+        bindButton('btn-beat-toggle', () => {
+            config.beatOn = !config.beatOn;
+            dom.freeBeat.checked = config.beatOn;
+            updateControlBarUI();
+            savePrefs();
+        });
+        bindButton('btn-melody-toggle', () => {
+            config.melodyOn = !config.melodyOn;
+            dom.freeMelody.checked = config.melodyOn;
+            updateControlBarUI();
+            savePrefs();
+        });
+
+        bindButton('btn-oct-down', () => {
+            if (baseOctave > 2) {
+                baseOctave--;
+                buildKeyboard(true);
+                updateControlBarUI();
+                savePrefs();
+            }
+        });
+        bindButton('btn-oct-up', () => {
+            if (baseOctave < 4) {
+                baseOctave++;
+                buildKeyboard(true);
+                updateControlBarUI();
+                savePrefs();
+            }
+        });
+
+        // リザルトモーダル
+        bindButton('btn-result-next', () => {
+            if (currentStepIdx < COURSE_STEPS.length - 1) {
+                startCourseStep(currentStepIdx + 1);
+            }
+        });
+        bindButton('btn-result-retry', () => {
+            if (isCourseMode) startCourseStep(currentStepIdx);
+            else startFreeSession();
+        });
+        bindButton('btn-result-back', () => {
+            showOverlay(isCourseMode ? 'course-menu-screen' : 'free-settings-screen');
+        });
+
+        // リサイズ＆バックグラウンド監視
+        let resizePending = false;
+        window.addEventListener('resize', () => {
+            if (resizePending) return;
+            resizePending = true;
+            requestAnimationFrame(() => {
+                resizePending = false;
+                resizeApp();
+            });
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && activeOverlayId === null && isRunning && !isPaused) {
+                togglePlayPause();
+            }
+        });
+
+        requestMIDI();
+        resizeApp();
+        showOverlay('start-screen', false);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initApp);
+    } else {
+        initApp();
+    }
+})();
+</script>
+</body>
+</html>
