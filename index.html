@@ -811,6 +811,26 @@
         @media (hover: none) {
             .kbd-hint { display: none; }
         }
+        /* 狭い画面用の短い表記（.lbl を隠し、.lbl-narrow を出す） */
+        .lbl-narrow { display: none; }
+        @media (max-width: 600px) {
+            .lbl { display: none; }
+            .lbl-narrow { display: inline; }
+            #top-bar .ico { display: none; }
+            #mission-degrees { font-size: 0.76rem; }
+            #top-bar { justify-content: center; gap: 5px 6px; padding: 5px 8px; }
+            .bar-group { gap: 5px; }
+            .ctrl-chip { padding: 5px 9px; }
+            .stat-pill { padding: 4px 8px; }
+            .bpm-val { min-width: 30px; }
+            /* ミッション説明は1行に収め、全文は title（長押し・ホバー）で */
+            #mission-banner { flex-wrap: wrap; gap: 4px 8px; padding: 6px 10px; }
+            #mission-desc { flex-basis: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.78rem; }
+            /* キー一覧は折り返さず横スクロール（1行に固定してゲーム画面の高さを確保） */
+            #key-tracker { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; touch-action: pan-x; padding: 5px 8px; }
+            #key-tracker::-webkit-scrollbar { display: none; }
+            .key-badge, .tracker-phase-pill { flex-shrink: 0; }
+        }
         /* キーボード操作時のフォーカス表示（マウス・タッチでは出さない） */
         button:focus-visible, select:focus-visible, input:focus-visible, .toggle-row:focus-within {
             outline: 3px solid var(--degree);
@@ -1268,24 +1288,24 @@
         <!-- 2行目（中段）：操作メニューバー -->
         <header id="top-bar">
             <div class="bar-group">
-                <button class="ctrl-chip" id="btn-nav-home" type="button">◀ ホーム</button>
-                <button class="ctrl-chip" id="btn-nav-sub" type="button">☰ コース一覧</button>
+                <button class="ctrl-chip" id="btn-nav-home" type="button" aria-label="ホームへ戻る">◀<span class="lbl"> ホーム</span></button>
+                <button class="ctrl-chip" id="btn-nav-sub" type="button" aria-label="コース一覧">☰<span class="lbl"> コース一覧</span></button>
             </div>
 
             <div class="bar-group">
-                <button class="ctrl-chip" id="btn-play-pause" type="button" title="Spaceキーでも操作できます" aria-pressed="false">⏸ 一時停止</button>
+                <button class="ctrl-chip" id="btn-play-pause" type="button" title="Spaceキーでも操作できます" aria-pressed="false" aria-label="一時停止">⏸<span class="lbl"> 一時停止</span></button>
                 <div class="bpm-box" aria-label="BPM変更">
                     <button class="bpm-btn" id="btn-bpm-down" type="button" aria-label="テンポを5下げる">−</button>
-                    <span class="bpm-val" id="ingame-bpm-val">BPM 85</span>
+                    <span class="bpm-val" id="ingame-bpm-val">85</span>
                     <button class="bpm-btn" id="btn-bpm-up" type="button" aria-label="テンポを5上げる">＋</button>
                 </div>
-                <button class="ctrl-chip active-on" id="btn-beat-toggle" type="button" aria-pressed="true"><span class="ico">🥁 </span>ビート: ON</button>
-                <button class="ctrl-chip active-on" id="btn-melody-toggle" type="button" aria-pressed="true"><span class="ico">🎵 </span>メロディ: ON</button>
+                <button class="ctrl-chip active-on" id="btn-beat-toggle" type="button" aria-pressed="true"><span class="ico">🥁 </span>ビート ON</button>
+                <button class="ctrl-chip active-on" id="btn-melody-toggle" type="button" aria-pressed="true"><span class="ico">🎵 </span><span class="lbl">メロディ</span><span class="lbl-narrow">旋律</span> ON</button>
             </div>
 
             <div class="bar-group">
-                <div class="stat-pill lap">周回: <span class="val" id="lap-display">1/1周 (0/4)</span></div>
-                <div class="stat-pill">Score: <span class="val" id="score-display">0</span></div>
+                <div class="stat-pill lap"><span class="lbl">周回: </span><span class="val" id="lap-display">1/1周 (0/4)</span></div>
+                <div class="stat-pill"><span class="lbl">Score: </span><span class="val" id="score-display">0</span><span class="lbl-narrow">点</span></div>
             </div>
         </header>
 
@@ -1376,8 +1396,8 @@
 
     const NOTE_NAMES_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
     const NOTE_NAMES_FLAT  = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
-    const PC_NAMES_SHARP   = ['ド', 'ド#', 'レ', 'レ#', 'ミ', 'ファ', 'ファ#', 'ソ', 'ソ#', 'ラ', 'ラ#', 'シ'];
-    const PC_NAMES_FLAT    = ['ド', 'レb', 'レ', 'ミb', 'ミ', 'ファ', 'ソb', 'ソ', 'ラb', 'ラ', 'シb', 'シ'];
+    const PC_NAMES_SHARP   = ['ド', 'ド♯', 'レ', 'レ♯', 'ミ', 'ファ', 'ファ♯', 'ソ', 'ソ♯', 'ラ', 'ラ♯', 'シ'];
+    const PC_NAMES_FLAT    = ['ド', 'レ♭', 'レ', 'ミ♭', 'ミ', 'ファ', 'ソ♭', 'ソ', 'ラ♭', 'ラ', 'シ♭', 'シ'];
     const NOTE_TO_PC = {
         C: 0, 'C#': 1, Db: 1, D: 2, 'D#': 3, Eb: 3, E: 4,
         F: 5, 'F#': 6, Gb: 6, G: 7, 'G#': 8, Ab: 8, A: 9, 'A#': 10, Bb: 10, B: 11
@@ -1913,6 +1933,25 @@
         }
     }
 
+    // 構成音を和音の度数どおりの文字で綴る（例：C♭maj7 → ド♭・ミ♭・ソ♭・シ♭、D♯7 → レ♯・ファ♯♯・ラ♯・ド♯）。
+    // ルートの文字（コード名から取る）に、ルートからの半音数に対応する度数の文字数を足す。
+    // 半音数→度数：短2/長2度=2度(9th)、短3/長3度=3度、4度、減5/完全5度=5度、短6/長6度=6度(13th)、短7/長7度=7度。
+    const SOLFEGE = ['ド', 'レ', 'ミ', 'ファ', 'ソ', 'ラ', 'シ'];
+    const INTERVAL_LETTER_STEPS = [0, 1, 1, 2, 2, 3, 4, 4, 5, 5, 6, 6];
+    const ACCIDENTAL_MARKS = { '-2': '♭♭', '-1': '♭', '0': '', '1': '♯', '2': '♯♯' };
+    function spellChordTones(rootToken, rootPc, pcs, useFlat) {
+        const names = new Map();
+        const rootLetter = LETTERS.indexOf(rootToken[0]);
+        for (const pc of pcs) {
+            const li = (rootLetter + INTERVAL_LETTER_STEPS[mod12(pc - rootPc)]) % 7;
+            const acc = mod12(pc - LETTER_PC[li] + 6) - 6;
+            names.set(pc, rootLetter >= 0 && ACCIDENTAL_MARKS[acc] !== undefined
+                ? SOLFEGE[li] + ACCIDENTAL_MARKS[acc]
+                : getPcName(pc, useFlat));
+        }
+        return names;
+    }
+
     function getPcName(pc, useFlat) {
         return useFlat ? PC_NAMES_FLAT[mod12(pc)] : PC_NAMES_SHARP[mod12(pc)];
     }
@@ -2060,9 +2099,12 @@
 
         const requiredSet = new Set(required);
         const optionalSet = new Set(optional);
-        const hintParts = required.map(pc => getPcName(pc, useFlat));
+        // 構成音名はコード名のルートの綴りを基準に、度数どおりの文字で表す
+        const labelMatch = CHORD_LABEL_REGEX.exec(label);
+        const toneNames = spellChordTones(labelMatch ? labelMatch[1] : '', root, notes, useFlat);
+        const hintParts = required.map(pc => toneNames.get(pc));
         if (optional.length > 0) {
-            hintParts.push(`(${getPcName(optional[0], useFlat)})`);
+            hintParts.push(`(${toneNames.get(optional[0])})`);
         }
 
         return {
@@ -2075,6 +2117,7 @@
             optionalSet,
             fullNotes: notes,
             hintText: hintParts.join('・'),
+            toneNames,
             bassMidi,
             bassPc: mod12(bassMidi),
             melMidi
@@ -2206,6 +2249,10 @@
             el.classList.toggle('review', !isCurr && st === 'review');
 
             el.setAttribute('aria-label', `${base}: ${isCurr ? '演奏中' : st === 'perfect' ? '一発合格' : st === 'review' ? '要復習' : '未挑戦'}`);
+            // 狭い画面ではキー一覧が横スクロールになるので、演奏中のキーを中央に寄せる（ページ自体はスクロールさせない）
+            if (isCurr && dom.keyTracker.scrollWidth > dom.keyTracker.clientWidth) {
+                dom.keyTracker.scrollLeft = el.offsetLeft - (dom.keyTracker.clientWidth - el.offsetWidth) * 0.5;
+            }
             if (isCurr) {
                 el.textContent = base;
             } else if (st === 'perfect') {
@@ -2243,10 +2290,12 @@
         hadMissInCurrentKey = false;
         config.cofIdx = getSongKeyOrder(config.song)[0];
 
-        dom.btnNavSub.textContent = '☰ コース一覧';
+        dom.btnNavSub.innerHTML = '☰<span class="lbl"> コース一覧</span>';
+        dom.btnNavSub.setAttribute('aria-label', 'コース一覧');
         dom.missionTitle.textContent = `Step ${step.id + 1}: ${step.title}`;
         dom.missionDegrees.textContent = getDegreeText(step.song, step.diff);
         dom.missionDesc.textContent = step.mission;
+        dom.missionDesc.title = step.mission;
 
         await launchSession();
     }
@@ -2269,7 +2318,8 @@
         const parts = getKeyDisplayParts(getCurrentKeyInfo(), meta.isMinor);
         const modeText = config.mode === 'full' ? 'フル' : (config.mode === 'guide' ? 'ガイドトーン' : 'ルートレス');
 
-        dom.btnNavSub.textContent = '☰ 設定変更';
+        dom.btnNavSub.innerHTML = '☰<span class="lbl"> 設定変更</span>';
+        dom.btnNavSub.setAttribute('aria-label', 'フリー練習の設定変更');
         dom.missionTitle.textContent = `${meta.name}（${parts.short} / ${modeText}）`;
         dom.missionDegrees.textContent = getDegreeText(config.song, config.diff);
         dom.missionDesc.textContent =
@@ -2278,6 +2328,7 @@
                 : config.mode === 'guide'
                     ? 'ベースは自動。3度＋7度を近い鍵盤で繋ぐと Smooth +100'
                     : 'ルート抜きで弾き、平均2.5半音以内の移動で Smooth +100';
+        dom.missionDesc.title = dom.missionDesc.textContent;
 
         await launchSession();
     }
@@ -2357,21 +2408,22 @@
 
     function changeBpm(delta) {
         config.bpm = Math.max(60, Math.min(140, config.bpm + delta));
-        dom.ingameBpmVal.textContent = `BPM ${config.bpm}`;
+        dom.ingameBpmVal.innerHTML = `<span class="lbl">BPM </span>${config.bpm}`;
     }
 
     function updateControlBarUI() {
-        dom.btnPlayPause.innerHTML = (isPaused ? '▶ 再開' : '⏸ 一時停止') + ' <span class="kbd-hint">(Space)</span>';
+        dom.btnPlayPause.innerHTML = (isPaused ? '▶<span class="lbl"> 再開</span>' : '⏸<span class="lbl"> 一時停止</span>') + '<span class="kbd-hint lbl"> (Space)</span>';
+        dom.btnPlayPause.setAttribute('aria-label', isPaused ? '再開' : '一時停止');
         dom.btnPlayPause.classList.toggle('paused-state', isPaused);
         dom.btnPlayPause.setAttribute('aria-pressed', String(isPaused));
 
-        dom.ingameBpmVal.textContent = `BPM ${config.bpm}`;
+        dom.ingameBpmVal.innerHTML = `<span class="lbl">BPM </span>${config.bpm}`;
 
-        dom.btnBeatToggle.innerHTML = `<span class="ico">🥁 </span>ビート: ${config.beatOn ? 'ON' : 'OFF'}`;
+        dom.btnBeatToggle.innerHTML = `<span class="ico">🥁 </span>ビート ${config.beatOn ? 'ON' : 'OFF'}`;
         dom.btnBeatToggle.classList.toggle('active-on', config.beatOn);
         dom.btnBeatToggle.setAttribute('aria-pressed', String(config.beatOn));
 
-        dom.btnMelodyToggle.innerHTML = `<span class="ico">${config.melodyOn ? '🎵' : '🔇'} </span>メロディ: ${config.melodyOn ? 'ON' : 'OFF'}`;
+        dom.btnMelodyToggle.innerHTML = `<span class="ico">${config.melodyOn ? '🎵' : '🔇'} </span><span class="lbl">メロディ</span><span class="lbl-narrow">旋律</span> ${config.melodyOn ? 'ON' : 'OFF'}`;
         dom.btnMelodyToggle.classList.toggle('active-on', config.melodyOn);
         dom.btnMelodyToggle.setAttribute('aria-pressed', String(config.melodyOn));
 
@@ -2579,7 +2631,7 @@
                 b.attemptVersion = pressVersion;
                 const useFlat = currentUseFlat();
                 b.lastAttempt = {
-                    missing: required.filter(pc => !activePitchClasses.has(pc)).map(pc => getPcName(pc, useFlat)),
+                    missing: required.filter(pc => !activePitchClasses.has(pc)).map(pc => b.data.toneNames.get(pc)),
                     extra: Array.from(activePitchClasses).filter(pc => !requiredSet.has(pc) && !optionalSet.has(pc)).map(pc => getPcName(pc, useFlat))
                 };
             }

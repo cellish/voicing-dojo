@@ -3,7 +3,6 @@ Copyright (c) 2026 jun. All rights reserved.
 ボイシング道場（Voicing Dojo）のソースコード、文章、曲データの編集（コード進行・ボイシング・度数・
 ガイドトーン旋律・解説）の著作権は jun にあります。
 
-- 公開しているサイトで、どなたでも無料でアプリを使えます（個人の練習、授業やレッスンでの利用を含む）。
 - ソースコードを見ることはできますが、複製・改変・再配布・販売、
   およびこのアプリを元にした別のアプリやサービスの公開には、著作権者の許可が必要です。
 
@@ -17,7 +16,7 @@ THIRD_PARTY_NOTICES.md を参照してください。
 
 The source code, text and musical annotations (chord progressions, voicings, degree labels,
 guide-tone lines and explanations) of Voicing Dojo are copyright (c) 2026 jun.
-All rights reserved. Anyone may use the app free of charge on the published site.
+All rights reserved.
 Copying, modifying, redistributing or selling the source, or publishing an app or
 service derived from it, requires the copyright holder's permission.
 Third-party software is covered by its own license (see THIRD_PARTY_NOTICES.md).
