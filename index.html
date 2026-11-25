@@ -1161,7 +1161,7 @@
                             <option value="ii_V_i_min">マイナー ii-V-i（ii° - V - i - i）</option>
                             <option value="pop">王道進行（IV - V - iii - vi）</option>
                             <option value="canon">カノン進行・オンコード（I - V on 7 - vi …）</option>
-                            <option value="autumn">枯葉サイクル（iv - ♭VII - ♭III - ♭VI …）</option>
+                            <option value="passacaglia">パッサカリア・ヘンデル（i - iv - ♭VII - ♭III …）</option>
                             <option value="citypop">丸サ進行（IV - III - vi - v・I）</option>
                         </select>
                     </div>
@@ -1399,8 +1399,8 @@
         { tonicPc: 7,  maj: 'G',  majFull: 'G Major',  majSig: '♯1',     majFlat: false, min: 'Gm',  minFull: 'G Minor',  minSig: '♭2',     minFlat: true  }
     ]);
 
-    // 枯葉サイクル(Am基準)用の五度圏順（Am → Dm → Gm → Cm → ... で白鍵中心から自然に進む）
-    const AM_START_ORDER = Object.freeze([9, 10, 11, 0, 1, 2, 3, 4, 5, 6, 7, 8]);
+    // パッサカリア（原調ト短調）用の五度圏順：Gm → Cm → Fm → ...（原調から始め、4度ずつ上へ）
+    const GM_START_ORDER = Object.freeze([11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     const C_START_ORDER  = Object.freeze([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
 
     // ルート・クオリティ・スラッシュ後のベース音を正確に分離する正規表現
@@ -1415,7 +1415,7 @@
         ii_V_i_min: { name: 'マイナー ii-V-i',         isMinor: true,  baseTonicPc: 0, keyOrder: C_START_ORDER },
         pop:        { name: '王道進行',                isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER },
         canon:      { name: 'カノン進行（オンコード）', isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER },
-        autumn:     { name: '枯葉サイクル',            isMinor: true,  baseTonicPc: 9, keyOrder: AM_START_ORDER },
+        passacaglia: { name: 'パッサカリア（ヘンデル）', isMinor: true,  baseTonicPc: 7, keyOrder: GM_START_ORDER, baseTonicLetter: 'G' },
         citypop:    { name: '丸サ進行',                isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER }
     });
 
@@ -1457,17 +1457,19 @@
             { label: 'F',    label_int: 'Dm7',     label_adv: 'Dm9',     deg: 'IV',    deg_int: 'iim7',     deg_adv: 'iim9',     bassMidi: 41, bassMidi_int: 38, bassMidi_adv: 38, root: 5, root_int: 2, root_adv: 2, notes: [5, 9, 0], seventh: [2, 5, 9, 0], ninth: [2, 5, 9, 0, 4], melMidi: 57 },
             { label: 'G',    label_int: 'G7sus4',  label_adv: 'G9sus4',  deg: 'V',     deg_int: 'V7sus4',   deg_adv: 'V9sus4',   bassMidi: 43, root: 7, notes: [7, 11, 2], seventh: [7, 0, 2, 5],  ninth: [7, 0, 2, 5, 9],  melMidi: 59, melMidi_int: 60, melMidi_adv: 60 }
         ],
-        // 枯葉サイクル（Am基準）：iv7 - ♭VII7 - ♭IIImaj7 - ♭VImaj7（平行長調の ii-V-I-IV）→ iiø7 - V7 - im7 - im7（短調の ii-V-i）
-        // 旋律は3度・7度を半音/全音で繋ぐオリジナルのガイドトーン・ライン（原曲旋律は不使用）
-        autumn: [
-            { label: 'Dm',   label_int: 'Dm7',     label_adv: 'Dm9',      deg: 'iv',  deg_int: 'ivm7',    deg_adv: 'ivm9',    bassMidi: 50, root: 2,  notes: [2, 5, 9],  seventh: [2, 5, 9, 0],  ninth: [2, 5, 9, 0, 4],  melMidi: 65 },
-            { label: 'G',    label_int: 'G7',      label_adv: 'G9',       deg: '♭VII', deg_int: '♭VII7',  deg_adv: '♭VII9',   bassMidi: 43, root: 7,  notes: [7, 11, 2], seventh: [7, 11, 2, 5], ninth: [7, 11, 2, 5, 9], melMidi: 65 },
-            { label: 'C',    label_int: 'Cmaj7',   label_adv: 'Cmaj9',    deg: '♭III', deg_int: '♭IIImaj7', deg_adv: '♭IIImaj9', bassMidi: 48, root: 0, notes: [0, 4, 7], seventh: [0, 4, 7, 11], ninth: [0, 4, 7, 11, 2], melMidi: 64 },
-            { label: 'F',    label_int: 'Fmaj7',   label_adv: 'Fmaj9',    deg: '♭VI', deg_int: '♭VImaj7', deg_adv: '♭VImaj9', bassMidi: 41, root: 5,  notes: [5, 9, 0],  seventh: [5, 9, 0, 4],  ninth: [5, 9, 0, 4, 7],  melMidi: 64 },
-            { label: 'Bdim', label_int: 'Bm7(b5)', label_adv: 'Bm11(b5)', deg: 'ii°', deg_int: 'iiø7',    deg_adv: 'iiø11',   bassMidi: 47, root: 11, notes: [11, 2, 5], seventh: [11, 2, 5, 9], ninth: [11, 2, 5, 9, 4], melMidi: 62, isHalfDim: true },
-            { label: 'E',    label_int: 'E7',      label_adv: 'E7(b9)',   deg: 'V',   deg_int: 'V7',      deg_adv: 'V7(b9)',  bassMidi: 40, root: 4,  notes: [4, 8, 11], seventh: [4, 8, 11, 2], ninth: [4, 8, 11, 2, 5], melMidi: 62 },
-            { label: 'Am',   label_int: 'Am7',     label_adv: 'Am9',      deg: 'i',   deg_int: 'im7',     deg_adv: 'im9',     bassMidi: 45, root: 9,  notes: [9, 0, 4],  seventh: [9, 0, 4, 7],  ninth: [9, 0, 4, 7, 11], melMidi: 60 },
-            { label: 'Am',   label_int: 'Am7',     label_adv: 'Am9',      deg: 'i',   deg_int: 'im7',     deg_adv: 'im9',     bassMidi: 45, root: 9,  notes: [9, 0, 4],  seventh: [9, 0, 4, 7],  ninth: [9, 0, 4, 7, 11], melMidi: 67 }
+        // パッサカリア：ヘンデル《組曲 第7番 ト短調 HWV 432》第6曲のテーマ（4小節、1小節に2和音）を原調のまま収録。
+        // 和音 i - iv - ♭VII - ♭III - ♭VI - ii° - V - i（4度上行の連鎖）。原曲の1和音2拍を、このアプリでは1和音4拍に拡大。
+        // melMidi はテーマ最上声の各和音頭の音（D5 E♭5 C5 D5 B♭4 C5 A4 G4）、bassMidi は左手の最低音（G C F B♭ E♭ A D G）。
+        // 出典：利用者が用意した楽譜画像（パブリックドメインの作品。ヘンデル 1759年没）から書き起こし。
+        passacaglia: [
+            { label: 'Gm',   label_int: 'Gm7',     label_adv: 'Gm9',      deg: 'i',    deg_int: 'im7',      deg_adv: 'im9',      bassMidi: 55, root: 7,  notes: [7, 10, 2], seventh: [7, 10, 2, 5],  ninth: [7, 10, 2, 5, 9],  melMidi: 74 },
+            { label: 'Cm',   label_int: 'Cm7',     label_adv: 'Cm9',      deg: 'iv',   deg_int: 'ivm7',     deg_adv: 'ivm9',     bassMidi: 48, root: 0,  notes: [0, 3, 7],  seventh: [0, 3, 7, 10],  ninth: [0, 3, 7, 10, 2],  melMidi: 75 },
+            { label: 'F',    label_int: 'F7',      label_adv: 'F9',       deg: '♭VII', deg_int: '♭VII7',    deg_adv: '♭VII9',    bassMidi: 53, root: 5,  notes: [5, 9, 0],  seventh: [5, 9, 0, 3],   ninth: [5, 9, 0, 3, 7],   melMidi: 72 },
+            { label: 'Bb',   label_int: 'Bbmaj7',  label_adv: 'Bbmaj9',   deg: '♭III', deg_int: '♭IIImaj7', deg_adv: '♭IIImaj9', bassMidi: 46, root: 10, notes: [10, 2, 5], seventh: [10, 2, 5, 9],  ninth: [10, 2, 5, 9, 0],  melMidi: 74 },
+            { label: 'Eb',   label_int: 'Ebmaj7',  label_adv: 'Ebmaj9',   deg: '♭VI',  deg_int: '♭VImaj7',  deg_adv: '♭VImaj9',  bassMidi: 51, root: 3,  notes: [3, 7, 10], seventh: [3, 7, 10, 2],  ninth: [3, 7, 10, 2, 5],  melMidi: 70 },
+            { label: 'Adim', label_int: 'Am7(b5)', label_adv: 'Am11(b5)', deg: 'ii°',  deg_int: 'iiø7',     deg_adv: 'iiø11',    bassMidi: 45, root: 9,  notes: [9, 0, 3],  seventh: [9, 0, 3, 7],   ninth: [9, 0, 3, 7, 2],   melMidi: 72, isHalfDim: true },
+            { label: 'D',    label_int: 'D7',      label_adv: 'D7(b9)',   deg: 'V',    deg_int: 'V7',       deg_adv: 'V7(b9)',   bassMidi: 50, root: 2,  notes: [2, 6, 9],  seventh: [2, 6, 9, 0],   ninth: [2, 6, 9, 0, 3],   melMidi: 69 },
+            { label: 'Gm',   label_int: 'Gm7',     label_adv: 'Gm9',      deg: 'i',    deg_int: 'im7',      deg_adv: 'im9',      bassMidi: 43, root: 7,  notes: [7, 10, 2], seventh: [7, 10, 2, 5],  ninth: [7, 10, 2, 5, 9],  melMidi: 67 }
         ],
         // 丸サ進行：4小節ループ（vm7 と I7 は最終小節を2拍ずつ分け合う＝ IV へ戻る ii-V）
         citypop: [
@@ -1480,7 +1482,7 @@
     });
 
     /* =========================================================================
-       3. 12キー制覇コース（枯葉サイクル復活・全13ステップ・4フェーズ）
+       3. 12キー制覇コース（全13ステップ・4フェーズ）
        ========================================================================= */
     const COURSE_PHASES = Object.freeze([
         { id: 1, tag: 'Phase 1', title: '3和音で一通りマスター（Triad・フル）' },
@@ -1512,8 +1514,8 @@
         { id: 5, key: 'p2-pop', phase: 2, title: '王道進行（ガイドトーン）', song: 'pop', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
           goal: '最小の指移動で J-POP 進行を伴奏する',
           mission: '3度＋7度の2音。平均2.5半音以内の移動で Smooth +100' },
-        { id: 6, key: 'p2-autumn', phase: 2, title: '枯葉サイクル（ガイドトーン）', song: 'autumn', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2〜3音）', bpm: 85,
-          goal: '4度上行（5度下行）の連鎖で、3度と7度が交互に入れ替わる流れを体感',
+        { id: 6, key: 'p2-passacaglia', phase: 2, title: 'パッサカリア（ガイドトーン）', song: 'passacaglia', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2〜3音）', bpm: 85,
+          goal: 'ヘンデルの旋律に合わせ、4度上行の連鎖で3度と7度が交互に入れ替わる流れを体感',
           mission: '3度＋7度（iiø7 は♭5も）を最小移動で繋ぐと Smooth +100' },
 
         // Phase 3（4和音・フル）
@@ -1526,8 +1528,8 @@
         { id: 9, key: 'p3-pop', phase: 3, title: '王道進行（4和音）', song: 'pop', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 85,
           goal: 'IVmaj7 の浮遊感と iiim7・vim7 の切なさを4和音で',
           mission: '7thまで押さえ、最低音をルートにすると Perfect +100' },
-        { id: 10, key: 'p3-autumn', phase: 3, title: '枯葉サイクル（4和音）', song: 'autumn', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
-          goal: '平行長調の ii-V-I-IV と短調の ii-V-i を連結したジャズの定番サイクル',
+        { id: 10, key: 'p3-passacaglia', phase: 3, title: 'パッサカリア（4和音）', song: 'passacaglia', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+          goal: 'バロックからジャズまで使われる4度上行の循環を、ヘンデルの旋律とともに4和音で',
           mission: '8コードすべて7thまで。最低音をルートにすると Perfect +100' },
         { id: 11, key: 'p3-citypop', phase: 3, title: '丸サ進行（4和音）', song: 'citypop', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 85,
           goal: 'III7（vi へのセカンダリードミナント）と vm7-I7（IV への ii-V）で作るシティポップの循環',
@@ -1539,12 +1541,14 @@
           mission: 'ルート抜きの4音。転回して最小移動で繋ぐと Smooth +100' }
     ]);
 
-    // 旧バージョン(v3: 数値ID)の進捗を新しい安定IDへ移行する対応表（旧Step5=枯葉3和音は廃止）
+    // 旧バージョン(v3: 数値ID)の進捗を新しい安定IDへ移行する対応表（旧Step5=3和音の循環進行は廃止）
     const LEGACY_STEP_KEYS = Object.freeze({
         0: 'p1-maj', 1: 'p1-min', 2: 'p1-pop', 3: 'p1-canon',
-        5: 'p2-maj', 6: 'p2-pop', 7: 'p2-autumn',
-        8: 'p3-maj', 9: 'p3-min', 10: 'p3-autumn', 11: 'p3-citypop', 12: 'p4-citypop'
+        5: 'p2-maj', 6: 'p2-pop', 7: 'p2-passacaglia',
+        8: 'p3-maj', 9: 'p3-min', 10: 'p3-passacaglia', 11: 'p3-citypop', 12: 'p4-citypop'
     });
+    // 名前を変えたステップの旧ID → 新ID（枯葉サイクルをヘンデルのパッサカリアに差し替え。同じ4度上行の循環なので進捗を引き継ぐ）
+    const RENAMED_STEP_KEYS = Object.freeze({ 'p2-autumn': 'p2-passacaglia', 'p3-autumn': 'p3-passacaglia' });
 
     /* =========================================================================
        4. 音源（Tone.js 遅延初期化 + try/catch安全ガード）
@@ -1819,7 +1823,7 @@
         try {
             const raw = localStorage.getItem(STORAGE_KEY);
             if (raw) {
-                return new Set(JSON.parse(raw).filter(k => validKeys.has(k)));
+                return new Set(JSON.parse(raw).map(k => RENAMED_STEP_KEYS[k] || k).filter(k => validKeys.has(k)));
             }
             // v3（数値ID）からの移行
             const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
@@ -2027,7 +2031,7 @@
         const useFlat = keyParts.useFlat;
         const def = resolveChordDef(chordDef, config.diff);
 
-        const label = transposeChordLabel(def.label, shift, useFlat, keyParts.short, meta.isMinor ? (meta.baseTonicPc === 9 ? 'A' : 'C') : 'C');
+        const label = transposeChordLabel(def.label, shift, useFlat, keyParts.short, meta.baseTonicLetter || 'C');
         const notes = def.notes.map(pc => mod12(pc + shift));
         const root = mod12(def.root + shift);
 

@@ -19,11 +19,12 @@
 - ドキュメント: 本ファイルと docs/PLAN.md を作成。道場シリーズの共通部品検討用に docs/INVENTORY.md（中身の一覧）を作成。
 - 著作権表示: LICENSE（All rights reserved）、THIRD_PARTY_NOTICES.md、README.md（収録進行の権利の状態）、ホーム画面下部の表示を追加。
 - GitHub の公開リポジトリ cellish/voicing-dojo を作成して push。ローカルのフォルダ名を voicing-dojo に変更。
+- 枯葉サイクルをヘンデル《パッサカリア》HWV 432 に差し替え（原調ト短調、テーマの旋律付き。同じ4度上行の循環で、原曲が公有のため旋律を鳴らせる）。楽譜は利用者が用意した画像から書き起こし。保存済みの進捗は新IDへ引き継ぐ。
 
 ## 次のタスク
 
 1. iOS / iPad 実機で確認: 伴奏・ドラムと描画のずれ、マルチタッチ、テーマ（ライト/ダーク）、低い画面での表示時間の自動調整。
 2. 実際に遊んで定数を調整: 判定幅（`HIT_WINDOW_*`）、Just の幅とボーナス（`JUST_TIMING_SEC` / `JUST_BONUS`）、表示時間の3段階。
-3. 音源の見直しと CDN 依存の解消（[PLAN.md §6 Phase B](docs/PLAN.md#6-ロードマップ)）。
+3. 音源の見直しと CDN 依存の解消。音を出す仕組みを他アプリと共通化し、旋律に音価を持たせてパッサカリアの旋律を書き足す（[PLAN.md §6 Phase B](docs/PLAN.md#6-ロードマップ)）。
 4. 構成音ヒントの調に沿った綴り（[PLAN.md §6 Phase C](docs/PLAN.md#6-ロードマップ)）。
 5. スクリーンリーダー（VoiceOver）での操作確認。

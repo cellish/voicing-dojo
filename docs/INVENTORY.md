@@ -13,7 +13,7 @@
   - 12キー制覇コース（全13ステップ・4フェーズ、ミスしたキーは最後に自動復習）… `COURSE_STEPS`, `handleKeyCleared`
   - フリー練習（進行・キー・難易度・ボイシング・BPM・周回・表示時間・耳コピを設定）… `startFreeSession`
   - 3種のボイシング判定: フル / ガイドトーン / ルートレス … `buildChordTarget`, `tryJudgeHit`
-  - 6種の進行: メジャー ii-V-I、マイナー ii-V-i、王道、カノン（オンコード）、枯葉サイクル、丸サ … `PROGRESSIONS`
+  - 6種の進行: メジャー ii-V-I、マイナー ii-V-i、王道、カノン（オンコード）、パッサカリア（ヘンデル）、丸サ … `PROGRESSIONS`
   - 伴奏（ベース・ガイドトーン旋律・ドラム）、耳コピモード（コード名を隠してヒント音を再生）
   - テーマ（モダン＝既定・OS のライト/ダークに追従 / ネオン）… `applyTheme`
 - **言語・フレームワーク**: 素の HTML / CSS / JavaScript（ES2020 程度、IIFE 1つ）。フレームワークなし。
@@ -68,7 +68,7 @@
 
 ### 調・転調
 - 調は `CIRCLE_OF_FIFTHS`（12要素）の要素で表す: `tonicPc`、長調/短調それぞれの表示名・調号・♭系かどうか。
-- 進行データは原調（C または Am、`SONG_META.baseTonicPc`）で書き、半音数 `shift` を足して移調 … `buildChordTarget`
+- 進行データは原調（C、マイナー ii-V-i は Cm、パッサカリアは Gm。`SONG_META.baseTonicPc` と `baseTonicLetter`）で書き、半音数 `shift` を足して移調 … `buildChordTarget`
 - 移調時、伴奏のベース・旋律は**進行全体を同じオクターブだけ**ずらして音域（`BASS_RANGE` 36–55、`MELODY_RANGE` 55–79）に収める … `fitOctaveShift`, `getRangeShifts`
 - 「転調」は**周回ごとのキー変更**（五度圏順に次のキーへ）だけ … `transitionToCourseKey`。進行の途中での転調（借用和音・セカンダリードミナント）は度数ラベルで表すだけで、調としては扱わない。
 
@@ -100,9 +100,9 @@
 進行のメタ情報（`SONG_META`）:
 
 ```js
-autumn: { name: '枯葉サイクル', isMinor: true, baseTonicPc: 9, keyOrder: AM_START_ORDER }
+passacaglia: { name: 'パッサカリア（ヘンデル）', isMinor: true, baseTonicPc: 7, keyOrder: GM_START_ORDER, baseTonicLetter: 'G' }
 ```
-`keyOrder` は `CIRCLE_OF_FIFTHS` の添字の並び（`C_START_ORDER` = C→F→B♭…、`AM_START_ORDER` = Am→Dm→Gm…）。
+`keyOrder` は `CIRCLE_OF_FIFTHS` の添字の並び（`C_START_ORDER` = C→F→B♭…、`GM_START_ORDER` = Gm→Cm→Fm…）。`baseTonicLetter` はコード名の綴りの基準になる原調の主音の文字（省略時 C）。
 
 コースのステップ（`COURSE_STEPS` の1要素）:
 
@@ -146,7 +146,7 @@ autumn: { name: '枯葉サイクル', isMinor: true, baseTonicPc: 9, keyOrder: A
 | 言語切替 | **なし** | 日本語のみ（`<html lang="ja">`）。UI 文言は HTML と JS に直書き |
 | 保存 | あり | localStorage: `chord_master_cleared_steps_v4`（クリア済みステップの固定ID配列）、`chord_master_cleared_steps_v3`（旧形式、読み込み時に移行のみ）、`chord_master_prefs_v1`（フリー設定・周回数・表示時間・オクターブ・ビート/メロディ・テーマ）… `loadClearedSteps`, `saveClearedSteps`, `savePrefs`, `loadPrefs`。`<head>` 内のインラインスクリプトもテーマを先読み |
 | PWA・オフライン | **なし** | manifest・Service Worker なし。Tone.js を CDN から読むためオフラインでは音が出ない（推測：画面自体は開ける） |
-| 著作権表示 | あり | `LICENSE`（All rights reserved）、`THIRD_PARTY_NOTICES.md`、`README.md` の「著作権・ライセンス」（収録進行ごとの権利の状態）、ホーム画面下部の `<footer class="app-foot">`。コードのコメントにも「旋律はオリジナルのガイドトーン・ライン（原曲旋律は不使用）」（`PROGRESSIONS.autumn` の直前） |
+| 著作権表示 | あり | `LICENSE`（All rights reserved）、`THIRD_PARTY_NOTICES.md`、`README.md` の「著作権・ライセンス」（収録進行ごとの権利の状態）、ホーム画面下部の `<footer class="app-foot">`。コードのコメントにパッサカリアの出典（ヘンデル HWV 432、利用者が用意した楽譜画像から書き起こし）（`PROGRESSIONS.passacaglia` の直前） |
 
 その他の機能:
 - テーマ: CSS 変数＋`html[data-theme="modern"|"retro"]`、Canvas は `CANVAS_THEMES`（retro / modernLight / modernDark）… `applyTheme`, `buildFonts`
@@ -175,7 +175,7 @@ autumn: { name: '枯葉サイクル', isMinor: true, baseTonicPc: 9, keyOrder: A
 |---|---|---|
 | ピッチクラス・音名の基本表 | `mod12`, `NOTE_TO_PC`, `NOTE_NAMES_SHARP/FLAT`, `PC_NAMES_SHARP/FLAT`, `MIDI_FREQ_TABLE` | どの音楽アプリでも必要で、アプリ固有の前提がない |
 | 調の表 | `CIRCLE_OF_FIFTHS`（長調/短調の名前・調号・♭系フラグ） | 移調・表示に共通。ただし短調の綴り選択（A♭m ではなく G♯m）はこのアプリの判断 |
-| 調に沿った綴り | `spellInKey`, `transposeChordLabel`, `CHORD_LABEL_REGEX` | 異名同音の表示問題は他アプリでも起きる（推測）。ただし今は原調 C/Am の文字を基準にしているので、一般化には「原調の主音」を引数で渡す形が必要 |
+| 調に沿った綴り | `spellInKey`, `transposeChordLabel`, `CHORD_LABEL_REGEX` | 異名同音の表示問題は他アプリでも起きる（推測）。原調の主音の文字は `SONG_META.baseTonicLetter` で渡す形になっている |
 | 音程によるガイドトーン抽出 | `pickGuideTones` | 構成音の並び順に依存せず、ルートからの音程だけで3度・7度を選ぶ。和声系アプリで再利用しやすい |
 | 進行単位の音域合わせ | `fitOctaveShift` | 旋律・ベースの形を崩さずに音域へ収める汎用処理 |
 | MIDI 入力 | `onMIDIMessage`, `updateMidiDevices`, `requestMIDI` | 小さく自己完結。ただし処理は Note On/Off のみ |
@@ -205,6 +205,8 @@ autumn: { name: '枯葉サイクル', isMinor: true, baseTonicPc: 9, keyOrder: A
 - **度数ラベルとコード名が別々の手書き文字列**: 構成音・コード名・度数の3つが整合しているかを保証する仕組みはない（推測：データ追加時に食い違いが起きやすい）。
 - **MIDI**: サステインペダル（CC64）・ベロシティを無視する。全チャンネルの入力を区別なく受ける。
 - **耳コピのヒント**: 和音ヒントは構成音の先頭4音だけを C4〜B5 付近で鳴らす（5音目は鳴らない）… `spawnNextBlock`
+- **旋律は1和音1音だけ（あとの課題）**: 伴奏の旋律は各和音の頭の1音（`melMidi`）しか持てず、音価・リズムを表せない。パッサカリア（ヘンデル）の旋律も原曲の付点リズムや16分音符を省き、和音頭の音だけを鳴らしている … `scheduleAccompaniment`。
+  16分音符まで鳴らせるようにし、パッサカリアの旋律を書き足すのは**あとの課題**とする。音を出す仕組み（音価を持つ旋律データの形、拍に合わせた予約）は道場シリーズの他アプリとある程度共通にする予定なので、その検討に合わせて作り直す（作者の方針、2026-11-25）。
 - **保存キーが旧名称**（`chord_master_…`）: 既存の進捗を壊さないため意図的に維持。
 - **テストがリポジトリにない**: 動作確認に使った Node スタブの通しプレイはリポジトリ外。自動テストはない。
 - **TODO / FIXME コメント**: なし。
