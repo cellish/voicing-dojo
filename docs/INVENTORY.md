@@ -10,12 +10,12 @@
 - **アプリ名**: Voicing Dojo（旧称 Chord Master。フォルダ名は `chord-shooter`）
 - **目的**: 上から降りてくるコードを判定ラインで鍵盤で弾き、コード進行のボイシング（押さえ方）と声部の動きを全12キーで練習する。
 - **主な機能**
-  - 12キー制覇コース（全19ステップ・4フェーズ、ミスしたキーは最後に自動復習）… `COURSE_STEPS`, `handleKeyCleared`
+  - 12キー制覇コース（全23ステップ・5フェーズ、ミスしたキーは最後に自動復習）… `COURSE_STEPS`, `handleKeyCleared`
   - フリー練習（進行・キー・難易度・ボイシング・BPM・周回・表示時間・耳コピを設定）… `startFreeSession`
   - チャレンジ（今日のドリル・スピードアップ・耳コピ・苦手キー克服）… `startChallenge`, `renderChallengeMenu`
   - 自己ベスト・ランク・コンボ・実績・連続練習日数 … `recordResult`, `computeRank`, `ACHIEVEMENTS`, `recordActivityDay`
-  - 3種のボイシング判定: フル / ガイドトーン / ルートレス … `buildChordTarget`, `tryJudgeHit`
-  - 7種の進行: メジャー ii-V-I、マイナー ii-V-i、循環進行、王道、カノン（オンコード）、パッサカリア（ヘンデル）、丸サ … `PROGRESSIONS`
+  - 4種のボイシング判定: フル / シェル / ガイドトーン / ルートレス … `buildChordTarget`, `tryJudgeHit`
+  - 11種の進行: メジャー ii-V-I、マイナー ii-V-i、循環進行、ブルース12小節、ドミナントの連鎖、裏コード、バックドア、王道、カノン（オンコード）、パッサカリア（ヘンデル）、丸サ … `PROGRESSIONS`
   - 伴奏（ベース・ガイドトーン旋律・ドラム）、耳コピモード（コード名を隠してヒント音を再生）
   - テーマ（モダン＝既定・OS のライト/ダークに追従 / ネオン）… `applyTheme`
 - **言語・フレームワーク**: 素の HTML / CSS / JavaScript（ES2020 程度、IIFE 1つ）。フレームワークなし。

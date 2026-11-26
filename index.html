@@ -1228,13 +1228,13 @@
 
             <div class="home-cards">
                 <button class="mode-card course" id="btn-open-course" type="button">
-                    <span class="card-pill">はじめての方はこちら・全19ステップ</span>
+                    <span class="card-pill">はじめての方はこちら・全23ステップ</span>
                     <h2><span class="ico">🔰 </span>12キー制覇コース</h2>
-                    <p>3和音 → ガイドトーン → 4和音 → 5和音ルートレスの順に、6つの定番進行を全12キーで。ミスしたキーは最後に自動で復習します。</p>
+                    <p>3和音 → ガイドトーン → 4和音 → 5和音ルートレス → ジャズの定番進行の順に、全12キーで。ミスしたキーは最後に自動で復習します。</p>
                 </button>
 
                 <button class="mode-card" id="btn-open-free" type="button">
-                    <span class="card-pill">全7進行・自由設定</span>
+                    <span class="card-pill">全11進行・自由設定</span>
                     <h2><span class="ico">🎹 </span>フリー練習</h2>
                     <p>進行・キー・難易度・ボイシング・テンポを選んで練習。コード名を隠す耳コピモードもあります。</p>
                 </button>
@@ -1255,13 +1255,13 @@
     </section>
 
     <!-- =====================================================================
-         2. コース選択画面（全19ステップ・Phase別・周回数設定）
+         2. コース選択画面（全23ステップ・Phase別・周回数設定）
          ===================================================================== -->
     <section id="course-menu-screen" class="overlay-screen hidden">
         <div class="screen-inner">
             <div class="sub-header">
                 <button class="btn" id="btn-course-back" type="button">◀ ホームへ</button>
-                <h2><span class="ico">🔰 </span>12キー制覇コース（全19ステップ）</h2>
+                <h2><span class="ico">🔰 </span>12キー制覇コース（全23ステップ）</h2>
                 <span class="status-badge" id="course-clear-badge">クリア: 0 / 13</span>
             </div>
 
@@ -1276,6 +1276,14 @@
                         <option value="1" selected>1周（デフォルト）</option>
                         <option value="2">2周</option>
                         <option value="3">3周</option>
+                    </select>
+                </label>
+                <label class="laps-selector">
+                    <span>キーの順番:</span>
+                    <select id="course-order-select">
+                        <option value="fifths" selected>五度圏順</option>
+                        <option value="chromatic">半音ずつ上がる</option>
+                        <option value="random">ランダム</option>
                     </select>
                 </label>
                 <label class="laps-selector">
@@ -1307,7 +1315,7 @@
                 <div class="settings-card">
                     <h3><span class="ico">🎵 </span>楽曲とキー</h3>
                     <div class="field">
-                        <label for="free-song">コード進行（全7曲）</label>
+                        <label for="free-song">コード進行（全11曲）</label>
                         <select id="free-song">
                             <option value="ii_V_I_maj">メジャー ii-V-I（ii - V - I - I）</option>
                             <option value="ii_V_i_min">マイナー ii-V-i（ii° - V - i - i）</option>
@@ -1316,6 +1324,10 @@
                             <option value="canon">カノン進行・オンコード（I - V on 7 - vi …）</option>
                             <option value="passacaglia">パッサカリア・ヘンデル（i - iv - ♭VII - ♭III …）</option>
                             <option value="citypop">丸サ進行（IV - III - vi - v・I）</option>
+                            <option value="blues">ブルース12小節（I7 - IV7 - I7 …）</option>
+                            <option value="dominant_chain">ドミナントの連鎖（III7 - VI7 - II7 - V7 - I）</option>
+                            <option value="tritone_sub">裏コード（ii - ♭II7 - I）</option>
+                            <option value="backdoor">バックドア（iv - ♭VII7 - I）</option>
                         </select>
                     </div>
                     <div class="field">
@@ -1346,6 +1358,7 @@
                         <label for="free-mode">ボイシングモード</label>
                         <select id="free-mode">
                             <option value="full">フル（全構成音・ベース一致で満点）</option>
+                            <option value="shell">シェル（ルート・3度・7度）</option>
                             <option value="guide">ガイドトーン（3度・7度メイン）</option>
                             <option value="rootless">ルートレス（ルート抜き）</option>
                         </select>
@@ -1412,6 +1425,7 @@
                     <span>ボイシング:</span>
                     <select id="ch-level">
                         <option value="triad">3和音・フル</option>
+                        <option value="shell">シェル（ルート・3度・7度）</option>
                         <option value="guide">ガイドトーン</option>
                         <option value="seventh" selected>4和音・フル</option>
                         <option value="rootless">5和音・ルートレス</option>
@@ -1422,6 +1436,14 @@
                     <select id="ch-hint">
                         <option value="chord" selected>コード和音</option>
                         <option value="bass_melody">ベース＋メロディ</option>
+                    </select>
+                </label>
+                <label class="laps-selector">
+                    <span>キーの順番:</span>
+                    <select id="ch-order-select">
+                        <option value="fifths" selected>五度圏順</option>
+                        <option value="chromatic">半音ずつ上がる</option>
+                        <option value="random">ランダム</option>
                     </select>
                 </label>
                 <div class="course-toolbar-info">進行とボイシングは、スピードアップ・耳コピ・苦手キー克服に使います（今日のドリルは日替わり）。</div>
@@ -1613,13 +1635,17 @@
     const CHORD_LABEL_REGEX = /^([A-G][#b]?)(.*?)(?:\/([A-G][#b]?))?$/;
 
     /* =========================================================================
-       2. 楽曲データ（全7曲・音楽理論的に正確なボイシング）
+       2. 楽曲データ（全11曲・音楽理論的に正確なボイシング）
        ========================================================================= */
     // 度数表記は PROGRESSIONS の deg / deg_int / deg_adv から難易度別に自動生成する（getDegreeText）
     const SONG_META = Object.freeze({
         ii_V_I_maj: { name: 'メジャー ii-V-I',         isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER },
         ii_V_i_min: { name: 'マイナー ii-V-i',         isMinor: true,  baseTonicPc: 0, keyOrder: C_START_ORDER },
         turnaround: { name: '循環進行（I-VI-ii-V）',    isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER },
+        blues:      { name: 'ブルース（12小節）',      isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER },
+        dominant_chain: { name: 'ドミナントの連鎖',    isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER },
+        tritone_sub: { name: '裏コード（ii-♭II7-I）',  isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER },
+        backdoor:   { name: 'バックドア（iv-♭VII-I）', isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER },
         pop:        { name: '王道進行',                isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER },
         canon:      { name: 'カノン進行（オンコード）', isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER },
         passacaglia: { name: 'パッサカリア（ヘンデル）', isMinor: true,  baseTonicPc: 7, keyOrder: GM_START_ORDER, baseTonicLetter: 'G' },
@@ -1652,6 +1678,44 @@
             { label: 'A',  label_int: 'A7',    label_adv: 'A7(b9)', deg: 'VI', deg_int: 'VI7',   deg_adv: 'VI7(b9)', bassMidi: 45, root: 9, notes: [9, 1, 4],  seventh: [9, 1, 4, 7],  ninth: [9, 1, 4, 7, 10],  melMidi: 67 },
             { label: 'Dm', label_int: 'Dm7',   label_adv: 'Dm9',    deg: 'ii', deg_int: 'ii7',   deg_adv: 'ii9',     bassMidi: 50, root: 2, notes: [2, 5, 9],  seventh: [2, 5, 9, 0],  ninth: [2, 5, 9, 0, 4],   melMidi: 65 },
             { label: 'G',  label_int: 'G7',    label_adv: 'G9',     deg: 'V',  deg_int: 'V7',    deg_adv: 'V9',      bassMidi: 43, root: 7, notes: [7, 11, 2], seventh: [7, 11, 2, 5], ninth: [7, 11, 2, 5, 9],  melMidi: 65 }
+        ],
+        // ブルース12小節（1小節1和音）：I7 と IV7・V7 だけ（全部ドミナント7th）。旋律は作者自身のガイドトーン（I7 の3度と IV7 の7度が半音で行き来する）
+        blues: [
+            { label: 'C', label_int: 'C7', label_adv: 'C9', deg: 'I', deg_int: 'I7', deg_adv: 'I9', bassMidi: 48, root: 0, notes: [0, 4, 7], seventh: [0, 4, 7, 10], ninth: [0, 4, 7, 10, 2], melMidi: 64 },
+            { label: 'F', label_int: 'F7', label_adv: 'F9', deg: 'IV', deg_int: 'IV7', deg_adv: 'IV9', bassMidi: 41, root: 5, notes: [5, 9, 0], seventh: [5, 9, 0, 3], ninth: [5, 9, 0, 3, 7], melMidi: 63 },
+            { label: 'C', label_int: 'C7', label_adv: 'C9', deg: 'I', deg_int: 'I7', deg_adv: 'I9', bassMidi: 48, root: 0, notes: [0, 4, 7], seventh: [0, 4, 7, 10], ninth: [0, 4, 7, 10, 2], melMidi: 64 },
+            { label: 'C', label_int: 'C7', label_adv: 'C9', deg: 'I', deg_int: 'I7', deg_adv: 'I9', bassMidi: 48, root: 0, notes: [0, 4, 7], seventh: [0, 4, 7, 10], ninth: [0, 4, 7, 10, 2], melMidi: 64 },
+            { label: 'F', label_int: 'F7', label_adv: 'F9', deg: 'IV', deg_int: 'IV7', deg_adv: 'IV9', bassMidi: 41, root: 5, notes: [5, 9, 0], seventh: [5, 9, 0, 3], ninth: [5, 9, 0, 3, 7], melMidi: 63 },
+            { label: 'F', label_int: 'F7', label_adv: 'F9', deg: 'IV', deg_int: 'IV7', deg_adv: 'IV9', bassMidi: 41, root: 5, notes: [5, 9, 0], seventh: [5, 9, 0, 3], ninth: [5, 9, 0, 3, 7], melMidi: 63 },
+            { label: 'C', label_int: 'C7', label_adv: 'C9', deg: 'I', deg_int: 'I7', deg_adv: 'I9', bassMidi: 48, root: 0, notes: [0, 4, 7], seventh: [0, 4, 7, 10], ninth: [0, 4, 7, 10, 2], melMidi: 64 },
+            { label: 'C', label_int: 'C7', label_adv: 'C9', deg: 'I', deg_int: 'I7', deg_adv: 'I9', bassMidi: 48, root: 0, notes: [0, 4, 7], seventh: [0, 4, 7, 10], ninth: [0, 4, 7, 10, 2], melMidi: 64 },
+            { label: 'G', label_int: 'G7', label_adv: 'G9', deg: 'V', deg_int: 'V7', deg_adv: 'V9', bassMidi: 43, root: 7, notes: [7, 11, 2], seventh: [7, 11, 2, 5], ninth: [7, 11, 2, 5, 9], melMidi: 65 },
+            { label: 'F', label_int: 'F7', label_adv: 'F9', deg: 'IV', deg_int: 'IV7', deg_adv: 'IV9', bassMidi: 41, root: 5, notes: [5, 9, 0], seventh: [5, 9, 0, 3], ninth: [5, 9, 0, 3, 7], melMidi: 63 },
+            { label: 'C', label_int: 'C7', label_adv: 'C9', deg: 'I', deg_int: 'I7', deg_adv: 'I9', bassMidi: 48, root: 0, notes: [0, 4, 7], seventh: [0, 4, 7, 10], ninth: [0, 4, 7, 10, 2], melMidi: 64 },
+            { label: 'G', label_int: 'G7', label_adv: 'G9', deg: 'V', deg_int: 'V7', deg_adv: 'V9', bassMidi: 43, root: 7, notes: [7, 11, 2], seventh: [7, 11, 2, 5], ninth: [7, 11, 2, 5, 9], melMidi: 65 }
+        ],
+        // ドミナントの連鎖：III7-VI7-II7-V7-I（4度上行でドミナントが続き、I へ解決）。旋律は 7度→次の3度 が半音で下がり続けるガイドトーン（作者自身）
+        dominant_chain: [
+            { label: 'E', label_int: 'E7', label_adv: 'E7(b9)', deg: 'III', deg_int: 'III7', deg_adv: 'III7(b9)', bassMidi: 40, root: 4, notes: [4, 8, 11], seventh: [4, 8, 11, 2], ninth: [4, 8, 11, 2, 5], melMidi: 62 },
+            { label: 'A', label_int: 'A7', label_adv: 'A7(b9)', deg: 'VI', deg_int: 'VI7', deg_adv: 'VI7(b9)', bassMidi: 45, root: 9, notes: [9, 1, 4], seventh: [9, 1, 4, 7], ninth: [9, 1, 4, 7, 10], melMidi: 61 },
+            { label: 'D', label_int: 'D7', label_adv: 'D9', deg: 'II', deg_int: 'II7', deg_adv: 'II9', bassMidi: 50, root: 2, notes: [2, 6, 9], seventh: [2, 6, 9, 0], ninth: [2, 6, 9, 0, 4], melMidi: 60 },
+            { label: 'G', label_int: 'G7', label_adv: 'G9', deg: 'V', deg_int: 'V7', deg_adv: 'V9', bassMidi: 43, root: 7, notes: [7, 11, 2], seventh: [7, 11, 2, 5], ninth: [7, 11, 2, 5, 9], melMidi: 59 },
+            { label: 'C', label_int: 'Cmaj7', label_adv: 'Cmaj9', deg: 'I', deg_int: 'Imaj7', deg_adv: 'Imaj9', bassMidi: 48, root: 0, notes: [0, 4, 7], seventh: [0, 4, 7, 11], ninth: [0, 4, 7, 11, 2], melMidi: 60 },
+            { label: 'C', label_int: 'C6', label_adv: 'C6(9)', deg: 'I', deg_int: 'I6', deg_adv: 'I6(9)', bassMidi: 48, root: 0, notes: [0, 4, 7], seventh: [0, 4, 7, 9], ninth: [0, 4, 7, 9, 2], melMidi: 64 }
+        ],
+        // 裏コード：ii-♭II7-I。♭II7 は V7 と3度・7度が同じ（入れ替わる）ので、ガイドトーンは V7 と同じ形になる
+        tritone_sub: [
+            { label: 'Dm', label_int: 'Dm7', label_adv: 'Dm9', deg: 'ii', deg_int: 'ii7', deg_adv: 'ii9', bassMidi: 50, root: 2, notes: [2, 5, 9], seventh: [2, 5, 9, 0], ninth: [2, 5, 9, 0, 4], melMidi: 65 },
+            { label: 'Db', label_int: 'Db7', label_adv: 'Db9', deg: '♭II', deg_int: '♭II7', deg_adv: '♭II9', bassMidi: 49, root: 1, notes: [1, 5, 8], seventh: [1, 5, 8, 11], ninth: [1, 5, 8, 11, 3], melMidi: 65 },
+            { label: 'C', label_int: 'Cmaj7', label_adv: 'Cmaj9', deg: 'I', deg_int: 'Imaj7', deg_adv: 'Imaj9', bassMidi: 48, root: 0, notes: [0, 4, 7], seventh: [0, 4, 7, 11], ninth: [0, 4, 7, 11, 2], melMidi: 64 },
+            { label: 'C', label_int: 'C6', label_adv: 'C6(9)', deg: 'I', deg_int: 'I6', deg_adv: 'I6(9)', bassMidi: 48, root: 0, notes: [0, 4, 7], seventh: [0, 4, 7, 9], ninth: [0, 4, 7, 9, 2], melMidi: 64 }
+        ],
+        // バックドア：ivm7-♭VII7-I（同主短調から借りた和音で I へ）。旋律は作者自身のガイドトーン
+        backdoor: [
+            { label: 'Fm', label_int: 'Fm7', label_adv: 'Fm9', deg: 'iv', deg_int: 'ivm7', deg_adv: 'ivm9', bassMidi: 41, root: 5, notes: [5, 8, 0], seventh: [5, 8, 0, 3], ninth: [5, 8, 0, 3, 7], melMidi: 68 },
+            { label: 'Bb', label_int: 'Bb7', label_adv: 'Bb9', deg: '♭VII', deg_int: '♭VII7', deg_adv: '♭VII9', bassMidi: 46, root: 10, notes: [10, 2, 5], seventh: [10, 2, 5, 8], ninth: [10, 2, 5, 8, 0], melMidi: 68 },
+            { label: 'C', label_int: 'Cmaj7', label_adv: 'Cmaj9', deg: 'I', deg_int: 'Imaj7', deg_adv: 'Imaj9', bassMidi: 48, root: 0, notes: [0, 4, 7], seventh: [0, 4, 7, 11], ninth: [0, 4, 7, 11, 2], melMidi: 67 },
+            { label: 'C', label_int: 'C6', label_adv: 'C6(9)', deg: 'I', deg_int: 'I6', deg_adv: 'I6(9)', bassMidi: 48, root: 0, notes: [0, 4, 7], seventh: [0, 4, 7, 9], ninth: [0, 4, 7, 9, 2], melMidi: 67 }
         ],
         // 王道進行
         pop: [
@@ -1697,13 +1761,14 @@
     });
 
     /* =========================================================================
-       3. 12キー制覇コース（全19ステップ・4フェーズ）
+       3. 12キー制覇コース（全23ステップ・5フェーズ）
        ========================================================================= */
     const COURSE_PHASES = Object.freeze([
         { id: 1, tag: 'Phase 1', title: '3和音で一通りマスター（Triad・フル）' },
         { id: 2, tag: 'Phase 2', title: 'ガイドトーン（3度・7度の2音で滑らかに繋ぐ）' },
         { id: 3, tag: 'Phase 3', title: '4和音・7thを習得（4和音・フル）' },
-        { id: 4, tag: 'Phase 4', title: '5和音・ルートレス（プロ仕様の洗練ボイシング）' }
+        { id: 4, tag: 'Phase 4', title: '5和音・ルートレス（プロ仕様の洗練ボイシング）' },
+        { id: 5, tag: 'Phase 5', title: '応用：ジャズの定番進行（4和音・フル）' }
     ]);
 
     // key は保存用の安定ID（並び替えても進捗がずれない）。度数表記は進行データから自動生成。
@@ -1771,7 +1836,20 @@
           mission: 'ルート抜きの4音。転回して最小移動で繋ぐと Smooth +100' },
         { id: 18, key: 'p4-citypop', phase: 4, title: '丸サ進行（5和音ルートレス）', song: 'citypop', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 85,
           goal: 'ルートをベースに任せ、9th・♭9を含む4音で弾くプロ仕様の響き',
-          mission: 'ルート抜きの4音。転回して最小移動で繋ぐと Smooth +100' }
+          mission: 'ルート抜きの4音。転回して最小移動で繋ぐと Smooth +100' },
+        // Phase 5（応用：ジャズの定番進行）
+        { id: 19, key: 'p5-blues', phase: 5, title: 'ブルース12小節', song: 'blues', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 100,
+          goal: '全部がドミナント7th。I7 の3度と IV7 の7度が半音で行き来する（C なら ミ ⇄ ミ♭）',
+          mission: '12小節で1キー。最低音をルートにすると Perfect +100' },
+        { id: 20, key: 'p5-dominant', phase: 5, title: 'ドミナントの連鎖', song: 'dominant_chain', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+          goal: 'III7-VI7-II7-V7 と4度ずつドミナントが続き I へ。7度が半音下がって次の3度になる流れが続く',
+          mission: '調の外の3度（C なら ソ♯・ド♯・ファ♯）に注意。最低音をルートにすると Perfect +100' },
+        { id: 21, key: 'p5-tritone', phase: 5, title: '裏コード ii-♭II7-I', song: 'tritone_sub', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+          goal: 'V7 の代わりに半音上の ♭II7。3度と7度は V7 と同じ音で、ベースが半音で下がる',
+          mission: '♭II7 の7度は V7 の3度と同じ音。最低音をルートにすると Perfect +100' },
+        { id: 22, key: 'p5-backdoor', phase: 5, title: 'バックドア ivm7-♭VII7-I', song: 'backdoor', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+          goal: '同主短調から借りた ivm7 と ♭VII7 で、V7 を通らずに I へ',
+          mission: '♭VII7 の7度（C なら ラ♭）が I の5度へ下がる。最低音をルートにすると Perfect +100' }
     ]);
 
     // 旧バージョン(v3: 数値ID)の進捗を新しい安定IDへ移行する対応表（旧Step5=3和音の循環進行は廃止）
@@ -1945,6 +2023,7 @@
     // ---- チャレンジ ----
     const CHALLENGE_LEVELS = Object.freeze({
         triad:    { diff: 'beginner',     mode: 'full',     label: '3和音・フル' },
+        shell:    { diff: 'intermediate', mode: 'shell',    label: 'シェル' },
         guide:    { diff: 'intermediate', mode: 'guide',    label: 'ガイドトーン' },
         seventh:  { diff: 'intermediate', mode: 'full',     label: '4和音・フル' },
         rootless: { diff: 'advanced',     mode: 'rootless', label: '5和音・ルートレス' }
@@ -1967,6 +2046,7 @@
         { id: 'phase_2', title: 'Phase 2 修了', desc: 'Phase 2 をすべて制覇', check: c => c.phaseDone(2) },
         { id: 'phase_3', title: 'Phase 3 修了', desc: 'Phase 3 をすべて制覇', check: c => c.phaseDone(3) },
         { id: 'phase_4', title: 'Phase 4 修了', desc: 'Phase 4 をすべて制覇', check: c => c.phaseDone(4) },
+        { id: 'phase_5', title: 'Phase 5 修了', desc: 'Phase 5 をすべて制覇', check: c => c.phaseDone(5) },
         { id: 'all_steps', title: '免許皆伝', desc: 'コースの全ステップを制覇', check: c => c.clearedCount >= COURSE_STEPS.length },
         { id: 'rank_s', title: 'S ランク', desc: 'どこかで S ランクを取る', check: c => c.rank === 'S' },
         { id: 'combo_50', title: '50 コンボ', desc: '1回で50コンボ', check: c => c.maxCombo >= 50 },
@@ -2073,6 +2153,8 @@
         chSong: document.getElementById('ch-song'),
         chLevel: document.getElementById('ch-level'),
         chHint: document.getElementById('ch-hint'),
+        courseOrderSelect: document.getElementById('course-order-select'),
+        chOrderSelect: document.getElementById('ch-order-select'),
         btnResultNext: document.getElementById('btn-result-next'),
         btnResultBack: document.getElementById('btn-result-back'),
         gameShell: document.getElementById('game-shell'),
@@ -2541,6 +2623,10 @@
             required = notes.filter(pc => pc !== root);
         } else if (config.mode === 'guide') {
             required = pickGuideTones(notes, root, !!chordDef.isHalfDim);
+        } else if (config.mode === 'shell') {
+            // シェル：ベース音（ふつうはルート）＋ガイドトーン（3度・7度）。左手の基本形
+            const bassPc = mod12(bassMidi);
+            required = [bassPc, ...pickGuideTones(notes, root, !!chordDef.isHalfDim).filter(pc => pc !== bassPc)];
         } else {
             // フルモード：5音以上のコードでは完全5度の省略を許容（♭5は必須）
             const p5 = mod12(root + 7);
@@ -2557,7 +2643,7 @@
         // 構成音名はコード名のルートの綴りを基準に、度数どおりの文字で表す
         const labelMatch = CHORD_LABEL_REGEX.exec(label);
         const toneNames = spellChordTones(labelMatch ? labelMatch[1] : '', root, notes, useFlat);
-        const hintParts = required.map(pc => toneNames.get(pc));
+        const hintParts = required.map(pc => toneNames.get(pc) || getPcName(pc, useFlat));
         if (optional.length > 0) {
             hintParts.push(`(${toneNames.get(optional[0])})`);
         }
@@ -2715,8 +2801,11 @@
         trackerPhasePill.textContent = '↻ 復習フェーズ';
         frag.appendChild(trackerPhasePill);
 
+        // 弾く順に並べ、今回弾かないキーは後ろへ（keyTrackerBadges は keyOrder 上の位置で引く）
         const order = meta.keyOrder;
-        for (let pos = 0; pos < order.length; pos++) {
+        const displayOrder = keyPlan.concat(order.map((_, pos) => pos).filter(pos => !keyPlan.includes(pos)));
+        keyTrackerBadges = new Array(order.length);
+        for (const pos of displayOrder) {
             const info = CIRCLE_OF_FIFTHS[order[pos]];
             const shortName = prettyKeyName(meta.isMinor ? info.min : info.maj);
             const el = document.createElement('span');
@@ -2724,7 +2813,7 @@
             el.setAttribute('role', 'listitem');
             el.dataset.baseName = shortName;
             el.textContent = shortName;
-            keyTrackerBadges.push(el);
+            keyTrackerBadges[pos] = el;
             frag.appendChild(el);
         }
         dom.keyTracker.appendChild(frag);
@@ -2790,7 +2879,7 @@
         config.blindMode = 'off';
 
         challengeType = null;
-        resetKeyPlan([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+        resetKeyPlan(buildKeyPlan(config.song, dom.courseOrderSelect.value));
 
         dom.btnNavSub.innerHTML = '☰<span class="lbl"> コース一覧</span>';
         dom.btnNavSub.setAttribute('aria-label', 'コース一覧');
@@ -2808,7 +2897,7 @@
         config.lookaheadSec = Number(dom.courseSpeedSelect.value) || 2.8;
         config.blindMode = 'off';
         config.lapsToClear = 1;
-        let plan = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+        let plan = null;
         let title, desc;
 
         if (type === 'daily') {
@@ -2840,7 +2929,7 @@
                 desc = 'ミスの多かったキーを各2周。ノーミスで弾くと苦手が減ります';
             }
         }
-        resetKeyPlan(plan);
+        resetKeyPlan(plan || buildKeyPlan(config.song, dom.chOrderSelect.value));
 
         dom.btnNavSub.innerHTML = '☰<span class="lbl"> チャレンジ一覧</span>';
         dom.btnNavSub.setAttribute('aria-label', 'チャレンジ一覧');
@@ -2850,6 +2939,22 @@
         dom.missionDesc.title = desc;
 
         await launchSession();
+    }
+
+    // 12キーを弾く順（keyOrder 上の位置の並び）。五度圏順・半音ずつ上がる順（原調から）・ランダム
+    function buildKeyPlan(song, orderMode) {
+        const order = getSongKeyOrder(song);
+        const plan = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+        if (orderMode === 'chromatic') {
+            const basePc = CIRCLE_OF_FIFTHS[order[0]].tonicPc;
+            plan.sort((a, b) => mod12(CIRCLE_OF_FIFTHS[order[a]].tonicPc - basePc) - mod12(CIRCLE_OF_FIFTHS[order[b]].tonicPc - basePc));
+        } else if (orderMode === 'random') {
+            for (let i = plan.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [plan[i], plan[j]] = [plan[j], plan[i]];
+            }
+        }
+        return plan;
     }
 
     // 12キー＆自動復習ステート初期化（plan＝弾くキーの位置の並び）
@@ -2885,7 +2990,7 @@
 
         const meta = SONG_META[config.song];
         const parts = getKeyDisplayParts(getCurrentKeyInfo(), meta.isMinor);
-        const modeText = config.mode === 'full' ? 'フル' : (config.mode === 'guide' ? 'ガイドトーン' : 'ルートレス');
+        const modeText = ({ full: 'フル', shell: 'シェル', guide: 'ガイドトーン', rootless: 'ルートレス' })[config.mode];
 
         dom.btnNavSub.innerHTML = '☰<span class="lbl"> 設定変更</span>';
         dom.btnNavSub.setAttribute('aria-label', 'フリー練習の設定変更');
@@ -2894,6 +2999,8 @@
         dom.missionDesc.textContent =
             config.mode === 'full'
                 ? '最低音を指定ベースにすると Perfect +100（転回形は +50）'
+                : config.mode === 'shell'
+                    ? 'ルート＋3度＋7度の3音。ルートを一番下にすると Perfect +100'
                 : config.mode === 'guide'
                     ? 'ベースは自動。3度＋7度を近い鍵盤で繋ぐと Smooth +100'
                     : 'ルート抜きで弾き、平均2.5半音以内の移動で Smooth +100';
@@ -3328,7 +3435,7 @@
         const currentNotesArr = Array.from(noteSources.keys());
         let pts, msg, col;
 
-        if (config.mode === 'full') {
+        if (config.mode === 'full' || config.mode === 'shell') {
             let minNote = 128;
             for (let k = 0; k < currentNotesArr.length; k++) {
                 if (currentNotesArr[k] < minNote) minNote = currentNotesArr[k];
@@ -4105,6 +4212,10 @@
         let warn = false;
         if (mode === 'full') {
             text = '全構成音を弾き、一番低い音を指定ベースにすると満点（転回形は半分）。';
+        } else if (mode === 'shell') {
+            text = isTriad ? '3和音には7度がないため、ルート・3度・5度（3和音そのもの）になります（中級以上推奨）。'
+                           : 'ルート・3度・7度の3音（7度が無い和音は6度など）。ルートを一番下にすると満点。左手の基本形です。';
+            warn = isTriad;
         } else if (mode === 'guide') {
             text = isTriad ? '3和音には7度がないため3度＋5度の練習になります（中級以上推奨）。'
                            : '3度と7度（6度・9度で代用する場合あり）だけを弾き、前の和音から近い音へ繋ぎます。';
@@ -4126,7 +4237,8 @@
                 diff: dom.freeDiff.value, mode: dom.freeMode.value, bpm: dom.freeBpm.value,
                 blind: dom.freeBlind.value, melody: config.melodyOn, beat: config.beatOn, speed: dom.freeSpeed.value,
                 courseLaps: dom.courseLapsSelect.value, octave: baseOctave, theme: currentTheme,
-                chSong: dom.chSong.value, chLevel: dom.chLevel.value, chHint: dom.chHint.value
+                chSong: dom.chSong.value, chLevel: dom.chLevel.value, chHint: dom.chHint.value,
+                keyOrder: dom.courseOrderSelect.value
             }));
         } catch {}
     }
@@ -4151,6 +4263,8 @@
         setSelect(dom.chSong, pr.chSong);
         setSelect(dom.chLevel, pr.chLevel);
         setSelect(dom.chHint, pr.chHint);
+        setSelect(dom.courseOrderSelect, pr.keyOrder);
+        setSelect(dom.chOrderSelect, pr.keyOrder);
         setSelect(dom.courseSpeedSelect, pr.speed);
         const bpm = Number(pr.bpm);
         if (bpm >= 60 && bpm <= 140) {
@@ -4219,6 +4333,9 @@
         // 表示時間はコース・フリー共通の設定として両方の選択を同期
         dom.courseSpeedSelect.addEventListener('change', () => { dom.freeSpeed.value = dom.courseSpeedSelect.value; savePrefs(); });
         dom.freeSpeed.addEventListener('change', () => { dom.courseSpeedSelect.value = dom.freeSpeed.value; savePrefs(); });
+        // キーの順番はコースとチャレンジで共通
+        dom.courseOrderSelect.addEventListener('change', () => { dom.chOrderSelect.value = dom.courseOrderSelect.value; savePrefs(); });
+        dom.chOrderSelect.addEventListener('change', () => { dom.courseOrderSelect.value = dom.chOrderSelect.value; savePrefs(); });
         dom.courseLapsSelect.addEventListener('change', (e) => {
             dom.freeLaps.value = e.target.value;
             savePrefs();

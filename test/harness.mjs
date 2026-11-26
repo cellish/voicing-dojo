@@ -14,7 +14,7 @@ function loadScript() {
     const tail = js.lastIndexOf('})();');
     js = js.slice(0, tail) + `
     globalThis.__t = {
-        startCourseStep, startFreeSession, startChallenge, pickWeakKeyPositions, getDailyDrill, getStreak, recordActivityDay, updateTimeline, drawFrame, pressNote, releaseNote,
+        startCourseStep, startFreeSession, startChallenge, buildKeyPlan, pickWeakKeyPositions, getDailyDrill, getStreak, recordActivityDay, updateTimeline, drawFrame, pressNote, releaseNote,
         buildChordTarget, getDegreeText, getHitWindowBeats, getLookaheadBeats, resizeApp, applyTheme, initAudio,
         transposeChordLabel, spellInKey, PROGRESSIONS, SONG_META, CIRCLE_OF_FIFTHS, COURSE_STEPS, computeRank, getStepBestRank,
         state: () => ({ currentBeat, hitStreak, targetStreak, blocks, courseOrderPos, keyStatuses, isReviewPhase,

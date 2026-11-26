@@ -7,10 +7,10 @@ import { loadApp, playCourseStep, playChallenge } from './harness.mjs';
 const plain = (x) => JSON.parse(JSON.stringify(x));
 const stepIndex = (key) => loadApp().T.COURSE_STEPS.findIndex(s => s.key === key);
 
-test('コースは 5 / 4 / 6 / 4 ステップ', () => {
+test('コースは 5 / 4 / 6 / 4 / 4 ステップ', () => {
     const { T } = loadApp();
-    const counts = [1, 2, 3, 4].map(p => T.COURSE_STEPS.filter(s => s.phase === p).length);
-    assert.deepEqual(plain(counts), [5, 4, 6, 4]);
+    const counts = [1, 2, 3, 4, 5].map(p => T.COURSE_STEPS.filter(s => s.phase === p).length);
+    assert.deepEqual(plain(counts), [5, 4, 6, 4, 4]);
     assert.ok(T.COURSE_STEPS.every((s, i) => s.id === i), 'id は並び順と一致');
 });
 
@@ -247,4 +247,64 @@ test('連続日数：昨日練習していれば伸び、空いたら1から', (
     app.T.recordActivityDay();
     assert.equal(app.T.getStreak(), 1);
     assert.equal(app.T.state().activity.best, 4);
+});
+
+test('キーの順番：五度圏順・半音ずつ上がる順・ランダム', () => {
+    const app = loadApp();
+    const { T } = app;
+    const names = (song, plan) => plan.map(pos => T.CIRCLE_OF_FIFTHS[T.SONG_META[song].keyOrder[pos]].maj);
+    assert.deepEqual(plain(names('pop', T.buildKeyPlan('pop', 'fifths'))), ['C', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'B', 'E', 'A', 'D', 'G']);
+    assert.deepEqual(plain(names('pop', T.buildKeyPlan('pop', 'chromatic'))), ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']);
+    // パッサカリアは原調（ト短調）から半音ずつ
+    const pas = T.buildKeyPlan('passacaglia', 'chromatic').map(pos => T.CIRCLE_OF_FIFTHS[T.SONG_META.passacaglia.keyOrder[pos]].min);
+    assert.equal(pas[0], 'Gm');
+    assert.equal(pas[1], 'G#m');
+    const rnd = T.buildKeyPlan('pop', 'random');
+    assert.deepEqual(plain([...rnd].sort((a, b) => a - b)), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], 'ランダムでも12キーを1回ずつ');
+    // 半音順でコースを通しプレイ：弾いたキーの順も半音ずつ
+    app.elements['course-order-select'].value = 'chromatic';
+    const r = playCourseStep(app, stepIndex('p1-maj'));
+    assert.equal(r.done, true);
+    assert.equal(r.chords, 4 * 12);
+});
+
+test('Phase 5 のジャズの定番進行を通しプレイでき、コード名は調に沿って綴る', () => {
+    const app = loadApp();
+    for (const key of ['p5-blues', 'p5-dominant', 'p5-tritone', 'p5-backdoor']) {
+        const step = app.T.COURSE_STEPS[stepIndex(key)];
+        const r = playCourseStep(app, stepIndex(key));
+        assert.equal(r.done, true, key);
+        assert.equal(r.chords, app.T.PROGRESSIONS[step.song].length * 12, key);
+    }
+    const { T } = app;
+    const cfg = T.state().config;
+    const labelsIn = (song, keyName) => {
+        Object.assign(cfg, { song, diff: 'intermediate', mode: 'full' });
+        cfg.cofIdx = T.CIRCLE_OF_FIFTHS.findIndex(c => c.maj === keyName);
+        return T.PROGRESSIONS[song].map(c => T.buildChordTarget(c));
+    };
+    assert.deepEqual(plain(labelsIn('tritone_sub', 'E').map(d => d.label)), ['F#m7', 'F7', 'Emaj7', 'E6']);
+    assert.equal(labelsIn('tritone_sub', 'C')[1].hintText, 'レ♭・ファ・ラ♭・ド♭');
+    assert.deepEqual(plain(labelsIn('backdoor', 'Eb').map(d => d.label)), ['Abm7', 'Db7', 'Ebmaj7', 'Eb6']);
+    assert.deepEqual(plain(labelsIn('dominant_chain', 'F').map(d => d.label)), ['A7', 'D7', 'G7', 'C7', 'Fmaj7', 'F6']);
+    assert.deepEqual(plain(labelsIn('blues', 'Bb').map(d => d.label).slice(0, 2)), ['Bb7', 'Eb7']);
+    // ガイドトーン：♭II7 は V7 と同じ2音（3度と7度が入れ替わる）
+    Object.assign(cfg, { song: 'tritone_sub', diff: 'intermediate', mode: 'guide', cofIdx: 0 });
+    const g = T.buildChordTarget(T.PROGRESSIONS.tritone_sub[1]);
+    assert.deepEqual(plain([...g.required].sort((a, b) => a - b)), [5, 11]);
+});
+
+test('シェル：ルート（指定ベース）＋3度＋7度、ルートが一番下で Perfect', () => {
+    const app = loadApp();
+    const { T } = app;
+    Object.assign(T.state().config, { song: 'ii_V_I_maj', diff: 'intermediate', mode: 'shell', cofIdx: 0 });
+    const req = plain(T.PROGRESSIONS.ii_V_I_maj.map(c => T.buildChordTarget(c).required));
+    assert.deepEqual(req, [[2, 5, 0], [7, 11, 5], [0, 4, 11], [0, 4, 9]]); // Dm7 / G7 / Cmaj7 / C6
+    // チャレンジのボイシングにも使える：4キーをノーミスで弾いて5キー目でミス
+    app.elements['ch-song'].value = 'ii_V_I_maj';
+    app.elements['ch-level'].value = 'shell';
+    const r = playChallenge(app, 'speed', { missAt: 16 });
+    assert.equal(r.state.config.mode, 'shell');
+    assert.equal(r.state.speedKeysCleared, 4);
+    assert.equal(r.state.perfectCount, 16, 'ハーネスはベース音を一番下に弾くので全部 Perfect');
 });
