@@ -1,13 +1,13 @@
-# INVENTORY — Voicing Dojo（chord-shooter）
+# INVENTORY — Voicing Dojo（voicing-dojo）
 
-道場シリーズの共通部品（書法コア）検討用の一覧。2026-11-25 時点の `index.html` を読んで確認した内容。
+道場シリーズの共通部品（書法コア）検討用の一覧。2026-11-25 に `index.html` を読んで作成し、2026-11-27 に見直した内容（全29ステップ・ルートレス A/B・保存キーまで反映）。
 推測は「（推測）」と明記。行番号は目安（同日時点）。
 
 ---
 
 ## 1. 概要
 
-- **アプリ名**: Voicing Dojo（旧称 Chord Master。フォルダ名は `chord-shooter`）
+- **アプリ名**: Voicing Dojo（旧称 Chord Master。旧フォルダ名は `chord-shooter`。今のフォルダ名・リポジトリ名は `voicing-dojo`）
 - **目的**: 上から降りてくるコードを判定ラインで鍵盤で弾き、コード進行のボイシング（押さえ方）と声部の動きを全12キーで練習する。
 - **主な機能**
   - 12キー制覇コース（全29ステップ・6フェーズ、ミスしたキーは最後に自動復習）… `COURSE_STEPS`, `handleKeyCleared`
@@ -114,7 +114,7 @@ passacaglia: { name: 'パッサカリア（ヘンデル）', isMinor: true, base
   diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 85,
   goal: '…', mission: '…' }
 ```
-`key` は保存用の固定ID。`diff` は `beginner|intermediate|advanced`、`mode` は `full|guide|rootless`。
+`key` は保存用の固定ID。`diff` は `beginner|intermediate|advanced`、`mode` は `full|guide|shell|rootless|rootless_ab`（`rootless_ab` は `formStart: 'A'|'B'` も持つ）。
 
 判定用に作られる1コード分の目標（`buildChordTarget` の戻り値、移調済み）:
 
@@ -147,7 +147,7 @@ passacaglia: { name: 'パッサカリア（ヘンデル）', isMinor: true, base
 | 課題・問題データ | あり | すべて `index.html` 内の JS 定数: `PROGRESSIONS`（進行）、`SONG_META`（名前・長短・原調・キー順）、`COURSE_PHASES` / `COURSE_STEPS`（コース）。外部ファイル・JSON は**なし** |
 | ファイル読み込み・書き出し | **なし** | MusicXML・MIDI ファイル・JSON の入出力なし |
 | 言語切替 | **なし** | 日本語のみ（`<html lang="ja">`）。UI 文言は HTML と JS に直書き |
-| 保存 | あり | localStorage: `chord_master_cleared_steps_v4`（クリア済みステップの固定ID配列）、`chord_master_cleared_steps_v3`（旧形式、読み込み時に移行のみ）、`chord_master_prefs_v1`（フリー設定・周回数・表示時間・オクターブ・ビート/メロディ・テーマ）… `loadClearedSteps`, `saveClearedSteps`, `savePrefs`, `loadPrefs`。`<head>` 内のインラインスクリプトもテーマを先読み |
+| 保存 | あり | localStorage: `chord_master_cleared_steps_v4`（クリア済みステップの固定ID配列）、`chord_master_cleared_steps_v3`（旧形式、読み込み時に移行のみ）、`chord_master_prefs_v1`（フリー設定・周回数・表示時間・オクターブ・ビート/メロディ・テーマ）、`chord_master_activity_v1`（練習した日・連続日数・今日のドリル）、`chord_master_keystats_v1`（キーごとのミス・ノーミス回数）、`chord_master_achievements_v1`（解除した実績）、`chord_master_records_v1`（自己ベスト）。詳しくは `docs/DESIGN.md` §5 … `loadClearedSteps`, `saveClearedSteps`, `savePrefs`, `loadPrefs`。`<head>` 内のインラインスクリプトもテーマを先読み |
 | PWA・オフライン | **なし** | manifest・Service Worker なし。Tone.js を CDN から読むためオフラインでは音が出ない（推測：画面自体は開ける） |
 | 著作権表示 | あり | `LICENSE`（All rights reserved）、`THIRD_PARTY_NOTICES.md`、`THIRD_PARTY_NOTICES.md` の「収録している曲・進行の権利の状態」、ホーム画面下部の `<footer class="app-foot">`。コードのコメントにパッサカリアの出典（ヘンデル HWV 432、利用者が用意した楽譜画像から書き起こし）（`PROGRESSIONS.passacaglia` の直前） |
 
@@ -233,3 +233,5 @@ passacaglia: { name: 'パッサカリア（ヘンデル）', isMinor: true, base
 - コードや音名の表示ルール
 
 ### このアプリに残したい部分：
+
+（未記入。作者が書く）

@@ -15,6 +15,7 @@
 公開ページ：https://cellish.github.io/voicing-dojo/
 
 ビルドは不要です。`index.html` をブラウザ（Chrome、Safari）で開けば動きます。
+Safari（iPhone・iPad を含む）は Web MIDI に対応していないため、MIDI 鍵盤は使えません。画面の鍵盤と PC のキーボードで弾けます。
 音の再生に Tone.js をインターネットから読み込むので、オンラインで使ってください。
 
 ## ファイル構成
