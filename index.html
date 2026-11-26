@@ -931,6 +931,11 @@
             display: flex;
             touch-action: none;
         }
+        /* 縦向きの画面向けの2段鍵盤（試作）：上の段が高いオクターブ */
+        #keyboard-container.two-rows { flex-direction: column; height: auto; }
+        .kbd-row { display: flex; width: 100%; height: clamp(72px, 12dvh, 100px); }
+        .kbd-row + .kbd-row { border-top: 3px solid var(--border); }
+        .oct-controls .hidden { display: none; }
         .key-white {
             position: relative;
             flex: 1 1 0%;
@@ -1723,6 +1728,7 @@
         <!-- 下部バーチャル鍵盤 -->
         <footer id="keyboard-wrapper">
             <div class="oct-controls">
+                <button id="btn-kbd-rows" class="hidden" type="button" aria-pressed="false">2段にする</button>
                 <button id="btn-oct-down" type="button" aria-label="鍵盤を1オクターブ下げる">Oct −</button>
                 <span id="oct-display" style="color:var(--primary)">C3</span>
                 <button id="btn-oct-up" type="button" aria-label="鍵盤を1オクターブ上げる">Oct ＋</button>
@@ -2212,6 +2218,7 @@
         beatOn: true,
         namesOn: true, // ブロックにコードの構成音の音名を出すか
         keyHintOn: false, // 次に弾く音を鍵盤の色で示すか
+        twoRows: false,   // 幅の狭い画面で鍵盤を2段（2オクターブ）にするか
         blindMode: 'off'
     };
 
@@ -2377,6 +2384,7 @@
         btnMelodyToggle: document.getElementById('btn-melody-toggle'),
         btnNamesToggle: document.getElementById('btn-names-toggle'),
         btnKeyHintToggle: document.getElementById('btn-keyhint-toggle'),
+        btnKbdRows: document.getElementById('btn-kbd-rows'),
         infoKey: document.getElementById('info-key'),
         infoKeyName: document.getElementById('info-key-name'),
         infoKeySig: document.getElementById('info-key-sig'),
@@ -4475,8 +4483,13 @@
        ========================================================================= */
     function buildKeyboard(force = false) {
         const w = window.innerWidth;
-        const span = w < 600 ? 16 : (w < 1100 ? 23 : 36); // 1.5 / 2 / 3 オクターブ
-        const keySig = `${baseOctave}-${span}`;
+        const twoRows = w < 600 && config.twoRows;
+        const span = twoRows ? 23 : (w < 600 ? 16 : (w < 1100 ? 23 : 36)); // 1.5 / 2 / 3 オクターブ
+        const keySig = `${baseOctave}-${span}-${twoRows}`;
+        // 2段の切り替えは幅の狭い画面だけに出す
+        dom.btnKbdRows.classList.toggle('hidden', w >= 600);
+        dom.btnKbdRows.textContent = twoRows ? '1段にする' : '2段にする';
+        dom.btnKbdRows.setAttribute('aria-pressed', String(twoRows));
         if (!force && renderedOctaveKey === keySig) return;
         renderedOctaveKey = keySig;
 
@@ -4489,7 +4502,9 @@
         const frag = document.createDocumentFragment();
         const blacks = new Set([1, 3, 6, 8, 10]);
 
-        for (let m = startMidi; m <= endMidi; m++) {
+        // 白鍵（黒鍵はその子）を parent に from〜to の範囲で並べる
+        const addKeys = (parent, from, to) => {
+        for (let m = from; m <= to; m++) {
             if (blacks.has(m % 12)) continue;
             const wKey = document.createElement('div');
             wKey.className = 'key-white';
@@ -4497,14 +4512,26 @@
             if (m % 12 === 0) wKey.textContent = 'C' + (Math.floor(m / 12) - 1);
             keyElements.set(m, wKey);
 
-            if (m < endMidi && blacks.has((m + 1) % 12)) {
+            if (m < to && blacks.has((m + 1) % 12)) {
                 const bKey = document.createElement('div');
                 bKey.className = 'key-black';
                 bKey.dataset.note = String(m + 1);
                 wKey.appendChild(bKey);
                 keyElements.set(m + 1, bKey);
             }
-            frag.appendChild(wKey);
+            parent.appendChild(wKey);
+        }
+        };
+        dom.keyboardContainer.classList.toggle('two-rows', twoRows);
+        if (twoRows) {
+            for (const from of [startMidi + 12, startMidi]) {
+                const row = document.createElement('div');
+                row.className = 'kbd-row';
+                addKeys(row, from, from + 11);
+                frag.appendChild(row);
+            }
+        } else {
+            addKeys(frag, startMidi, endMidi);
         }
         dom.keyboardContainer.appendChild(frag);
     }
@@ -4552,6 +4579,7 @@
     }
 
     function resizeApp() {
+        buildKeyboard(false); // 鍵盤の高さが決まってから、残りのゲーム画面の大きさを測る
         canvasW = Math.max(240, dom.gameContainer.clientWidth);
         canvasH = Math.max(120, dom.gameContainer.clientHeight);
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -4567,7 +4595,6 @@
 
         buildFonts();
 
-        buildKeyboard(false);
         if (isPaused && activeOverlayId === null) {
             drawFrame();
         }
@@ -4639,7 +4666,7 @@
             localStorage.setItem(PREFS_KEY, JSON.stringify({
                 song: dom.freeSong.value, key: dom.freeKey.value, laps: dom.freeLaps.value,
                 diff: dom.freeDiff.value, mode: dom.freeMode.value, bpm: dom.freeBpm.value,
-                blind: dom.freeBlind.value, melody: config.melodyOn, beat: config.beatOn, names: config.namesOn, keyHint: config.keyHintOn, speed: dom.freeSpeed.value,
+                blind: dom.freeBlind.value, melody: config.melodyOn, beat: config.beatOn, names: config.namesOn, keyHint: config.keyHintOn, twoRows: config.twoRows, speed: dom.freeSpeed.value,
                 courseLaps: dom.courseLapsSelect.value, octave: baseOctave, theme: currentTheme,
                 chSong: dom.chSong.value, chLevel: dom.chLevel.value, chHint: dom.chHint.value,
                 keyOrder: dom.courseOrderSelect.value
@@ -4679,6 +4706,7 @@
         if (typeof pr.beat === 'boolean') config.beatOn = dom.freeBeat.checked = pr.beat;
         if (typeof pr.names === 'boolean') config.namesOn = pr.names;
         if (typeof pr.keyHint === 'boolean') config.keyHintOn = pr.keyHint;
+        if (typeof pr.twoRows === 'boolean') config.twoRows = pr.twoRows;
         const oct = Number(pr.octave);
         if (oct >= 2 && oct <= 4) baseOctave = oct;
         if (THEME_NAMES.includes(pr.theme)) applyTheme(pr.theme);
@@ -4779,6 +4807,14 @@
             updateControlBarUI();
             savePrefs();
             updateKeyHint();
+        });
+
+        bindButton('btn-kbd-rows', () => {
+            config.twoRows = !config.twoRows;
+            releaseAllNotes();
+            resizeApp();
+            updateKeyHint();
+            savePrefs();
         });
 
         bindButton('btn-oct-down', () => {

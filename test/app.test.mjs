@@ -456,3 +456,16 @@ test('鍵盤ヒント：OFF のときと耳コピでは色を付けない', () =
     ear.T.drawFrame();
     assert.equal(colored(ear), 0);
 });
+
+test('2段の鍵盤：幅の狭い画面で2オクターブになり、全12キーの指定の形が鍵盤に収まる', () => {
+    const prefs = (o) => ({ chord_master_prefs_v1: JSON.stringify(o) });
+    const range = (app) => { app.T.startCourseStep(0); return app.T.keyElements.size; };
+    assert.equal(range(loadApp({ width: 390 })), 17, '1段は C3〜E4');
+    assert.equal(range(loadApp({ width: 390, storage: prefs({ twoRows: true }) })), 24, '2段は C3〜B4');
+    assert.equal(range(loadApp({ width: 800, storage: prefs({ twoRows: true }) })), 24, '広い画面は今までどおり');
+    for (const key of ['p1-maj', 'p3-maj', 'p4-maj-ab', 'p4-maj-ba']) {
+        const app = loadApp({ width: 390, storage: prefs({ twoRows: true, keyHint: true }) });
+        const r = playCourseStep(app, stepIndex(key), { useHint: true });
+        assert.equal(r.state.perfectCount, r.chords, key);
+    }
+});

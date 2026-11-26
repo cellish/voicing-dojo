@@ -70,7 +70,7 @@ class FakeSynth {
  * @param {object} opts.storage  localStorage の初期内容（キー → 文字列）
  * @returns {{ T, clock, audioLog, setNow, elements }}
  */
-export function loadApp({ storage = {} } = {}) {
+export function loadApp({ storage = {}, width = 800 } = {}) {
     const elements = {};
     const getEl = (id) => elements[id] || (elements[id] = makeElement());
     // 起動時に値を読むセレクトは、有効な初期値を入れておく
@@ -91,7 +91,7 @@ export function loadApp({ storage = {} } = {}) {
             getElementById: getEl, createElement: makeElement, createDocumentFragment: makeElement,
             addEventListener() {}, elementFromPoint() { return null; }
         },
-        window: { innerWidth: 800, devicePixelRatio: 2, addEventListener() {} },
+        window: { innerWidth: width, devicePixelRatio: 2, addEventListener() {} },
         navigator: {},
         performance: { now: () => 0 },
         requestAnimationFrame: () => 1, cancelAnimationFrame() {},
