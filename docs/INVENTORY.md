@@ -26,8 +26,8 @@
 | ファイル | 役割 |
 |---|---|
 | `index.html` | アプリ全体（CSS・HTML・JS をすべて含む。約3,500行） |
-| `PROGRESS.md` | 作業ログと引き継ぎ |
-| `docs/PLAN.md` | 設計判断とロードマップ |
+| `STATUS.md` / `PLAN.md` | 現状 / 未完了の作業 |
+| `docs/DESIGN.md` | 設計判断(理由つき) |
 | `docs/INVENTORY.md` | 本ファイル |
 | `README.md` | 概要・使い方・ファイル構成・著作権と収録作品の権利の状態 |
 | `LICENSE` | 著作権表示（All rights reserved、日英） |
@@ -149,7 +149,7 @@ passacaglia: { name: 'パッサカリア（ヘンデル）', isMinor: true, base
 | 言語切替 | **なし** | 日本語のみ（`<html lang="ja">`）。UI 文言は HTML と JS に直書き |
 | 保存 | あり | localStorage: `chord_master_cleared_steps_v4`（クリア済みステップの固定ID配列）、`chord_master_cleared_steps_v3`（旧形式、読み込み時に移行のみ）、`chord_master_prefs_v1`（フリー設定・周回数・表示時間・オクターブ・ビート/メロディ・テーマ）… `loadClearedSteps`, `saveClearedSteps`, `savePrefs`, `loadPrefs`。`<head>` 内のインラインスクリプトもテーマを先読み |
 | PWA・オフライン | **なし** | manifest・Service Worker なし。Tone.js を CDN から読むためオフラインでは音が出ない（推測：画面自体は開ける） |
-| 著作権表示 | あり | `LICENSE`（All rights reserved）、`THIRD_PARTY_NOTICES.md`、`README.md` の「著作権・ライセンス」（収録進行ごとの権利の状態）、ホーム画面下部の `<footer class="app-foot">`。コードのコメントにパッサカリアの出典（ヘンデル HWV 432、利用者が用意した楽譜画像から書き起こし）（`PROGRESSIONS.passacaglia` の直前） |
+| 著作権表示 | あり | `LICENSE`（All rights reserved）、`THIRD_PARTY_NOTICES.md`、`THIRD_PARTY_NOTICES.md` の「収録している曲・進行の権利の状態」、ホーム画面下部の `<footer class="app-foot">`。コードのコメントにパッサカリアの出典（ヘンデル HWV 432、利用者が用意した楽譜画像から書き起こし）（`PROGRESSIONS.passacaglia` の直前） |
 
 その他の機能:
 - テーマ: CSS 変数＋`html[data-theme="modern"|"retro"]`＋`data-variant="light"|"dark"|"soft"|"lavender"`、Canvas は `CANVAS_THEMES`（retro / modernLight / modernDark / modernSoft / modernLavender）… `applyTheme`, `buildFonts`
@@ -202,13 +202,13 @@ passacaglia: { name: 'パッサカリア（ヘンデル）', isMinor: true, base
 | 判定と採点 | 「必須音の集合を押しているか」＋「最低音」＋「平均移動距離」というゲーム用の簡易判定。声部ごとの規則（並行5度・限定進行など）はない |
 | コース・復習ロジック | `COURSE_STEPS`, `handleKeyCleared`, `reviewQueue` は12キー巡回ゲームの仕組みそのもの |
 | Canvas 描画・テーマ | 落下型ゲームの画面に特化 |
-| 伴奏の音色 | 合成音のみで、音源見直しが予定されている（PLAN.md Phase B） |
+| 伴奏の音色 | 合成音のみで、音源見直しが予定されている（`PLAN.md` Phase B） |
 
 ---
 
 ## 6. 既知の問題
 
-- **CDN 依存**: Tone.js を CDN から読むため、オフライン・CDN 障害時に音が出ない。読み込み失敗時の案内もない（PLAN.md Phase B）。
+- **CDN 依存**: Tone.js を CDN から読むため、オフライン・CDN 障害時に音が出ない。読み込み失敗時の案内もない（`PLAN.md` Phase B）。
 - **異名同音の情報がデータにない**: 構成音がピッチクラスだけなので、正しい綴りを出すにはコード名やルートの文字から逆算する必要がある（`spellInKey` は原調の文字を手がかりにしている）。
 - **4/4 拍子が暗黙の前提**: ドラムとカウントインが `% 4` 前提。3拍子などは扱えない。
 - **度数ラベルとコード名が別々の手書き文字列**: 構成音・コード名・度数の3つが整合しているかを保証する仕組みはない（推測：データ追加時に食い違いが起きやすい）。整合チェックは他アプリと共有する部品として作る予定（§5）。
