@@ -10,11 +10,11 @@
 - **アプリ名**: Voicing Dojo（旧称 Chord Master。フォルダ名は `chord-shooter`）
 - **目的**: 上から降りてくるコードを判定ラインで鍵盤で弾き、コード進行のボイシング（押さえ方）と声部の動きを全12キーで練習する。
 - **主な機能**
-  - 12キー制覇コース（全27ステップ・6フェーズ、ミスしたキーは最後に自動復習）… `COURSE_STEPS`, `handleKeyCleared`
+  - 12キー制覇コース（全29ステップ・6フェーズ、ミスしたキーは最後に自動復習）… `COURSE_STEPS`, `handleKeyCleared`
   - フリー練習（進行・キー・難易度・ボイシング・BPM・周回・表示時間・耳コピを設定）… `startFreeSession`
   - チャレンジ（今日のドリル・スピードアップ・耳コピ・苦手キー克服）… `startChallenge`, `renderChallengeMenu`
   - 自己ベスト・ランク・コンボ・実績・連続練習日数 … `recordResult`, `computeRank`, `ACHIEVEMENTS`, `recordActivityDay`
-  - 4種のボイシング判定: フル / シェル / ガイドトーン / ルートレス … `buildChordTarget`, `tryJudgeHit`
+  - 5種のボイシング判定: フル / シェル / ガイドトーン / ルートレス / ルートレス A/B … `buildChordTarget`, `tryJudgeHit`
   - 11種の進行: メジャー ii-V-I、マイナー ii-V-i、循環進行、ブルース12小節、ドミナントの連鎖、裏コード、バックドア、王道、カノン（オンコード）、パッサカリア（ヘンデル）、丸サ … `PROGRESSIONS`
   - 伴奏（ベース・ガイドトーン旋律・ドラム）、耳コピモード（コード名を隠してヒント音を再生）
   - テーマ（モダン：自動＝既定・ライト・ダーク・ソフト（ピンク・ラベンダー） / ネオン）… `applyTheme`
@@ -47,7 +47,7 @@
 - **異名同音は内部で区別しない**（C♯ と D♭ は同じ 1）。綴りは**表示の段階でだけ**決める。
   - コード名: `spellInKey()` が調の主音の文字（C,D,E…）から度数で綴る（G♭メジャーの IV → `Cb`）。±2以上の臨時記号になる場合は `NOTE_NAMES_SHARP/FLAT` にフォールバック。
   - キー名: `CIRCLE_OF_FIFTHS` の表に文字列で持ち、`prettyKeyName()` で b/# を ♭/♯ 記号に変換。
-  - 構成音ヒント（ド・レ…）: `spellChordTones()` がコード名のルートの文字に、ルートからの半音数に対応する度数の文字数（`INTERVAL_LETTER_STEPS`）を足して綴る（C♭maj7 → ド♭・ミ♭・ソ♭・シ♭、D♯7 → レ♯・ファ♯♯・ラ♯・ド♯）。和音の外の音（押下中の表示、余分な音）は `getPcName(pc, useFlat)` で調ごとの ♯系/♭系の切り替えのみ。
+  - 構成音ヒント（英字の音名）: `spellChordTones()` がコード名のルートの文字に、ルートからの半音数に対応する度数の文字数（`INTERVAL_LETTER_STEPS`）を足して綴る（Cbmaj7 → Cb・Eb・Gb・Bb、D#7 → D#・F##・A#・C#）。和音の外の音（押下中の表示、余分な音）は `getPcName(pc, useFlat)` で調ごとの ♯系/♭系の切り替えのみ。
   - 音名→ピッチクラスの表: `NOTE_TO_PC`（`C#` と `Db` の両方を持つ）。
 
 ### 音価・拍・小節
@@ -143,7 +143,7 @@ passacaglia: { name: 'パッサカリア（ヘンデル）', isMinor: true, base
 | 音の再生 | あり | Tone.js 14.8.49 … `initAudio`, `createAudioGraph`。`PolySynth`（演奏音・ヒント）、`Synth`（旋律）、`FMSynth`（ベース）、`MembraneSynth`/`NoiseSynth`（ドラム）。`Tone.getContext().lookAhead = 0` にし、伴奏・ドラムは約60ms先を自前で予約 … `scheduleAccompaniment`, `updateTimeline`, `audioTimeAtBeatOffset`。サンプル音源は**なし**（すべて合成音） |
 | マイク入力・音高判定 | **なし** | — |
 | 音程・コード・調の計算 | 一部 | `mod12`, `transposeChordLabel`, `spellInKey`, `pickGuideTones`（ルートからの音程で3度・7度を選ぶ）, `resolveChordDef`。和音の識別（押鍵からコード名を判定）は**なし**。判定は「必須音の集合を全部押しているか」のみ |
-| 規則の判定と採点 | あり | `tryJudgeHit`: 必須音（`requiredSet`）を全部含み、余分な音1つまで許容。フル＝最低音がベースなら100点/転回形50点、ガイド・ルートレス＝平均移動≤2.5半音で100点/50点、Just（±70ms）+20点。5音以上は完全5度を省略可。判定幅 `getHitWindowBeats`（±1/3拍、180〜350ms）。禁則（並行5度など）の判定は**なし** |
+| 規則の判定と採点 | あり | `tryJudgeHit`: 必須音（`requiredSet`）を全部含み、余分な音1つまで許容。フル＝最低音がベースなら100点/転回形50点、ガイド・ルートレス＝平均移動≤2.5半音で100点/50点、ルートレス A/B＝指定の最低音なら100点/違えば50点、Just（±70ms）+20点。5音以上は完全5度を省略可。判定幅 `getHitWindowBeats`（±1/3拍、180〜350ms）。禁則（並行5度など）の判定は**なし** |
 | 課題・問題データ | あり | すべて `index.html` 内の JS 定数: `PROGRESSIONS`（進行）、`SONG_META`（名前・長短・原調・キー順）、`COURSE_PHASES` / `COURSE_STEPS`（コース）。外部ファイル・JSON は**なし** |
 | ファイル読み込み・書き出し | **なし** | MusicXML・MIDI ファイル・JSON の入出力なし |
 | 言語切替 | **なし** | 日本語のみ（`<html lang="ja">`）。UI 文言は HTML と JS に直書き |

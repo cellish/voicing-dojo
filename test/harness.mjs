@@ -16,7 +16,7 @@ function loadScript() {
     globalThis.__t = {
         startCourseStep, startFreeSession, startChallenge, buildKeyPlan, pickWeakKeyPositions, getDailyDrill, getStreak, recordActivityDay, updateTimeline, drawFrame, pressNote, releaseNote,
         buildChordTarget, getDegreeText, getHitWindowBeats, getLookaheadBeats, resizeApp, applyTheme, initAudio,
-        transposeChordLabel, spellInKey, PROGRESSIONS, SONG_META, CIRCLE_OF_FIFTHS, COURSE_STEPS, COURSE_PHASES, ACHIEVEMENTS, computeRank, getStepBestRank,
+        transposeChordLabel, spellInKey, PROGRESSIONS, SONG_META, CIRCLE_OF_FIFTHS, COURSE_STEPS, COURSE_PHASES, ACHIEVEMENTS, badgeSvg, computeRank, getStepBestRank,
         state: () => ({ currentBeat, hitStreak, targetStreak, blocks, courseOrderPos, keyStatuses, isReviewPhase,
                         reviewQueue, resultPending, score, config, clearedSteps,
                         combo, maxCombo, missCount, perfectCount, hitCount, records,
@@ -125,7 +125,7 @@ export function playChallenge(app, type, opts = {}) {
     return playLoop(app, opts);
 }
 
-function playLoop(app, { missAt = -1, maxSeconds = 4000 } = {}) {
+function playLoop(app, { missAt = -1, maxSeconds = 4000, wrongForm = false } = {}) {
     const { T } = app;
     const dt = 1 / 60;
     let t = app.__t || 0;
@@ -140,7 +140,10 @@ function playLoop(app, { missAt = -1, maxSeconds = 4000 } = {}) {
             if (chords === missAt && !skipped) {
                 skipped = b;
             } else {
-                held = [36 + b.data.bassPc, ...b.data.required.map(pc => 60 + pc)];
+                // A/B フォームは指定の音を一番下にして押さえる（wrongForm ならその次の音を下にする）
+                const low = b.data.formLowPc === null ? null : (wrongForm ? b.data.required[1] : b.data.formLowPc);
+                held = low === null ? [36 + b.data.bassPc, ...b.data.required.map(pc => 60 + pc)]
+                    : b.data.required.map(pc => 48 + low + ((pc - low + 12) % 12));
                 held.forEach(n => T.pressNote(n, 'test'));
             }
             chords++;

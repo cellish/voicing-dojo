@@ -606,28 +606,44 @@
             font-weight: 700;
         }
         .challenge-card:disabled { opacity: 0.55; cursor: not-allowed; }
+        #challenge-screen .phase-heading { width: 100%; }
+        #challenge-screen .phase-count { margin-left: auto; }
         .achievement-list {
             list-style: none;
             margin: 0 0 24px;
             padding: 0;
             width: 100%;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
             gap: 8px;
         }
         .achv {
             display: flex;
             flex-direction: column;
-            gap: 2px;
-            padding: 8px 10px;
-            border-radius: 10px;
+            align-items: center;
+            text-align: center;
+            gap: 3px;
+            padding: 10px 6px;
+            border-radius: 14px;
             border: 1px solid var(--border);
-            font-size: 0.78rem;
-            opacity: 0.55;
+            background: var(--surface);
+            font-size: 0.76rem;
         }
-        .achv.got { opacity: 1; border-color: var(--gold); }
-        .achv.got strong { color: var(--gold); }
-        .achv span { opacity: 0.8; }
+        .achv.got { border-color: var(--gold); }
+        .achv span { color: var(--muted); font-size: 0.68rem; line-height: 1.4; }
+        .badge-art { width: 56px; height: 65px; flex: none; }
+        .badge-art .ribbon { fill: var(--badge-edge); }
+        .badge-art .medal { fill: var(--badge-fill); stroke: var(--badge-edge); stroke-width: 3; stroke-linejoin: round; }
+        .badge-art .inner { fill: rgba(255, 255, 255, 0.16); stroke: rgba(255, 255, 255, 0.7); stroke-width: 1.5; }
+        .badge-art text { fill: #fff; font-weight: 800; text-anchor: middle; dominant-baseline: central; }
+        /* 未獲得：色を抜いて輪郭だけにする */
+        .achv:not(.got) .badge-art .ribbon { fill: var(--border); }
+        .achv:not(.got) .badge-art .medal { fill: var(--surface-2); stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 4 3; }
+        .achv:not(.got) .badge-art .inner { fill: none; stroke: var(--border); }
+        .achv:not(.got) .badge-art text { fill: var(--muted); }
+        .achv:not(.got) strong { color: var(--muted); }
+        .achv-pill .badge-art { width: 26px; height: 30px; vertical-align: middle; margin-right: 6px; }
+        .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
         .result-actions {
             display: flex;
             flex-direction: column;
@@ -775,6 +791,42 @@
         .stat-pill.lap .val { color: #ff8ef7; }
 
         /* 3行目（下段）：12キー一覧トラッカー */
+        #play-info {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            padding: 6px 8px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+        .info-item {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            padding: 4px 14px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            white-space: nowrap;
+        }
+        .info-item strong { font-size: 1.25rem; font-weight: 900; color: var(--text); }
+        .info-item .info-label { font-size: 0.72rem; font-weight: 800; color: var(--muted); }
+        .info-item .info-sub { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+        #info-form { border-color: var(--primary); }
+        #info-form strong { color: var(--primary); }
+        .info-item.flash { border-color: var(--primary); background: var(--primary-soft, rgba(0, 229, 255, 0.14)); }
+        @media (max-width: 600px) {
+            #play-info { gap: 5px; padding: 4px 6px; }
+            .info-item { padding: 3px 8px; gap: 5px; }
+            .info-item strong { font-size: 1.05rem; }
+            .info-item .info-sub { font-size: 0.7rem; }
+        }
+        @media (max-height: 520px) {
+            #play-info { padding: 2px 6px; }
+            .info-item { padding: 1px 8px; }
+            .info-item strong { font-size: 0.95rem; }
+        }
+
         #key-tracker {
             display: flex;
             align-items: center;
@@ -993,6 +1045,12 @@
             #key-tracker { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; touch-action: pan-x; padding: 5px 8px; }
             #key-tracker::-webkit-scrollbar { display: none; }
             .key-badge, .tracker-phase-pill { flex-shrink: 0; }
+        }
+        @media (max-height: 520px) {
+            #top-bar .lbl, #top-bar .ico { display: none; }
+            #top-bar .lbl-narrow { display: inline; }
+            .ctrl-chip { padding: 3px 9px; }
+            .stat-pill { padding: 2px 8px; }
         }
         /* キーボード操作時のフォーカス表示（マウス・タッチでは出さない） */
         button:focus-visible, select:focus-visible, input:focus-visible, .toggle-row:focus-within {
@@ -1342,7 +1400,7 @@
                 <h2 class="home-group-title" id="home-goal-title">目標に挑戦する</h2>
                 <div class="home-cards">
                 <button class="mode-card course" id="btn-open-course" type="button">
-                    <span class="card-pill">はじめての方はこちら・全27ステップ</span>
+                    <span class="card-pill">はじめての方はこちら・全29ステップ</span>
                     <h2><span class="ico">🔰 </span>12キー制覇コース</h2>
                     <p>3和音 → ガイドトーン → シェル → 4和音 → 5和音ルートレス → ジャズの定番進行の順に、全12キーで。ミスしたキーは最後に自動で復習します。</p>
                 </button>
@@ -1350,7 +1408,7 @@
                 <button class="mode-card" id="btn-open-challenge" type="button">
                     <span class="card-pill">腕試し・毎日の練習</span>
                     <h2><span class="ico">🏆 </span>チャレンジ</h2>
-                    <p>今日のドリル、だんだん速くなるスピードアップ、耳コピ、苦手キー克服。実績も集めよう。</p>
+                    <p>今日のドリル、だんだん速くなるスピードアップ、耳コピ、苦手キー克服。バッジも集めよう。</p>
                 </button>
                 </div>
             </section>
@@ -1374,13 +1432,13 @@
     </section>
 
     <!-- =====================================================================
-         2. コース選択画面（全27ステップ・Phase別・周回数設定）
+         2. コース選択画面（全29ステップ・Phase別・周回数設定）
          ===================================================================== -->
     <section id="course-menu-screen" class="overlay-screen hidden">
         <div class="screen-inner">
             <div class="sub-header">
                 <button class="btn" id="btn-course-back" type="button">◀ ホームへ</button>
-                <h2><span class="ico">🔰 </span>12キー制覇コース（全27ステップ）</h2>
+                <h2><span class="ico">🔰 </span>12キー制覇コース（全29ステップ）</h2>
                 <span class="status-badge" id="course-clear-badge">クリア: 0 / 13</span>
             </div>
 
@@ -1480,6 +1538,8 @@
                             <option value="shell">シェル（ルート・3度・7度）</option>
                             <option value="guide">ガイドトーン（3度・7度メイン）</option>
                             <option value="rootless">ルートレス（ルート抜き）</option>
+                            <option value="rootless_ab_a">ルートレス A/B（A 始まり）</option>
+                            <option value="rootless_ab_b">ルートレス A/B（B 始まり）</option>
                         </select>
                         <p class="field-note" id="free-mode-note"></p>
                     </div>
@@ -1548,6 +1608,8 @@
                         <option value="guide">ガイドトーン</option>
                         <option value="seventh" selected>4和音・フル</option>
                         <option value="rootless">5和音・ルートレス</option>
+                        <option value="rootless_ab_a">ルートレス A/B（A 始まり）</option>
+                        <option value="rootless_ab_b">ルートレス A/B（B 始まり）</option>
                     </select>
                 </label>
                 <label class="laps-selector">
@@ -1570,7 +1632,7 @@
 
             <div class="course-grid challenge-grid" id="challenge-grid"></div>
 
-            <h3 class="phase-heading"><span class="phase-tag">実績</span><span>集めた実績</span><span class="phase-count" id="achievement-count">0 / 0</span></h3>
+            <h3 class="phase-heading"><span class="phase-tag">バッジ</span><span>集めたバッジ</span><span class="phase-count" id="achievement-count">0 / 0</span></h3>
             <ul class="achievement-list" id="achievement-list"></ul>
         </div>
     </section>
@@ -1624,6 +1686,7 @@
                 </div>
                 <button class="ctrl-chip active-on" id="btn-beat-toggle" type="button" aria-pressed="true"><span class="ico">🥁 </span>ビート ON</button>
                 <button class="ctrl-chip active-on" id="btn-melody-toggle" type="button" aria-pressed="true"><span class="ico">🎵 </span><span class="lbl">メロディ</span><span class="lbl-narrow">旋律</span> ON</button>
+                <button class="ctrl-chip active-on" id="btn-names-toggle" type="button" aria-pressed="true" title="コードの下に出る音名">音名 ON</button>
             </div>
 
             <div class="bar-group">
@@ -1634,6 +1697,16 @@
 
         <!-- 3行目（下段）：12キー一覧トラッカー -->
         <div id="key-tracker" role="group" aria-label="12キーの進捗"></div>
+
+        <!-- 4行目：いまのキーと、次に弾く形（ゲーム画面のすぐ上） -->
+        <div id="play-info">
+            <div class="info-item" id="info-key">
+                <span class="info-label">KEY</span><strong id="info-key-name">C Major</strong><span class="info-sub" id="info-key-sig"></span>
+            </div>
+            <div class="info-item hidden" id="info-form">
+                <span class="info-label">次の形</span><strong id="info-form-name">A形</strong><span class="info-sub" id="info-form-desc">3度が一番下</span>
+            </div>
+        </div>
 
         <!-- メインCanvas領域 -->
         <main id="game-container">
@@ -1749,8 +1822,8 @@
 
     const NOTE_NAMES_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
     const NOTE_NAMES_FLAT  = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
-    const PC_NAMES_SHARP   = ['ド', 'ド♯', 'レ', 'レ♯', 'ミ', 'ファ', 'ファ♯', 'ソ', 'ソ♯', 'ラ', 'ラ♯', 'シ'];
-    const PC_NAMES_FLAT    = ['ド', 'レ♭', 'レ', 'ミ♭', 'ミ', 'ファ', 'ソ♭', 'ソ', 'ラ♭', 'ラ', 'シ♭', 'シ'];
+    const PC_NAMES_SHARP   = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const PC_NAMES_FLAT    = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
     const NOTE_TO_PC = {
         C: 0, 'C#': 1, Db: 1, D: 2, 'D#': 3, Eb: 3, E: 4,
         F: 5, 'F#': 6, Gb: 6, G: 7, 'G#': 8, Ab: 8, A: 9, 'A#': 10, Bb: 10, B: 11
@@ -1816,7 +1889,7 @@
             { label: 'Cm',   label_int: 'Cm7',     label_adv: 'Cm9',      deg: 'i',   deg_int: 'im7',    deg_adv: 'im9',    bassMidi: 48, root: 0, notes: [0, 3, 7],  seventh: [0, 3, 7, 10], ninth: [0, 3, 7, 10, 2], melMidi: 63 },
             { label: 'Cm',   label_int: 'Cm6',     label_adv: 'Cm6(9)',   deg: 'i',   deg_int: 'im6',    deg_adv: 'im6(9)', bassMidi: 48, root: 0, notes: [0, 3, 7],  seventh: [0, 3, 7, 9],  ninth: [0, 3, 7, 9, 2],  melMidi: 63 }
         ],
-        // 循環進行（イチロクニーゴー）：VI は ii へのセカンダリードミナント（3和音でも長三和音、C キーなら A のド♯）。
+        // 循環進行（イチロクニーゴー）：VI は ii へのセカンダリードミナント（3和音でも長三和音、C キーなら A の C#）。
         // 上級は VI7(b9)（♭9 は調の音。ルートレスにすると減7の形）。旋律線は作者自身のガイドトーン（3度→7度→3度→7度→I の3度へ解決）。
         turnaround: [
             { label: 'C',  label_int: 'Cmaj7', label_adv: 'Cmaj9',  deg: 'I',  deg_int: 'Imaj7', deg_adv: 'Imaj9',   bassMidi: 48, root: 0, notes: [0, 4, 7],  seventh: [0, 4, 7, 11], ninth: [0, 4, 7, 11, 2],  melMidi: 64 },
@@ -1906,7 +1979,7 @@
     });
 
     /* =========================================================================
-       3. 12キー制覇コース（全27ステップ・6フェーズ）
+       3. 12キー制覇コース（全29ステップ・6フェーズ）
        ========================================================================= */
     // 並び順が表示順（tag はその順の番号）。id は保存済みの実績（phase_<id>）と対応するので変えない
     const COURSE_PHASES = Object.freeze([
@@ -1935,14 +2008,14 @@
           mission: '共通音を残して近い形で移ろう。最低音をルートにすると Perfect +100' },
         { id: 4, key: 'p1-canon', phase: 1, title: 'カノン進行', song: 'canon', diff: 'beginner', mode: 'full', badge: '3和音・オンコード', bpm: 80,
           goal: 'ベースが順次下行するオンコード',
-          mission: 'G/B なら「シ」、C/E なら「ミ」を一番低く弾くと Perfect +100' },
+          mission: 'G/B なら B、C/E なら E を一番低く弾くと Perfect +100' },
 
         // Phase 2（ガイドトーン）
         { id: 5, key: 'p2-maj', phase: 2, title: 'メジャー ii-V-I（ガイドトーン）', song: 'ii_V_I_maj', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
-          goal: '7度が半音下がって次の3度になる声部進行',
+          goal: '7度が半音下がって次の3度に。2回目の I は6th',
           mission: 'ベースは自動。3度＋7度の2音を近い鍵盤で繋ぐと Smooth +100' },
         { id: 6, key: 'p2-min', phase: 2, title: 'マイナー ii-V-i（ガイドトーン）', song: 'ii_V_i_min', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
-          goal: '短調の声部進行。iiø7 の♭5は弾いても弾かなくてもよい',
+          goal: '短調の声部進行。♭5は任意、2回目の i は6th',
           mission: '3度＋7度（iiø7 の♭5は任意）を最小移動で繋ぐと Smooth +100' },
         { id: 7, key: 'p2-turnaround', phase: 2, title: '循環進行（ガイドトーン）', song: 'turnaround', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
           goal: '7度が半音下がって次の3度になる流れの循環版',
@@ -1956,10 +2029,10 @@
 
         // Phase 3（シェル）
         { id: 10, key: 'ps-maj', phase: 6, title: 'メジャー ii-V-I（シェル）', song: 'ii_V_I_maj', diff: 'intermediate', mode: 'shell', badge: 'シェル（3音）', bpm: 80,
-          goal: '左手の基本形。5度は弾かない（2回目の I は6度）',
+          goal: '左手の基本形。5度は弾かない。2回目の I は6th',
           mission: 'ルートを一番下にすると Perfect +100' },
         { id: 11, key: 'ps-min', phase: 6, title: 'マイナー ii-V-i（シェル）', song: 'ii_V_i_min', diff: 'intermediate', mode: 'shell', badge: 'iiø7 は♭5も', bpm: 80,
-          goal: '短調を左手の形で。♭5 が短調らしさを出す',
+          goal: '左手の形。♭5が短調らしさを出す。2回目の i は6th',
           mission: 'iiø7 は ♭5 も入れる（4音）。ルートを一番下にすると Perfect +100' },
         { id: 12, key: 'ps-turnaround', phase: 6, title: '循環進行（シェル）', song: 'turnaround', diff: 'intermediate', mode: 'shell', badge: 'シェル（3音）', bpm: 80,
           goal: '5度を省くと VI7 の調外の3度がよく聞こえる',
@@ -1967,10 +2040,10 @@
 
         // Phase 4（4和音・フル）
         { id: 13, key: 'p3-maj', phase: 3, title: 'メジャー ii-V-I（4和音）', song: 'ii_V_I_maj', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
-          goal: '全構成音を弾く（2回目の I は6度）',
+          goal: '全構成音を弾く。2回目の I は6th',
           mission: '7th（I6 は6度）まで押さえ、最低音をルートにすると Perfect +100' },
         { id: 14, key: 'p3-min', phase: 3, title: 'マイナー ii-V-i（4和音）', song: 'ii_V_i_min', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
-          goal: 'ハーフディミニッシュと♭9の本格的な短調（2回目は im6）',
+          goal: 'ハーフディミニッシュと♭9の短調。2回目の i は6th',
           mission: 'V7(b9) は5度省略OK（4音でも可）。最低音をルートにすると Perfect +100' },
         { id: 15, key: 'p3-turnaround', phase: 3, title: '循環進行（4和音）', song: 'turnaround', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
           goal: 'VI7 は ii へのセカンダリードミナント',
@@ -1987,10 +2060,10 @@
 
         // Phase 5（5和音・ルートレス）
         { id: 19, key: 'p4-maj', phase: 4, title: 'メジャー ii-V-I（5和音ルートレス）', song: 'ii_V_I_maj', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 80,
-          goal: 'ルートはベースに任せる、3度か7度が下のジャズの基本形',
+          goal: '3度か7度が下の基本形。2回目の I は6th',
           mission: 'ルート抜きの4音。転回して最小移動で繋ぐと Smooth +100' },
         { id: 20, key: 'p4-min', phase: 4, title: 'マイナー ii-V-i（5和音ルートレス）', song: 'ii_V_i_min', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 80,
-          goal: 'V7(b9) はルートを抜くと減7の形',
+          goal: 'V7(b9) はルートを抜くと減7の形。2回目の i は6th',
           mission: 'ルート抜きの4音。転回して最小移動で繋ぐと Smooth +100' },
         { id: 21, key: 'p4-turnaround', phase: 4, title: '循環進行（5和音ルートレス）', song: 'turnaround', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 80,
           goal: 'VI7(b9) はルートを抜くと減7の形',
@@ -1998,19 +2071,25 @@
         { id: 22, key: 'p4-citypop', phase: 4, title: '丸サ進行（5和音ルートレス）', song: 'citypop', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 85,
           goal: '9th・♭9 を加えたプロ仕様の響き',
           mission: 'ルート抜きの4音。転回して最小移動で繋ぐと Smooth +100' },
+        { id: 23, key: 'p4-maj-ab', phase: 4, title: 'メジャー ii-V-I（A/B フォーム・A 始まり）', song: 'ii_V_I_maj', diff: 'advanced', mode: 'rootless_ab', formStart: 'A', badge: 'A/B フォーム', bpm: 80,
+          goal: 'A は3度、B は7度が下。2回目の I は6th',
+          mission: 'ブロックの A（3度が下）・B（7度が下）の形で弾くと +100' },
+        { id: 24, key: 'p4-maj-ba', phase: 4, title: 'メジャー ii-V-I（A/B フォーム・B 始まり）', song: 'ii_V_I_maj', diff: 'advanced', mode: 'rootless_ab', formStart: 'B', badge: 'A/B フォーム', bpm: 80,
+          goal: '同じ進行を B→A の順で。2回目の I は6th',
+          mission: 'ブロックの A（3度が下）・B（7度が下）の形で弾くと +100' },
         // Phase 6（応用：ジャズの定番進行）
-        { id: 23, key: 'p5-blues', phase: 5, title: 'ブルース12小節', song: 'blues', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 100,
+        { id: 25, key: 'p5-blues', phase: 5, title: 'ブルース12小節', song: 'blues', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 100,
           goal: '全部ドミナント7th。I7 と IV7 で半音の行き来',
           mission: '12小節で1キー。最低音をルートにすると Perfect +100' },
-        { id: 24, key: 'p5-dominant', phase: 5, title: 'ドミナントの連鎖', song: 'dominant_chain', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+        { id: 26, key: 'p5-dominant', phase: 5, title: 'ドミナントの連鎖', song: 'dominant_chain', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
           goal: '4度ずつドミナントが続いて I へ',
-          mission: '調の外の3度（C なら ソ♯・ド♯・ファ♯）に注意。最低音をルートにすると Perfect +100' },
-        { id: 25, key: 'p5-tritone', phase: 5, title: '裏コード', song: 'tritone_sub', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+          mission: '調の外の3度（C なら G#・C#・F#）に注意。最低音をルートにすると Perfect +100' },
+        { id: 27, key: 'p5-tritone', phase: 5, title: '裏コード', song: 'tritone_sub', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
           goal: 'V7 の代わりに♭II7。ベースが半音で下がる',
           mission: '♭II7 の7度は V7 の3度と同じ音。最低音をルートにすると Perfect +100' },
-        { id: 26, key: 'p5-backdoor', phase: 5, title: 'バックドア', song: 'backdoor', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+        { id: 28, key: 'p5-backdoor', phase: 5, title: 'バックドア', song: 'backdoor', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
           goal: '同主短調からの借用で、V7 を通らず I へ',
-          mission: '♭VII7 の7度（C なら ラ♭）が I の5度へ下がる。最低音をルートにすると Perfect +100' }
+          mission: '♭VII7 の7度（C なら Ab）が I の5度へ下がる。最低音をルートにすると Perfect +100' }
     ]);
 
     // 旧バージョン(v3: 数値ID)の進捗を新しい安定IDへ移行する対応表（旧Step5=3和音の循環進行は廃止）
@@ -2119,11 +2198,13 @@
         cofIdx: 0,      // CIRCLE_OF_FIFTHS の実インデックス（0..11）
         diff: 'beginner',
         mode: 'full',
+        formStart: 'A', // ルートレス A/B フォームの始まりの形
         bpm: 80,
         lapsToClear: 1, // デフォルト1周
         lookaheadSec: 2.8, // コードが出現してから判定ラインに届くまでの秒数
         melodyOn: true,
         beatOn: true,
+        namesOn: true, // ブロックにコードの構成音の音名を出すか
         blindMode: 'off'
     };
 
@@ -2187,7 +2268,9 @@
         shell:    { diff: 'intermediate', mode: 'shell',    label: 'シェル' },
         guide:    { diff: 'intermediate', mode: 'guide',    label: 'ガイドトーン' },
         seventh:  { diff: 'intermediate', mode: 'full',     label: '4和音・フル' },
-        rootless: { diff: 'advanced',     mode: 'rootless', label: '5和音・ルートレス' }
+        rootless: { diff: 'advanced',     mode: 'rootless', label: '5和音・ルートレス' },
+        rootless_ab_a: { diff: 'advanced', mode: 'rootless_ab', formStart: 'A', label: 'ルートレス A/B（A 始まり）' },
+        rootless_ab_b: { diff: 'advanced', mode: 'rootless_ab', formStart: 'B', label: 'ルートレス A/B（B 始まり）' }
     });
     const CHALLENGES = Object.freeze([
         { id: 'daily', title: '今日のドリル', desc: '日替わりの課題を1つ（1キー・2周）。毎日続けて連続日数を伸ばそう' },
@@ -2253,7 +2336,7 @@
     let keyChangeBanner = null; // { title, sub, isReview, elapsed, duration }
     let nextKeyPreview = null;  // NEXT KEY 予告（状態変化時のみ再計算）
     let pressedLabel = '';      // 押下中ノート表示文字列（押鍵変化時のみ再計算）
-    let keyChip = { cacheKey: '', main: '', sig: '', w: 0 }; // 左上のキー表示（キー・フォント変更時のみ再計算）
+    let playInfoCache = ''; // 上の Key・形の欄に出している内容（変わったときだけ書き換える）
     let pressedLabelDirty = false;
     let rangeCache = { sig: '', bassShift: 0, melShift: 0 };
     const fonts = { labelSize: 20, hintSize: 12, degSize: 14, bannerSub: '', bannerTitle: '', small: '', hud: '', combo: '', pauseTitle: '', pauseSub: '', keyLabel: '', keyMain: '', keySig: '' };
@@ -2283,6 +2366,13 @@
         btnPlayPause: document.getElementById('btn-play-pause'),
         btnBeatToggle: document.getElementById('btn-beat-toggle'),
         btnMelodyToggle: document.getElementById('btn-melody-toggle'),
+        btnNamesToggle: document.getElementById('btn-names-toggle'),
+        infoKey: document.getElementById('info-key'),
+        infoKeyName: document.getElementById('info-key-name'),
+        infoKeySig: document.getElementById('info-key-sig'),
+        infoForm: document.getElementById('info-form'),
+        infoFormName: document.getElementById('info-form-name'),
+        infoFormDesc: document.getElementById('info-form-desc'),
         btnNavSub: document.getElementById('btn-nav-sub'),
         octDisplay: document.getElementById('oct-display'),
         midiDot: document.getElementById('midi-dot'),
@@ -2418,7 +2508,7 @@
         if (challengeType === 'ear') return `challenge:ear:${config.song}:${challengeLevel}:${config.blindMode}`;
         if (challengeType) return `challenge:${challengeType}:${config.song}:${challengeLevel}`;
         if (isCourseMode) return `course:${COURSE_STEPS[currentStepIdx].key}:laps${config.lapsToClear}`;
-        return `free:${config.song}:${config.cofIdx}:${config.diff}:${config.mode}:laps${config.lapsToClear}:blind-${config.blindMode}`;
+        return `free:${config.song}:${config.cofIdx}:${config.diff}:${statMode(config.mode, config.formStart)}:laps${config.lapsToClear}:blind-${config.blindMode}`;
     }
 
     function computeRank(stats) {
@@ -2506,7 +2596,7 @@
 
     // clean = そのキーをノーミスで弾き切った、false = ミスした
     function recordKeyStat(clean) {
-        const id = keyStatId(config.song, config.diff, config.mode, config.cofIdx);
+        const id = keyStatId(config.song, config.diff, statMode(config.mode, config.formStart), config.cofIdx);
         const st = keyStats[id] || (keyStats[id] = { miss: 0, clean: 0 });
         if (clean) st.clean++; else st.miss++;
         saveJson(KEYSTATS_KEY, keyStats);
@@ -2545,7 +2635,38 @@
         return { step, pos: activity.daily.pos, done: !!activity.daily.done };
     }
 
-    // ---- 実績 ----
+    // バッジの絵（自作の SVG）。形は種類（コース=盾、腕前=六角、チャレンジ=丸、継続=花形）、金色は各種類の到達点
+    const BADGE_SHAPES = Object.freeze({
+        shield: '<path d="M32 4 55 12v18c0 15-10 24-23 29C19 54 9 45 9 30V12Z"/>',
+        hex: '<path d="M32 4 56 18v28L32 60 8 46V18Z"/>',
+        circle: '<circle cx="32" cy="32" r="27"/>',
+        seal: '<path d="M32 3l7 6 9-1 3 9 8 5-3 9 3 9-8 5-3 9-9-1-7 6-7-6-9 1-3-9-8-5 3-9-3-9 8-5 3-9 9 1Z"/>'
+    });
+    const BADGE_COLORS = Object.freeze({
+        teal: ['#14a39a', '#0b6f69'], violet: ['#8b6ad8', '#5b3fa8'], rose: ['#e0628c', '#a8335c'],
+        amber: ['#f08c3a', '#b45a12'], gold: ['#f2b418', '#a8730a']
+    });
+    const BADGE_ART = Object.freeze({
+        first_clear: ['shield', 'teal', '1'], all_steps: ['shield', 'gold', '★'],
+        rank_s: ['hex', 'violet', 'S'], combo_50: ['hex', 'violet', '50'], combo_100: ['hex', 'gold', '100'], just_90: ['hex', 'violet', '◎'],
+        speed_120: ['circle', 'rose', '120'], speed_160: ['circle', 'gold', '160'], ear_clear: ['circle', 'rose', '耳'],
+        weak_clear: ['circle', 'rose', '克'], daily_1: ['circle', 'rose', '今'],
+        streak_3: ['seal', 'amber', '3日'], streak_7: ['seal', 'amber', '7日'], streak_30: ['seal', 'gold', '30日']
+    });
+    function badgeSvg(id) {
+        // Phase 修了は表示上のフェーズ番号を入れる
+        const phase = COURSE_PHASES.find(ph => `phase_${ph.id}` === id);
+        const [shape, color, mark] = phase ? ['shield', 'teal', 'P' + phase.tag.replace('Phase ', '')] : BADGE_ART[id] || ['circle', 'teal', '♪'];
+        const [fill, edge] = BADGE_COLORS[color];
+        const size = mark.length >= 3 ? 17 : (mark.length === 2 ? 20 : 25);
+        return `<svg class="badge-art" viewBox="0 0 64 74" aria-hidden="true" style="--badge-fill:${fill};--badge-edge:${edge}">` +
+            '<path class="ribbon" d="M18 44 11 70l9-4 6 7 6-24ZM46 44l7 26-9-4-6 7-6-24Z"/>' +
+            `<g class="medal">${BADGE_SHAPES[shape]}</g>` +
+            '<circle class="inner" cx="32" cy="31" r="18"/>' +
+            `<text x="32" y="31" font-size="${size}">${mark}</text></svg>`;
+    }
+
+    // ---- 実績（画面では「バッジ」） ----
     function checkAchievements(result) {
         const phaseDone = (ph) => COURSE_STEPS.filter(st => st.phase === ph).every(st => clearedSteps.has(st.key));
         const ctx = {
@@ -2629,12 +2750,11 @@
         }
     }
 
-    // 構成音を和音の度数どおりの文字で綴る（例：C♭maj7 → ド♭・ミ♭・ソ♭・シ♭、D♯7 → レ♯・ファ♯♯・ラ♯・ド♯）。
+    // 構成音を和音の度数どおりの文字で綴る（例：Cbmaj7 → Cb・Eb・Gb・Bb、D#7 → D#・F##・A#・C#）。表記はコード名と同じ # / b。
     // ルートの文字（コード名から取る）に、ルートからの半音数に対応する度数の文字数を足す。
     // 半音数→度数：短2/長2度=2度(9th)、短3/長3度=3度、4度、減5/完全5度=5度、短6/長6度=6度(13th)、短7/長7度=7度。
-    const SOLFEGE = ['ド', 'レ', 'ミ', 'ファ', 'ソ', 'ラ', 'シ'];
     const INTERVAL_LETTER_STEPS = [0, 1, 1, 2, 2, 3, 4, 4, 5, 5, 6, 6];
-    const ACCIDENTAL_MARKS = { '-2': '♭♭', '-1': '♭', '0': '', '1': '♯', '2': '♯♯' };
+    const ACCIDENTAL_MARKS = { '-2': 'bb', '-1': 'b', '0': '', '1': '#', '2': '##' };
     function spellChordTones(rootToken, rootPc, pcs, useFlat) {
         const names = new Map();
         const rootLetter = LETTERS.indexOf(rootToken[0]);
@@ -2642,7 +2762,7 @@
             const li = (rootLetter + INTERVAL_LETTER_STEPS[mod12(pc - rootPc)]) % 7;
             const acc = mod12(pc - LETTER_PC[li] + 6) - 6;
             names.set(pc, rootLetter >= 0 && ACCIDENTAL_MARKS[acc] !== undefined
-                ? SOLFEGE[li] + ACCIDENTAL_MARKS[acc]
+                ? LETTERS[li] + ACCIDENTAL_MARKS[acc]
                 : getPcName(pc, useFlat));
         }
         return names;
@@ -2758,7 +2878,13 @@
         return out;
     }
 
-    function buildChordTarget(chordDef) {
+    // 記録やキーごとのミスでは、A 始まりと B 始まりを別の弾き方として数える
+    function statMode(mode, formStart) {
+        return mode === 'rootless_ab' ? `${mode}_${formStart.toLowerCase()}` : mode;
+    }
+
+    // chordIdx：進行の中のコードの番号（0始まり、周回によらない）。A/B フォームの割り当てに使う
+    function buildChordTarget(chordDef, chordIdx = 0) {
         const meta = SONG_META[config.song];
         const keyInfo = getCurrentKeyInfo();
         const keyParts = getKeyDisplayParts(keyInfo, meta.isMinor);
@@ -2778,8 +2904,16 @@
         let required = [];
         let optional = [];
 
+        let form = null, formLowPc = null;
         if (config.mode === 'rootless') {
             required = notes.filter(pc => pc !== root);
+        } else if (config.mode === 'rootless_ab') {
+            // A フォーム＝3度が一番下、B フォーム＝7度（無い和音は6度など）が一番下。コードごとに交互
+            form = (chordIdx % 2 === 0) === (config.formStart === 'A') ? 'A' : 'B';
+            const guides = pickGuideTones(notes, root, false);
+            formLowPc = form === 'A' ? guides[0] : guides[guides.length - 1];
+            // ヒントは指定の最低音から順に並べる
+            required = notes.filter(pc => pc !== root).sort((a, b) => mod12(a - formLowPc) - mod12(b - formLowPc));
         } else if (config.mode === 'guide') {
             required = pickGuideTones(notes, root, false);
             // iiø7 の♭5はガイドトーンではないので、弾いても弾かなくてもよい
@@ -2822,7 +2956,9 @@
             toneNames,
             bassMidi,
             bassPc: mod12(bassMidi),
-            melMidi
+            melMidi,
+            form,
+            formLowPc
         };
     }
 
@@ -2917,7 +3053,7 @@
         const lv = CHALLENGE_LEVELS[level] || CHALLENGE_LEVELS.seventh;
         const daily = getDailyDrill();
         const dailyKey = getKeyDisplayParts(getCofInfoByPos(daily.step.song, daily.pos), SONG_META[daily.step.song].isMinor);
-        const weak = pickWeakKeyPositions(song, lv.diff, lv.mode);
+        const weak = pickWeakKeyPositions(song, lv.diff, statMode(lv.mode, lv.formStart || 'A'));
         const songMeta = SONG_META[song];
         const weakNames = weak.map(pos => getKeyDisplayParts(getCofInfoByPos(song, pos), songMeta.isMinor).short).join('・');
         const rec = (k) => records[k] || null;
@@ -2955,7 +3091,8 @@
         const list = document.getElementById('achievement-list');
         list.innerHTML = ACHIEVEMENTS.map(a => {
             const got = achievements.has(a.id);
-            return `<li class="achv${got ? ' got' : ''}" title="${a.desc}"><strong>${got ? '★' : '☆'} ${a.title}</strong><span>${a.desc}</span></li>`;
+            return `<li class="achv${got ? ' got' : ''}" title="${a.desc}">${badgeSvg(a.id)}<strong>${a.title}</strong>` +
+                `<span>${a.desc}</span><span class="visually-hidden">${got ? '獲得済み' : '未獲得'}</span></li>`;
         }).join('');
         document.getElementById('achievement-count').textContent = `${achievements.size} / ${ACHIEVEMENTS.length}`;
     }
@@ -3052,6 +3189,7 @@
         config.song = step.song;
         config.diff = step.diff;
         config.mode = step.mode;
+        config.formStart = step.formStart || 'A';
         config.bpm = step.bpm;
         config.lapsToClear = Number(dom.courseLapsSelect.value) || 1;
         config.lookaheadSec = Number(dom.courseSpeedSelect.value) || 2.8;
@@ -3081,7 +3219,7 @@
 
         if (type === 'daily') {
             const d = getDailyDrill();
-            Object.assign(config, { song: d.step.song, diff: d.step.diff, mode: d.step.mode, bpm: d.step.bpm, lapsToClear: 2 });
+            Object.assign(config, { song: d.step.song, diff: d.step.diff, mode: d.step.mode, formStart: d.step.formStart || 'A', bpm: d.step.bpm, lapsToClear: 2 });
             challengeLevel = null;
             plan = [d.pos];
             title = `今日のドリル：${d.step.title}`;
@@ -3089,7 +3227,7 @@
         } else {
             const level = CHALLENGE_LEVELS[dom.chLevel.value] ? dom.chLevel.value : 'seventh';
             const lv = CHALLENGE_LEVELS[level];
-            Object.assign(config, { song: dom.chSong.value in SONG_META ? dom.chSong.value : 'ii_V_I_maj', diff: lv.diff, mode: lv.mode, bpm: 80 });
+            Object.assign(config, { song: dom.chSong.value in SONG_META ? dom.chSong.value : 'ii_V_I_maj', diff: lv.diff, mode: lv.mode, formStart: lv.formStart || 'A', bpm: 80 });
             challengeLevel = level;
             const name = `${SONG_META[config.song].name}（${lv.label}）`;
             if (type === 'speed') {
@@ -3101,7 +3239,7 @@
                 title = `耳コピチャレンジ：${name}`;
                 desc = 'コード名は隠れています。ブロックが出るときに鳴るヒントの音で判断';
             } else {
-                plan = pickWeakKeyPositions(config.song, config.diff, config.mode);
+                plan = pickWeakKeyPositions(config.song, config.diff, statMode(config.mode, config.formStart));
                 if (plan.length === 0) return;
                 config.lapsToClear = 2;
                 title = `苦手キー克服：${name}`;
@@ -3160,7 +3298,10 @@
         config.lapsToClear = Number(dom.freeLaps.value) || 1;
         config.lookaheadSec = Number(dom.freeSpeed.value) || 2.8;
         config.diff = dom.freeDiff.value;
-        config.mode = dom.freeMode.value;
+        // 選択肢の rootless_ab_a / rootless_ab_b は、弾き方と始まりの形に分ける
+        const ab = /^rootless_ab_([ab])$/.exec(dom.freeMode.value);
+        config.mode = ab ? 'rootless_ab' : dom.freeMode.value;
+        config.formStart = ab ? ab[1].toUpperCase() : 'A';
         config.bpm = Number(dom.freeBpm.value) || 85;
         config.blindMode = dom.freeBlind.value;
         config.melodyOn = dom.freeMelody.checked;
@@ -3169,7 +3310,7 @@
 
         const meta = SONG_META[config.song];
         const parts = getKeyDisplayParts(getCurrentKeyInfo(), meta.isMinor);
-        const modeText = ({ full: 'フル', shell: 'シェル', guide: 'ガイドトーン', rootless: 'ルートレス' })[config.mode];
+        const modeText = ({ full: 'フル', shell: 'シェル', guide: 'ガイドトーン', rootless: 'ルートレス', rootless_ab: `A/B・${config.formStart} 始まり` })[config.mode];
 
         dom.btnNavSub.innerHTML = '☰<span class="lbl"> 設定変更</span>';
         dom.btnNavSub.setAttribute('aria-label', 'フリー練習の設定変更');
@@ -3182,6 +3323,8 @@
                     ? 'ルート＋3度＋7度の3音。ルートを一番下にすると Perfect +100'
                 : config.mode === 'guide'
                     ? 'ベースは自動。3度＋7度を近い鍵盤で繋ぐと Smooth +100'
+                : config.mode === 'rootless_ab'
+                    ? 'ブロックの A（3度が下）・B（7度が下）の形で弾くと +100'
                     : 'ルート抜きで弾き、平均2.5半音以内の移動で Smooth +100';
         dom.missionDesc.title = dom.missionDesc.textContent;
 
@@ -3195,6 +3338,8 @@
 
         initKeyTrackerDOM();
         resetTimelineState();
+        playInfoCache = '';
+        updatePlayInfo();
         resizeApp();
         updateControlBarUI();
 
@@ -3287,6 +3432,10 @@
         dom.btnMelodyToggle.innerHTML = `<span class="ico">${config.melodyOn ? '🎵' : '🔇'} </span><span class="lbl">メロディ</span><span class="lbl-narrow">旋律</span> ${config.melodyOn ? 'ON' : 'OFF'}`;
         dom.btnMelodyToggle.classList.toggle('active-on', config.melodyOn);
         dom.btnMelodyToggle.setAttribute('aria-pressed', String(config.melodyOn));
+
+        dom.btnNamesToggle.textContent = `音名 ${config.namesOn ? 'ON' : 'OFF'}`;
+        dom.btnNamesToggle.classList.toggle('active-on', config.namesOn);
+        dom.btnNamesToggle.setAttribute('aria-pressed', String(config.namesOn));
 
         dom.octDisplay.textContent = `C${baseOctave}`;
     }
@@ -3382,7 +3531,7 @@
         const { isNew, rank } = renderResultStats();
         const unlocked = checkAchievements({ rank, maxCombo, challengeType, speedBpm: challengeType === 'speed' ? speedBestBpm : 0 });
         dom.resultAchv.classList.toggle('hidden', unlocked.length === 0);
-        dom.resultAchv.innerHTML = unlocked.map(a => `<span class="achv-pill" title="${a.desc}">実績解除：${a.title}</span>`).join('');
+        dom.resultAchv.innerHTML = unlocked.map(a => `<span class="achv-pill" title="${a.desc}">${badgeSvg(a.id)}バッジ獲得：${a.title}</span>`).join('');
         showConfetti(isNew || rank === 'S' || (isCourseRun && clearedSteps.size === COURSE_STEPS.length) || unlocked.length > 0);
 
         if (challengeType) {
@@ -3441,7 +3590,7 @@
     function spawnNextBlock() {
         const songData = PROGRESSIONS[config.song];
         const chordDef = songData[chordSeqIndex % songData.length];
-        const data = buildChordTarget(chordDef);
+        const data = buildChordTarget(chordDef, chordSeqIndex % songData.length);
         const isBlind = config.blindMode !== 'off';
 
         blocks.push({
@@ -3614,11 +3763,14 @@
         const currentNotesArr = Array.from(noteSources.keys());
         let pts, msg, col;
 
-        if (config.mode === 'full' || config.mode === 'shell') {
-            let minNote = 128;
-            for (let k = 0; k < currentNotesArr.length; k++) {
-                if (currentNotesArr[k] < minNote) minNote = currentNotesArr[k];
+        const minNote = Math.min(...currentNotesArr);
+        if (config.mode === 'rootless_ab') {
+            if (mod12(minNote) === b.data.formLowPc) {
+                pts = 100; msg = `${b.data.form} Form!`; col = COLORS.green;
+            } else {
+                pts = 50; msg = `形が違う（${b.data.form}）`; col = COLORS.orange;
             }
+        } else if (config.mode === 'full' || config.mode === 'shell') {
             if (mod12(minNote) === b.data.bassPc) {
                 pts = 100; msg = 'Perfect!'; col = COLORS.green;
             } else {
@@ -3791,6 +3943,30 @@
         else ctx.rect(x, y, w, h);
     }
 
+    // キーと、次に弾くコードの形（ルートレス A/B のとき）を画面上の欄に出す
+    function updatePlayInfo() {
+        const parts = getKeyDisplayParts(getCurrentKeyInfo(), SONG_META[config.song].isMinor);
+        let next = null;
+        if (config.mode === 'rootless_ab') {
+            for (const b of blocks) {
+                if (!b.hit && !b.missed && (!next || b.targetBeat < next.targetBeat)) next = b;
+            }
+        }
+        const form = next ? next.data.form : '';
+        const flash = !!keyChangeBanner; // 転調直後は目立たせる
+        const cache = `${parts.full}|${parts.sig}|${config.mode}|${form}|${flash}`;
+        if (cache === playInfoCache) return;
+        playInfoCache = cache;
+        dom.infoKeyName.textContent = parts.full;
+        dom.infoKeySig.textContent = parts.sig;
+        dom.infoKey.classList.toggle('flash', flash);
+        dom.infoForm.classList.toggle('hidden', config.mode !== 'rootless_ab');
+        if (form) {
+            dom.infoFormName.textContent = `${form}形`;
+            dom.infoFormDesc.textContent = form === 'A' ? '3度が一番下' : '7度が一番下';
+        }
+    }
+
     function drawFrame() {
         ctx.fillStyle = COLORS.bg;
         ctx.fillRect(0, 0, canvasW, canvasH);
@@ -3826,7 +4002,9 @@
         const badgeW = Math.max(58, Math.min(112, blockW * 0.27));
         const badgeH = blockH - pad * 2;
         const badgeX = blockX + pad;
-        const textAreaX = badgeX + badgeW + pad;
+        // A/B フォームでは、度数バッジの横に形の文字を出す
+        const formW = config.mode === 'rootless_ab' ? 52 : 0;
+        const textAreaX = badgeX + badgeW + pad + formW;
         const textAreaW = blockX + blockW - pad - textAreaX;
         const textCx = textAreaX + textAreaW * 0.5;
 
@@ -3865,68 +4043,40 @@
             ctx.font = b.fDeg;
             ctx.fillText(degText, badgeX + badgeW * 0.5, b.y);
 
+            if (b.data.form) {
+                const formX = badgeX + badgeW + pad + formW * 0.5 - 3;
+                ctx.fillStyle = b.missed ? COLORS.missedText : COLORS.blockText;
+                ctx.font = `${COLORS.wBlack} ${Math.round(blockH * 0.32)}px ${COLORS.family}`;
+                ctx.fillText(`${b.data.form}形`, formX, b.y - blockH * 0.14);
+                ctx.font = `600 ${Math.max(9, Math.round(blockH * 0.18))}px ${COLORS.family}`;
+                ctx.fillText(b.data.form === 'A' ? '3度が下' : '7度が下', formX, b.y + blockH * 0.24);
+            }
+
             // コード名・構成音
             ctx.fillStyle = b.missed ? COLORS.missedText : COLORS.blockText;
+            // 音名を OFF にしたときはコード名だけを中央に（ミスしたときは答えとして音名も出す）
+            const showHint = config.namesOn || b.isBlind || b.missed;
             ctx.font = b.fLabel;
-            ctx.fillText(labelText, textCx, b.y - blockH * 0.15);
+            ctx.fillText(labelText, textCx, showHint ? b.y - blockH * 0.15 : b.y);
 
-            ctx.fillStyle = b.missed ? COLORS.missedSub : COLORS.blockSub;
-            ctx.font = b.fHint;
-            ctx.fillText(hintText, textCx, b.y + blockH * 0.24);
+            if (showHint) {
+                ctx.fillStyle = b.missed ? COLORS.missedSub : COLORS.blockSub;
+                ctx.font = b.fHint;
+                ctx.fillText(hintText, textCx, b.y + blockH * 0.24);
+            }
         }
 
-        // 現在のキー（左上に常時表示）。度数はキーとセットで読むため、ブロックが降りてくる画面内に置く
-        const KEY_CHIP_X = 10, KEY_CHIP_Y = 10, KEY_CHIP_H = 46;
-        const keyCacheKey = `${config.song}|${config.cofIdx}|${fontVersion}`;
-        if (keyChip.cacheKey !== keyCacheKey) {
-            const parts = getKeyDisplayParts(getCurrentKeyInfo(), SONG_META[config.song].isMinor);
-            const main = parts.full;
-            ctx.font = fonts.keyMain;
-            const mainW = ctx.measureText(main).width;
-            ctx.font = fonts.keySig;
-            const sigW = ctx.measureText(parts.sig).width;
-            keyChip = { cacheKey: keyCacheKey, main, sig: parts.sig, mainW, w: Math.ceil(mainW + 8 + sigW + 24) };
-        }
-        const keyFlash = !!keyChangeBanner; // 転調直後はアクセント色で強調
-        const keyAccent = keyFlash && keyChangeBanner.isReview ? COLORS.orange : COLORS.primary;
-        roundRectPath(KEY_CHIP_X, KEY_CHIP_Y, keyChip.w, KEY_CHIP_H, 10);
-        ctx.fillStyle = COLORS.hudBg;   // 下を通るブロックに負けない不透明に近い背景
-        ctx.fill();
-        if (keyFlash) {                 // 転調直後はアクセント色を重ねる
-            ctx.fillStyle = keyChangeBanner.isReview ? COLORS.previewReviewBg : COLORS.previewBg;
-            ctx.fill();
-        }
-        ctx.strokeStyle = keyFlash ? keyAccent : COLORS.laneBorder;
-        ctx.lineWidth = keyFlash ? 2 : 1;
-        roundRectPath(KEY_CHIP_X, KEY_CHIP_Y, keyChip.w, KEY_CHIP_H, 10);
-        ctx.stroke();
-        ctx.textAlign = 'left';
-        ctx.fillStyle = keyFlash ? keyAccent : COLORS.textMuted;
-        ctx.font = fonts.keyLabel;
-        ctx.fillText('KEY', KEY_CHIP_X + 12, KEY_CHIP_Y + 12);
-        ctx.fillStyle = COLORS.textStrong;
-        ctx.font = fonts.keyMain;
-        ctx.fillText(keyChip.main, KEY_CHIP_X + 12, KEY_CHIP_Y + 30);
-        ctx.fillStyle = COLORS.textMuted;
-        ctx.font = fonts.keySig;
-        ctx.fillText(keyChip.sig, KEY_CHIP_X + 12 + keyChip.mainW + 8, KEY_CHIP_Y + 31);
-        ctx.textAlign = 'center';
-        const keyChipRight = KEY_CHIP_X + keyChip.w;
-        const keyChipBottom = KEY_CHIP_Y + KEY_CHIP_H;
+        updatePlayInfo();
+        const TOP_BADGE_Y = 10, TOP_BADGE_H = 30;
 
         // 最終コード付近の「NEXT KEY」予告バッジ（コースモード）。
         // 中央に置くとキー表示と重なる狭い画面では、キー表示の右側の余白に収める
         if (nextKeyPreview && !keyChangeBanner && !resultPending) {
             const preview = nextKeyPreview;
-            const badgeH = 30;
-            let badgeW = Math.min(laneW - 24, 300);
-            let bx = (canvasW - badgeW) * 0.5;
-            if (bx < keyChipRight + 8) {
-                const avail = canvasW - 10 - (keyChipRight + 8);
-                badgeW = Math.min(300, avail);
-                bx = keyChipRight + 8;
-            }
-            const by = KEY_CHIP_Y + (KEY_CHIP_H - badgeH) * 0.5;
+            const badgeH = TOP_BADGE_H;
+            const badgeW = Math.min(laneW - 24, 300);
+            const bx = (canvasW - badgeW) * 0.5;
+            const by = TOP_BADGE_Y;
             const text = `NEXT KEY: ${preview.label}`;
             ctx.fillStyle = preview.isReview ? COLORS.previewReviewBg : COLORS.previewBg;
             ctx.strokeStyle = preview.isReview ? COLORS.orange : COLORS.primary;
@@ -3959,8 +4109,7 @@
             ctx.globalAlpha = alpha;
             const bw = Math.min(canvasW - 28, 420);
             const bh = 68;
-            // キー表示の下から出す（キー表示と重ねない）
-            const bannerY = Math.max(keyChipBottom + 8 + bh * 0.5, Math.min(canvasH * 0.16, hitY - blockH * 2.2));
+            const bannerY = Math.max(TOP_BADGE_Y + bh * 0.5, Math.min(canvasH * 0.16, hitY - blockH * 2.2));
             ctx.translate(cx, bannerY);
             ctx.scale(scale, scale);
 
@@ -4300,9 +4449,6 @@
         fonts.combo = `${COLORS.wBlack} 18px ${f}`;
         fonts.pauseTitle = `${COLORS.wBlack} 22px ${f}`;
         fonts.pauseSub = `600 14px ${f}`;
-        fonts.keyLabel = `${COLORS.wBold} 10px ${f}`;
-        fonts.keyMain = `${COLORS.wBlack} 17px ${f}`;
-        fonts.keySig = `600 12px ${f}`;
         fontVersion++;
     }
 
@@ -4401,6 +4547,10 @@
             text = isTriad ? '3和音には7度がないため3度＋5度の練習になります（中級以上推奨）。'
                            : '3度と7度（6度・9度で代用する場合あり）だけを弾き、前の和音から近い音へ繋ぎます。';
             warn = isTriad;
+        } else if (mode.startsWith('rootless_ab')) {
+            text = isTriad ? '3和音からルートを抜くと2音だけになります（上級推奨）。'
+                           : 'ルート抜きで、A（3度が下）と B（7度が下）の形をコードごとに交互に弾きます（上級推奨）。';
+            warn = isTriad;
         } else {
             text = isTriad ? '3和音からルートを抜くと2音だけになります（上級推奨）。'
                            : 'ルートはベースに任せ、残りの音を転回して近い位置で繋ぎます（上級推奨）。';
@@ -4416,7 +4566,7 @@
             localStorage.setItem(PREFS_KEY, JSON.stringify({
                 song: dom.freeSong.value, key: dom.freeKey.value, laps: dom.freeLaps.value,
                 diff: dom.freeDiff.value, mode: dom.freeMode.value, bpm: dom.freeBpm.value,
-                blind: dom.freeBlind.value, melody: config.melodyOn, beat: config.beatOn, speed: dom.freeSpeed.value,
+                blind: dom.freeBlind.value, melody: config.melodyOn, beat: config.beatOn, names: config.namesOn, speed: dom.freeSpeed.value,
                 courseLaps: dom.courseLapsSelect.value, octave: baseOctave, theme: currentTheme,
                 chSong: dom.chSong.value, chLevel: dom.chLevel.value, chHint: dom.chHint.value,
                 keyOrder: dom.courseOrderSelect.value
@@ -4454,6 +4604,7 @@
         }
         if (typeof pr.melody === 'boolean') config.melodyOn = dom.freeMelody.checked = pr.melody;
         if (typeof pr.beat === 'boolean') config.beatOn = dom.freeBeat.checked = pr.beat;
+        if (typeof pr.names === 'boolean') config.namesOn = pr.names;
         const oct = Number(pr.octave);
         if (oct >= 2 && oct <= 4) baseOctave = oct;
         if (THEME_NAMES.includes(pr.theme)) applyTheme(pr.theme);
@@ -4540,6 +4691,13 @@
             dom.freeMelody.checked = config.melodyOn;
             updateControlBarUI();
             savePrefs();
+        });
+
+        bindButton('btn-names-toggle', () => {
+            config.namesOn = !config.namesOn;
+            updateControlBarUI();
+            savePrefs();
+            if (isPaused && activeOverlayId === null) drawFrame();
         });
 
         bindButton('btn-oct-down', () => {

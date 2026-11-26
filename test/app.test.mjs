@@ -7,10 +7,10 @@ import { loadApp, playCourseStep, playChallenge } from './harness.mjs';
 const plain = (x) => JSON.parse(JSON.stringify(x));
 const stepIndex = (key) => loadApp().T.COURSE_STEPS.findIndex(s => s.key === key);
 
-test('コースは表示順に 5 / 5 / 3 / 6 / 4 / 4 ステップ', () => {
+test('コースは表示順に 5 / 5 / 3 / 6 / 6 / 4 ステップ', () => {
     const { T } = loadApp();
     const counts = [1, 2, 6, 3, 4, 5].map(p => T.COURSE_STEPS.filter(s => s.phase === p).length);
-    assert.deepEqual(plain(counts), [5, 5, 3, 6, 4, 4]);
+    assert.deepEqual(plain(counts), [5, 5, 3, 6, 6, 4]);
     assert.ok(T.COURSE_STEPS.every((s, i) => s.id === i), 'id は並び順と一致');
 });
 
@@ -118,13 +118,13 @@ test('コード名は調に沿って綴る（G♭メジャーの IV は C♭、G
     assert.deepEqual(plain(labelsIn('passacaglia', 'G#m').map(d => d.label)),
         ['G#m7', 'C#m7', 'F#7', 'Bmaj7', 'Emaj7', 'A#m7(b5)', 'D#7', 'G#m7']);
     // 構成音名もコード名の綴りに合わせる
-    assert.equal(labelsIn('pop', 'Gb')[0].hintText, 'ド♭・ミ♭・ソ♭・シ♭');
-    assert.equal(labelsIn('passacaglia', 'G#m')[6].hintText, 'レ♯・ファ♯♯・ラ♯・ド♯');
+    assert.equal(labelsIn('pop', 'Gb')[0].hintText, 'Cb・Eb・Gb・Bb');
+    assert.equal(labelsIn('passacaglia', 'G#m')[6].hintText, 'D#・F##・A#・C#');
     // 循環進行の VI7 はセカンダリードミナント（調の外の音を含む）
     assert.deepEqual(plain(labelsIn('turnaround', 'C').map(d => d.label)), ['Cmaj7', 'A7', 'Dm7', 'G7']);
-    assert.equal(labelsIn('turnaround', 'C')[1].hintText, 'ラ・ド♯・ミ・ソ');
+    assert.equal(labelsIn('turnaround', 'C')[1].hintText, 'A・C#・E・G');
     assert.deepEqual(plain(labelsIn('turnaround', 'Gb').map(d => d.label)), ['Gbmaj7', 'Eb7', 'Abm7', 'Db7']);
-    assert.equal(labelsIn('turnaround', 'Gb')[1].hintText, 'ミ♭・ソ・シ♭・レ♭');
+    assert.equal(labelsIn('turnaround', 'Gb')[1].hintText, 'Eb・G・Bb・Db');
     assert.deepEqual(plain(labelsIn('turnaround', 'C', 'advanced').map(d => d.label)), ['Cmaj9', 'A7(b9)', 'Dm9', 'G9']);
 });
 
@@ -135,7 +135,7 @@ test('ガイドトーンは音程で選ぶ（iiø7 の♭5はガイドトーン�
     const iiHalfDim = T.buildChordTarget(T.PROGRESSIONS.passacaglia[5]); // Am7(b5)
     assert.deepEqual(plain(iiHalfDim.required), [0, 7]); // C, G
     assert.deepEqual(plain([...iiHalfDim.optionalSet]), [3]); // E♭
-    assert.equal(iiHalfDim.hintText, 'ド・ソ・(ミ♭)');
+    assert.equal(iiHalfDim.hintText, 'C・G・(Eb)');
     cfg.mode = 'shell';
     assert.ok(T.buildChordTarget(T.PROGRESSIONS.passacaglia[5]).required.includes(3));
 });
@@ -288,7 +288,7 @@ test('応用フェーズのジャズの定番進行を通しプレイでき、�
         return T.PROGRESSIONS[song].map(c => T.buildChordTarget(c));
     };
     assert.deepEqual(plain(labelsIn('tritone_sub', 'E').map(d => d.label)), ['F#m7', 'F7', 'Emaj7', 'E6']);
-    assert.equal(labelsIn('tritone_sub', 'C')[1].hintText, 'レ♭・ファ・ラ♭・ド♭');
+    assert.equal(labelsIn('tritone_sub', 'C')[1].hintText, 'Db・F・Ab・Cb');
     assert.deepEqual(plain(labelsIn('backdoor', 'Eb').map(d => d.label)), ['Abm7', 'Db7', 'Ebmaj7', 'Eb6']);
     assert.deepEqual(plain(labelsIn('dominant_chain', 'F').map(d => d.label)), ['A7', 'D7', 'G7', 'C7', 'Fmaj7', 'F6']);
     assert.deepEqual(plain(labelsIn('blues', 'Bb').map(d => d.label).slice(0, 2)), ['Bb7', 'Eb7']);
@@ -361,4 +361,67 @@ test('Phase 2 のマイナー ii-V-i：2音で12キーを通せる', () => {
     assert.equal(r.chords, 4 * 12);
     assert.equal(r.state.config.mode, 'guide');
     assert.equal(r.state.missCount, 0);
+});
+
+test('すべての実績にバッジの絵がある（Phase 修了は表示上の番号）', () => {
+    const { T } = loadApp();
+    for (const a of T.ACHIEVEMENTS) assert.ok(!T.badgeSvg(a.id).includes('♪'), a.id);
+    assert.ok(T.badgeSvg('phase_6').includes('>P3</text>')); // 内部 id 6 は表示上の Phase 3（シェル）
+});
+
+test('ルートレス A/B：C のメジャー ii-V-I の形と最低音（仕様の値）', () => {
+    const { T } = loadApp();
+    const cfg = T.state().config;
+    Object.assign(cfg, { song: 'ii_V_I_maj', diff: 'advanced', mode: 'rootless_ab', cofIdx: T.SONG_META.ii_V_I_maj.keyOrder[0] });
+    const targets = (start) => { cfg.formStart = start; return T.PROGRESSIONS.ii_V_I_maj.map((c, i) => T.buildChordTarget(c, i)); };
+    const low = (d) => d.toneNames.get(d.formLowPc);
+    const a = targets('A');
+    assert.deepEqual(plain(a.map(d => d.form)), ['A', 'B', 'A', 'B']);
+    assert.deepEqual(plain(a.map(low)), ['F', 'F', 'E', 'A']);
+    assert.equal(a[0].hintText, 'F・A・C・E');
+    const b = targets('B');
+    assert.deepEqual(plain(b.map(d => d.form)), ['B', 'A', 'B', 'A']);
+    assert.deepEqual(plain(b.map(low)), ['C', 'B', 'B', 'E']);
+});
+
+test('ルートレス A/B のコース：指定の形なら満点、最低音が違うと半分', () => {
+    for (const key of ['p4-maj-ab', 'p4-maj-ba']) {
+        const ok = playCourseStep(loadApp(), stepIndex(key));
+        assert.equal(ok.done, true, key);
+        assert.equal(ok.chords, 4 * 12, key);
+        assert.equal(ok.state.perfectCount, 4 * 12, key);
+        const ng = playCourseStep(loadApp(), stepIndex(key), { wrongForm: true });
+        assert.equal(ng.done, true, key);
+        assert.equal(ng.state.perfectCount, 0, key);
+        assert.equal(ng.state.missCount, 0, key);
+    }
+});
+
+test('ルートレス A/B：チャレンジとフリー練習で始まりの形を選べて、記録は別になる', () => {
+    const app = loadApp();
+    app.elements['ch-song'].value = 'ii_V_I_maj';
+    app.elements['ch-level'].value = 'rootless_ab_b';
+    const r = playChallenge(app, 'speed', { maxSeconds: 60 });
+    assert.equal(r.state.config.mode, 'rootless_ab');
+    assert.equal(r.state.config.formStart, 'B');
+    const statKeys = Object.keys(r.state.keyStats);
+    assert.ok(statKeys.length > 0);
+    assert.ok(statKeys.every(k => k.includes('|rootless_ab_b|')));
+
+    const free = loadApp();
+    free.elements['free-mode'].value = 'rootless_ab_b';
+    free.elements['free-diff'].value = 'advanced';
+    free.T.startFreeSession();
+    assert.equal(free.T.state().config.mode, 'rootless_ab');
+    assert.equal(free.T.state().config.formStart, 'B');
+});
+
+test('音名の ON/OFF は保存した設定を引き継ぐ', () => {
+    const app = loadApp({ storage: { chord_master_prefs_v1: JSON.stringify({ names: false }) } });
+    assert.equal(app.T.state().config.namesOn, false);
+    app.T.startCourseStep(0);
+    app.T.updateTimeline(1 / 60);
+    app.T.drawFrame();
+    assert.equal(app.elements['btn-names-toggle'].textContent, '音名 OFF');
+    assert.equal(app.elements['info-key-name'].textContent, 'C Major');
 });
