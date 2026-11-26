@@ -7,10 +7,11 @@ import { loadApp, playCourseStep } from './harness.mjs';
 const plain = (x) => JSON.parse(JSON.stringify(x));
 const stepIndex = (key) => loadApp().T.COURSE_STEPS.findIndex(s => s.key === key);
 
-test('コースは仕様どおり 4 / 3 / 5 / 1 ステップ', () => {
+test('コースは 5 / 4 / 6 / 4 ステップ', () => {
     const { T } = loadApp();
     const counts = [1, 2, 3, 4].map(p => T.COURSE_STEPS.filter(s => s.phase === p).length);
-    assert.deepEqual(plain(counts), [4, 3, 5, 1]);
+    assert.deepEqual(plain(counts), [5, 4, 6, 4]);
+    assert.ok(T.COURSE_STEPS.every((s, i) => s.id === i), 'id は並び順と一致');
 });
 
 test('ノーミスで 12 キーを制覇できる（メジャー ii-V-I、3和音）', () => {
@@ -31,10 +32,65 @@ test('ミスするとそのキーの1コード目からやり直し、12キー�
     assert.ok(r.state.keyStatuses.every(s => s === 'perfect'), '復習でノーミスなら緑に戻る');
 });
 
+test('循環進行の4ステップ（3和音・ガイドトーン・4和音・ルートレス）を通しプレイできる', () => {
+    const app = loadApp();
+    for (const key of ['p1-turnaround', 'p2-turnaround', 'p3-turnaround', 'p4-turnaround']) {
+        const r = playCourseStep(app, stepIndex(key));
+        assert.equal(r.done, true, key);
+        assert.equal(r.chords, 4 * 12, key);
+    }
+});
+
 test('丸サ進行（2拍のコードを含む）とルートレスの5和音を通しプレイできる', () => {
     const app = loadApp();
     assert.equal(playCourseStep(app, stepIndex('p3-citypop')).done, true);
     assert.equal(playCourseStep(app, stepIndex('p4-citypop')).done, true);
+});
+
+test('Phase 4 のメジャー・マイナー ii-V-I（ルートレス）を通しプレイできる', () => {
+    const app = loadApp();
+    for (const key of ['p4-maj', 'p4-min']) {
+        const r = playCourseStep(app, stepIndex(key));
+        assert.equal(r.done, true, key);
+        assert.equal(r.chords, 4 * 12, key);
+    }
+});
+
+test('ミスして弾き直しても点は増えない（やり直し区間の点を取り消し、復習は加点しない）', () => {
+    const clean = playCourseStep(loadApp(), stepIndex('p1-pop'));
+    const missed = playCourseStep(loadApp(), stepIndex('p1-pop'), { missAt: 2 });
+    assert.equal(missed.state.missCount, 1);
+    assert.ok(missed.chords > clean.chords, 'ミスした方が多く弾いている');
+    assert.equal(missed.state.score, clean.state.score - 100, 'それでも点はミス1回分（100点）低い');
+    assert.equal(clean.state.missCount, 0);
+    assert.equal(clean.state.maxCombo, 4 * 12, 'ノーミスなら全コードがコンボ');
+});
+
+test('ランク：ミス・Perfect 率・ジャスト率で決まる', () => {
+    const { T } = loadApp();
+    const r = (hits, perfect, just, misses) => T.computeRank({ hits, perfect, just, misses });
+    assert.equal(r(48, 48, 40, 0), 'S');
+    assert.equal(r(48, 48, 40, 1), 'A', 'ミスが1つあれば S にならない');
+    assert.equal(r(48, 48, 10, 0), 'B', 'ジャスト率が低い');
+    assert.equal(r(48, 30, 0, 0), 'C');
+    assert.equal(r(0, 0, 0, 0), 'C');
+});
+
+test('結果画面で自己ベストを記録し、コース一覧に最高ランクを出す', () => {
+    const app = loadApp();
+    const step = stepIndex('p1-maj');
+    playCourseStep(app, step);
+    app.runPendingTimeout();
+    const recs = JSON.parse(app.store.chord_master_records_v1);
+    const rec = recs['course:p1-maj:laps1'];
+    assert.ok(rec && rec.score > 0 && rec.combo === 48);
+    assert.equal(app.elements['result-new'].classList.contains('hidden'), false, '初回は NEW RECORD');
+    assert.equal(app.T.getStepBestRank('p1-maj'), rec.rank);
+
+    // 2回目（同じ点）は NEW RECORD にならない
+    playCourseStep(app, step);
+    app.runPendingTimeout();
+    assert.equal(app.elements['result-new'].classList.contains('hidden'), true);
 });
 
 test('カノンのベースはどのキーでも同じ形（ド-シ-ラ-ソ-ファ-ミ-ファ-ソ の順次下行）', () => {
@@ -63,6 +119,12 @@ test('コード名は調に沿って綴る（G♭メジャーの IV は C♭、G
     // 構成音名もコード名の綴りに合わせる
     assert.equal(labelsIn('pop', 'Gb')[0].hintText, 'ド♭・ミ♭・ソ♭・シ♭');
     assert.equal(labelsIn('passacaglia', 'G#m')[6].hintText, 'レ♯・ファ♯♯・ラ♯・ド♯');
+    // 循環進行の VI7 はセカンダリードミナント（調の外の音を含む）
+    assert.deepEqual(plain(labelsIn('turnaround', 'C').map(d => d.label)), ['Cmaj7', 'A7', 'Dm7', 'G7']);
+    assert.equal(labelsIn('turnaround', 'C')[1].hintText, 'ラ・ド♯・ミ・ソ');
+    assert.deepEqual(plain(labelsIn('turnaround', 'Gb').map(d => d.label)), ['Gbmaj7', 'Eb7', 'Abm7', 'Db7']);
+    assert.equal(labelsIn('turnaround', 'Gb')[1].hintText, 'ミ♭・ソ・シ♭・レ♭');
+    assert.deepEqual(plain(labelsIn('turnaround', 'C', 'advanced').map(d => d.label)), ['Cmaj9', 'A7(b9)', 'Dm9', 'G9']);
 });
 
 test('ガイドトーンは音程で選ぶ（iiø7 は 3度・♭5・7度）', () => {

@@ -10,7 +10,7 @@
 - **アプリ名**: Voicing Dojo（旧称 Chord Master。フォルダ名は `chord-shooter`）
 - **目的**: 上から降りてくるコードを判定ラインで鍵盤で弾き、コード進行のボイシング（押さえ方）と声部の動きを全12キーで練習する。
 - **主な機能**
-  - 12キー制覇コース（全13ステップ・4フェーズ、ミスしたキーは最後に自動復習）… `COURSE_STEPS`, `handleKeyCleared`
+  - 12キー制覇コース（全19ステップ・4フェーズ、ミスしたキーは最後に自動復習）… `COURSE_STEPS`, `handleKeyCleared`
   - フリー練習（進行・キー・難易度・ボイシング・BPM・周回・表示時間・耳コピを設定）… `startFreeSession`
   - 3種のボイシング判定: フル / ガイドトーン / ルートレス … `buildChordTarget`, `tryJudgeHit`
   - 6種の進行: メジャー ii-V-I、マイナー ii-V-i、王道、カノン（オンコード）、パッサカリア（ヘンデル）、丸サ … `PROGRESSIONS`

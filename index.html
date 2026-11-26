@@ -471,6 +471,52 @@
             font-size: 0.93rem;
             line-height: 1.55;
         }
+        .result-rank-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 2px 0 6px;
+        }
+        .result-rank {
+            font-size: 3.2rem;
+            font-weight: 900;
+            line-height: 1;
+            color: var(--primary);
+        }
+        .result-rank.rank-S { color: #f5b301; }
+        .result-rank.rank-A { color: var(--smooth); }
+        .result-new {
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #f5b301;
+            color: #1f1300;
+            font-size: 0.8rem;
+            font-weight: 900;
+            letter-spacing: 0.04em;
+        }
+        .result-stats {
+            display: grid;
+            grid-template-columns: auto auto;
+            gap: 4px 16px;
+            justify-content: center;
+            margin: -10px 0 22px;
+            font-size: 0.9rem;
+        }
+        .result-stats dt { text-align: right; opacity: 0.75; }
+        .result-stats dd { margin: 0; text-align: left; font-weight: 700; }
+        .result-stats .best { font-weight: 500; opacity: 0.75; }
+        .step-rank {
+            display: inline-block;
+            margin-left: 6px;
+            padding: 0 6px;
+            border-radius: 6px;
+            border: 1px solid currentColor;
+            font-size: 0.72rem;
+            color: var(--muted, #94a3b8);
+        }
+        .step-rank.rank-S { color: #f5b301; }
+        .step-rank.rank-A { color: var(--smooth); }
         .result-actions {
             display: flex;
             flex-direction: column;
@@ -1102,13 +1148,13 @@
 
             <div class="home-cards">
                 <button class="mode-card course" id="btn-open-course" type="button">
-                    <span class="card-pill">はじめての方はこちら・全13ステップ</span>
+                    <span class="card-pill">はじめての方はこちら・全19ステップ</span>
                     <h2><span class="ico">🔰 </span>12キー制覇コース</h2>
                     <p>3和音 → ガイドトーン → 4和音 → 5和音ルートレスの順に、6つの定番進行を全12キーで。ミスしたキーは最後に自動で復習します。</p>
                 </button>
 
                 <button class="mode-card" id="btn-open-free" type="button">
-                    <span class="card-pill">全6進行・自由設定</span>
+                    <span class="card-pill">全7進行・自由設定</span>
                     <h2><span class="ico">🎹 </span>フリー練習</h2>
                     <p>進行・キー・難易度・ボイシング・テンポを選んで練習。コード名を隠す耳コピモードもあります。</p>
                 </button>
@@ -1123,13 +1169,13 @@
     </section>
 
     <!-- =====================================================================
-         2. コース選択画面（全13ステップ・Phase別・周回数設定）
+         2. コース選択画面（全19ステップ・Phase別・周回数設定）
          ===================================================================== -->
     <section id="course-menu-screen" class="overlay-screen hidden">
         <div class="screen-inner">
             <div class="sub-header">
                 <button class="btn" id="btn-course-back" type="button">◀ ホームへ</button>
-                <h2><span class="ico">🔰 </span>12キー制覇コース（全13ステップ）</h2>
+                <h2><span class="ico">🔰 </span>12キー制覇コース（全19ステップ）</h2>
                 <span class="status-badge" id="course-clear-badge">クリア: 0 / 13</span>
             </div>
 
@@ -1175,10 +1221,11 @@
                 <div class="settings-card">
                     <h3><span class="ico">🎵 </span>楽曲とキー</h3>
                     <div class="field">
-                        <label for="free-song">コード進行（全6曲）</label>
+                        <label for="free-song">コード進行（全7曲）</label>
                         <select id="free-song">
                             <option value="ii_V_I_maj">メジャー ii-V-I（ii - V - I - I）</option>
                             <option value="ii_V_i_min">マイナー ii-V-i（ii° - V - i - i）</option>
+                            <option value="turnaround">循環進行（I - VI - ii - V）</option>
                             <option value="pop">王道進行（IV - V - iii - vi）</option>
                             <option value="canon">カノン進行・オンコード（I - V on 7 - vi …）</option>
                             <option value="passacaglia">パッサカリア・ヘンデル（i - iv - ♭VII - ♭III …）</option>
@@ -1265,7 +1312,12 @@
     <section id="result-screen" class="overlay-screen overlay-modal hidden" role="dialog" aria-modal="true" aria-labelledby="result-title" aria-describedby="result-desc">
         <div class="result-box">
             <h2 id="result-title">STAGE CLEAR!</h2>
+            <div class="result-rank-row">
+                <span class="result-rank" id="result-rank" aria-label="ランク">S</span>
+                <span class="result-new hidden" id="result-new">NEW RECORD!</span>
+            </div>
             <p id="result-desc">クリアおめでとうございます！</p>
+            <dl class="result-stats" id="result-stats"></dl>
             <div class="result-actions">
                 <button class="btn btn-primary" id="btn-result-next" type="button">次のステップへ進む</button>
                 <button class="btn btn-smooth" id="btn-result-retry" type="button">もう一度同じ課題を練習</button>
@@ -1340,6 +1392,7 @@
     const STORAGE_KEY = 'chord_master_cleared_steps_v4';
     const LEGACY_STORAGE_KEY = 'chord_master_cleared_steps_v3';
     const PREFS_KEY = 'chord_master_prefs_v1';
+    const RECORDS_KEY = 'chord_master_records_v1'; // 自己ベスト（ステップ・フリー設定ごと）
     const OVERLAY_IDS = ['start-screen', 'course-menu-screen', 'free-settings-screen', 'result-screen'];
 
     // Canvas 用の配色（テーマ別）。描画ループ内で CSS を参照しないよう JS 側に保持する。
@@ -1427,12 +1480,13 @@
     const CHORD_LABEL_REGEX = /^([A-G][#b]?)(.*?)(?:\/([A-G][#b]?))?$/;
 
     /* =========================================================================
-       2. 楽曲データ（全6曲・音楽理論的に正確なボイシング）
+       2. 楽曲データ（全7曲・音楽理論的に正確なボイシング）
        ========================================================================= */
     // 度数表記は PROGRESSIONS の deg / deg_int / deg_adv から難易度別に自動生成する（getDegreeText）
     const SONG_META = Object.freeze({
         ii_V_I_maj: { name: 'メジャー ii-V-I',         isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER },
         ii_V_i_min: { name: 'マイナー ii-V-i',         isMinor: true,  baseTonicPc: 0, keyOrder: C_START_ORDER },
+        turnaround: { name: '循環進行（I-VI-ii-V）',    isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER },
         pop:        { name: '王道進行',                isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER },
         canon:      { name: 'カノン進行（オンコード）', isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER },
         passacaglia: { name: 'パッサカリア（ヘンデル）', isMinor: true,  baseTonicPc: 7, keyOrder: GM_START_ORDER, baseTonicLetter: 'G' },
@@ -1457,6 +1511,14 @@
             { label: 'G',    label_int: 'G7(b9)',  label_adv: 'G7(b9)',   deg: 'V',   deg_int: 'V7(b9)', deg_adv: 'V7(b9)', bassMidi: 43, root: 7, notes: [7, 11, 2], seventh: [7, 11, 2, 5, 8], ninth: [7, 11, 2, 5, 8], melMidi: 65 },
             { label: 'Cm',   label_int: 'Cm7',     label_adv: 'Cm9',      deg: 'i',   deg_int: 'im7',    deg_adv: 'im9',    bassMidi: 48, root: 0, notes: [0, 3, 7],  seventh: [0, 3, 7, 10], ninth: [0, 3, 7, 10, 2], melMidi: 63 },
             { label: 'Cm',   label_int: 'Cm6',     label_adv: 'Cm6(9)',   deg: 'i',   deg_int: 'im6',    deg_adv: 'im6(9)', bassMidi: 48, root: 0, notes: [0, 3, 7],  seventh: [0, 3, 7, 9],  ninth: [0, 3, 7, 9, 2],  melMidi: 63 }
+        ],
+        // 循環進行（イチロクニーゴー）：VI は ii へのセカンダリードミナント（3和音でも長三和音、C キーなら A のド♯）。
+        // 上級は VI7(b9)（♭9 は調の音。ルートレスにすると減7の形）。旋律線は作者自身のガイドトーン（3度→7度→3度→7度→I の3度へ解決）。
+        turnaround: [
+            { label: 'C',  label_int: 'Cmaj7', label_adv: 'Cmaj9',  deg: 'I',  deg_int: 'Imaj7', deg_adv: 'Imaj9',   bassMidi: 48, root: 0, notes: [0, 4, 7],  seventh: [0, 4, 7, 11], ninth: [0, 4, 7, 11, 2],  melMidi: 64 },
+            { label: 'A',  label_int: 'A7',    label_adv: 'A7(b9)', deg: 'VI', deg_int: 'VI7',   deg_adv: 'VI7(b9)', bassMidi: 45, root: 9, notes: [9, 1, 4],  seventh: [9, 1, 4, 7],  ninth: [9, 1, 4, 7, 10],  melMidi: 67 },
+            { label: 'Dm', label_int: 'Dm7',   label_adv: 'Dm9',    deg: 'ii', deg_int: 'ii7',   deg_adv: 'ii9',     bassMidi: 50, root: 2, notes: [2, 5, 9],  seventh: [2, 5, 9, 0],  ninth: [2, 5, 9, 0, 4],   melMidi: 65 },
+            { label: 'G',  label_int: 'G7',    label_adv: 'G9',     deg: 'V',  deg_int: 'V7',    deg_adv: 'V9',      bassMidi: 43, root: 7, notes: [7, 11, 2], seventh: [7, 11, 2, 5], ninth: [7, 11, 2, 5, 9],  melMidi: 65 }
         ],
         // 王道進行
         pop: [
@@ -1502,7 +1564,7 @@
     });
 
     /* =========================================================================
-       3. 12キー制覇コース（全13ステップ・4フェーズ）
+       3. 12キー制覇コース（全19ステップ・4フェーズ）
        ========================================================================= */
     const COURSE_PHASES = Object.freeze([
         { id: 1, tag: 'Phase 1', title: '3和音で一通りマスター（Triad・フル）' },
@@ -1520,43 +1582,61 @@
         { id: 1, key: 'p1-min', phase: 1, title: 'マイナー ii°-V-i', song: 'ii_V_i_min', diff: 'beginner', mode: 'full', badge: '3和音・フル', bpm: 80,
           goal: '減三和音 ii° と、導音を含む V（和声的短音階）で短調に解決する響き',
           mission: 'V の3度（導音）は短調でも半音上げた音。最低音をルートにすると Perfect +100' },
-        { id: 2, key: 'p1-pop', phase: 1, title: '王道進行', song: 'pop', diff: 'beginner', mode: 'full', badge: '3和音・フル', bpm: 85,
+        { id: 2, key: 'p1-turnaround', phase: 1, title: '循環進行 I-VI-ii-V', song: 'turnaround', diff: 'beginner', mode: 'full', badge: '3和音・フル', bpm: 80,
+          goal: 'ii-V の前に VI を置いた循環。VI は ii へ向かうドミナントなので長三和音（C なら A：ラ・ド♯・ミ）',
+          mission: 'VI の3度は調の外の音（半音上げる）。最低音をルートにすると Perfect +100' },
+        { id: 3, key: 'p1-pop', phase: 1, title: '王道進行', song: 'pop', diff: 'beginner', mode: 'full', badge: '3和音・フル', bpm: 85,
           goal: 'J-POP定番。IV→V で盛り上げ、トニックに行かず iii→vi へ逃げる切なさ',
           mission: '共通音を残して近い形で移ろう。最低音をルートにすると Perfect +100' },
-        { id: 3, key: 'p1-canon', phase: 1, title: 'カノン進行（オンコード）', song: 'canon', diff: 'beginner', mode: 'full', badge: '3和音・オンコード', bpm: 80,
+        { id: 4, key: 'p1-canon', phase: 1, title: 'カノン進行（オンコード）', song: 'canon', diff: 'beginner', mode: 'full', badge: '3和音・オンコード', bpm: 80,
           goal: 'ベースが C-B-A-G-F-E と順次下行するオンコードを習得',
           mission: 'G/B なら「シ」、C/E なら「ミ」を一番低く弾くと Perfect +100' },
 
         // Phase 2（ガイドトーン）
-        { id: 4, key: 'p2-maj', phase: 2, title: 'メジャー ii-V-I（ガイドトーン）', song: 'ii_V_I_maj', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
+        { id: 5, key: 'p2-maj', phase: 2, title: 'メジャー ii-V-I（ガイドトーン）', song: 'ii_V_I_maj', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
           goal: '7度が半音下がって次の3度になる、ii-V-I の声部進行を体感',
           mission: 'ベースは自動。3度＋7度の2音を近い鍵盤で繋ぐと Smooth +100' },
-        { id: 5, key: 'p2-pop', phase: 2, title: '王道進行（ガイドトーン）', song: 'pop', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
+        { id: 6, key: 'p2-turnaround', phase: 2, title: '循環進行（ガイドトーン）', song: 'turnaround', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
+          goal: 'Imaj7 → VI7 → ii7 → V7 で、各コードの7度が半音下がって次の3度になる流れを体感',
+          mission: 'ベースは自動。3度＋7度の2音を近い鍵盤で繋ぐと Smooth +100' },
+        { id: 7, key: 'p2-pop', phase: 2, title: '王道進行（ガイドトーン）', song: 'pop', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
           goal: '最小の指移動で J-POP 進行を伴奏する',
           mission: '3度＋7度の2音。平均2.5半音以内の移動で Smooth +100' },
-        { id: 6, key: 'p2-passacaglia', phase: 2, title: 'パッサカリア（ガイドトーン）', song: 'passacaglia', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2〜3音）', bpm: 85,
+        { id: 8, key: 'p2-passacaglia', phase: 2, title: 'パッサカリア（ガイドトーン）', song: 'passacaglia', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2〜3音）', bpm: 85,
           goal: 'ヘンデルの旋律に合わせ、4度上行の連鎖で3度と7度が交互に入れ替わる流れを体感',
           mission: '3度＋7度（iiø7 は♭5も）を最小移動で繋ぐと Smooth +100' },
 
         // Phase 3（4和音・フル）
-        { id: 7, key: 'p3-maj', phase: 3, title: 'メジャー ii7-V7-Imaj7', song: 'ii_V_I_maj', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+        { id: 9, key: 'p3-maj', phase: 3, title: 'メジャー ii7-V7-Imaj7', song: 'ii_V_I_maj', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
           goal: '7thコードの全構成音を12キーで（2回目のIは I6）',
           mission: '7th（I6 は6度）まで押さえ、最低音をルートにすると Perfect +100' },
-        { id: 8, key: 'p3-min', phase: 3, title: 'マイナー iiø7-V7(b9)-im7', song: 'ii_V_i_min', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+        { id: 10, key: 'p3-min', phase: 3, title: 'マイナー iiø7-V7(b9)-im7', song: 'ii_V_i_min', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
           goal: 'ハーフディミニッシュと♭9で作る本格的な短調の ii-V-i（2回目は im6）',
           mission: 'V7(b9) は5度省略OK（4音でも可）。最低音をルートにすると Perfect +100' },
-        { id: 9, key: 'p3-pop', phase: 3, title: '王道進行（4和音）', song: 'pop', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 85,
+        { id: 11, key: 'p3-turnaround', phase: 3, title: '循環進行 Imaj7-VI7-ii7-V7', song: 'turnaround', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+          goal: 'VI7 は ii へのセカンダリードミナント。調の外の3度（C なら ド♯）を含む循環を12キーで',
+          mission: 'VI7 の3度は半音上がった音。最低音をルートにすると Perfect +100' },
+        { id: 12, key: 'p3-pop', phase: 3, title: '王道進行（4和音）', song: 'pop', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 85,
           goal: 'IVmaj7 の浮遊感と iiim7・vim7 の切なさを4和音で',
           mission: '7thまで押さえ、最低音をルートにすると Perfect +100' },
-        { id: 10, key: 'p3-passacaglia', phase: 3, title: 'パッサカリア（4和音）', song: 'passacaglia', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+        { id: 13, key: 'p3-passacaglia', phase: 3, title: 'パッサカリア（4和音）', song: 'passacaglia', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
           goal: 'バロックからジャズまで使われる4度上行の循環を、ヘンデルの旋律とともに4和音で',
           mission: '8コードすべて7thまで。最低音をルートにすると Perfect +100' },
-        { id: 11, key: 'p3-citypop', phase: 3, title: '丸サ進行（4和音）', song: 'citypop', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 85,
+        { id: 14, key: 'p3-citypop', phase: 3, title: '丸サ進行（4和音）', song: 'citypop', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 85,
           goal: 'III7（vi へのセカンダリードミナント）と vm7-I7（IV への ii-V）で作るシティポップの循環',
           mission: '最終小節は vm7・I7 が2拍ずつ。最低音をルートにすると Perfect +100' },
 
         // Phase 4（5和音・ルートレス）
-        { id: 12, key: 'p4-citypop', phase: 4, title: '丸サ進行（5和音ルートレス）', song: 'citypop', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 85,
+        { id: 15, key: 'p4-maj', phase: 4, title: 'メジャー ii-V-I（5和音ルートレス）', song: 'ii_V_I_maj', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 80,
+          goal: 'ルートをベースに任せ、9th を含む4音で弾くジャズの基本形（3度か7度を一番下にした2つの形）',
+          mission: 'ルート抜きの4音。転回して最小移動で繋ぐと Smooth +100' },
+        { id: 16, key: 'p4-min', phase: 4, title: 'マイナー ii-V-i（5和音ルートレス）', song: 'ii_V_i_min', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 80,
+          goal: 'iiø11 → V7(b9) → im9。V7(b9) はルートを抜くと減7の形になる',
+          mission: 'ルート抜きの4音。転回して最小移動で繋ぐと Smooth +100' },
+        { id: 17, key: 'p4-turnaround', phase: 4, title: '循環進行（5和音ルートレス）', song: 'turnaround', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 80,
+          goal: '9th・♭9 を含むルート抜きの4音で。VI7(b9) はルートを抜くと減7の形になる',
+          mission: 'ルート抜きの4音。転回して最小移動で繋ぐと Smooth +100' },
+        { id: 18, key: 'p4-citypop', phase: 4, title: '丸サ進行（5和音ルートレス）', song: 'citypop', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 85,
           goal: 'ルートをベースに任せ、9th・♭9を含む4音で弾くプロ仕様の響き',
           mission: 'ルート抜きの4音。転回して最小移動で繋ぐと Smooth +100' }
     ]);
@@ -1657,6 +1737,7 @@
     let isCourseMode = true;
     let currentStepIdx = 0;
     let clearedSteps = loadClearedSteps();
+    let records = loadRecords();
 
     const config = {
         song: 'ii_V_I_maj',
@@ -1706,6 +1787,18 @@
     const HIT_WINDOW_MAX_BEATS = 0.52;
     const JUST_TIMING_SEC = 0.07;     // ±70ms 以内なら「Just」
     const JUST_BONUS = 20;            // Just のボーナス点（和音の正しさ 100/50 より小さく、音の選び方を最優先にする）
+    // スコア：ミスしたらそのやり直し区間で得た点を取り消し、さらに MISS_PENALTY を引く（表示と記録は0未満にしない）。
+    // コースの復習フェーズは確認のための再演奏なので加点しない。これで「ミスして弾き直すほど点が増える」ことがなくなる。
+    const MISS_PENALTY = 100;
+    const COMBO_MILESTONES = Object.freeze([10, 25, 50, 100]); // 以降は100ごと
+    // ランク：上から順に、すべての条件を満たした最初のもの（perfect = 100点の判定の割合、just = ジャスト率）
+    const RANK_RULES = Object.freeze([
+        { rank: 'S', maxMiss: 0, perfect: 0.95, just: 0.7 },
+        { rank: 'A', maxMiss: 2, perfect: 0.85, just: 0.4 },
+        { rank: 'B', maxMiss: 5, perfect: 0.7,  just: 0 },
+        { rank: 'C', maxMiss: Infinity, perfect: 0, just: 0 }
+    ]);
+    const RANK_ORDER = 'SABC';
     function getHitWindowBeats() {
         const spb = 60 / config.bpm;
         const sec = Math.min(HIT_WINDOW_MAX_SEC, Math.max(HIT_WINDOW_MIN_SEC, HIT_WINDOW_BEAT_RATIO * spb));
@@ -1722,6 +1815,11 @@
     let score = 0;
     let hitCount = 0;               // 成功したコード数（ジャスト率の分母）
     let justCount = 0;              // タイミング Just（またはタイでの保持）の数
+    let perfectCount = 0;           // 100点の判定（Perfect / Smooth / Start）の数
+    let missCount = 0;
+    let combo = 0;                  // ミスなしで続けて弾けたコード数
+    let maxCombo = 0;
+    let attemptScore = 0;           // 今のやり直し区間（ミスで最初から弾き直す単位）で得た点
     let lastNoteOnBeat = -Infinity; // 最後に新しく鍵盤を押した拍（タイミング評価用）
     let pressVersion = 0;           // 押鍵状態が変わるたびに増える（不足音の再計算を間引く）
     let hitStreak = 0;
@@ -1737,7 +1835,7 @@
     let keyChip = { cacheKey: '', main: '', sig: '', w: 0 }; // 左上のキー表示（キー・フォント変更時のみ再計算）
     let pressedLabelDirty = false;
     let rangeCache = { sig: '', bassShift: 0, melShift: 0 };
-    const fonts = { labelSize: 20, hintSize: 12, degSize: 14, bannerSub: '', bannerTitle: '', small: '', hud: '', pauseTitle: '', pauseSub: '', keyLabel: '', keyMain: '', keySig: '' };
+    const fonts = { labelSize: 20, hintSize: 12, degSize: 14, bannerSub: '', bannerTitle: '', small: '', hud: '', combo: '', pauseTitle: '', pauseSub: '', keyLabel: '', keyMain: '', keySig: '' };
 
     // 入力・鍵盤状態
     const noteSources = new Map();
@@ -1785,6 +1883,9 @@
         freeBeat: document.getElementById('free-beat'),
         resultTitle: document.getElementById('result-title'),
         resultDesc: document.getElementById('result-desc'),
+        resultRank: document.getElementById('result-rank'),
+        resultNew: document.getElementById('result-new'),
+        resultStats: document.getElementById('result-stats'),
         btnResultNext: document.getElementById('btn-result-next'),
         btnResultBack: document.getElementById('btn-result-back'),
         gameShell: document.getElementById('game-shell'),
@@ -1864,6 +1965,59 @@
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(clearedSteps)));
         } catch {}
+    }
+
+    // 自己ベスト：{ [記録キー]: { score, rank, just, combo } }。各項目はそれぞれの最高値を残す
+    function loadRecords() {
+        try {
+            const r = JSON.parse(localStorage.getItem(RECORDS_KEY) || 'null');
+            if (r && typeof r === 'object') return r;
+        } catch {}
+        return {};
+    }
+
+    function saveRecords() {
+        try { localStorage.setItem(RECORDS_KEY, JSON.stringify(records)); } catch {}
+    }
+
+    // スコアは弾くコード数（周回数）で変わるので、周回数も記録キーに含める
+    function getRecordKey() {
+        if (isCourseMode) return `course:${COURSE_STEPS[currentStepIdx].key}:laps${config.lapsToClear}`;
+        return `free:${config.song}:${config.cofIdx}:${config.diff}:${config.mode}:laps${config.lapsToClear}:blind-${config.blindMode}`;
+    }
+
+    function computeRank(stats) {
+        const perfect = stats.hits > 0 ? stats.perfect / stats.hits : 0;
+        const just = stats.hits > 0 ? stats.just / stats.hits : 0;
+        return RANK_RULES.find(r => stats.misses <= r.maxMiss && perfect >= r.perfect && just >= r.just).rank;
+    }
+
+    function betterRank(a, b) {
+        if (!a) return b;
+        if (!b) return a;
+        return RANK_ORDER.indexOf(a) <= RANK_ORDER.indexOf(b) ? a : b;
+    }
+
+    // ステップの最高ランク（周回数の違う記録もまとめて見る。ランクは周回数によらない）
+    function getStepBestRank(stepKey) {
+        let best = null;
+        const prefix = `course:${stepKey}:`;
+        for (const k in records) if (k.startsWith(prefix)) best = betterRank(best, records[k].rank);
+        return best;
+    }
+
+    // 今回の結果を記録し、更新前の記録と「スコアの自己ベスト更新か」を返す
+    function recordResult(result) {
+        const key = getRecordKey();
+        const prev = records[key] || null;
+        records[key] = {
+            score: Math.max(prev ? prev.score : 0, result.score),
+            rank: betterRank(prev && prev.rank, result.rank),
+            just: Math.max(prev ? prev.just : 0, result.just),
+            combo: Math.max(prev ? prev.combo : 0, result.combo)
+        };
+        saveRecords();
+        return { prev, isNewScore: !prev || result.score > prev.score };
     }
 
     function mod12(n) {
@@ -2158,6 +2312,7 @@
                 const step = stepsInPhase[s];
                 const isCleared = clearedSteps.has(step.key);
                 const isRec = step.id === recIdx;
+                const bestRank = getStepBestRank(step.key);
 
                 const card = document.createElement('button');
                 card.type = 'button';
@@ -2165,7 +2320,7 @@
                 card.className = 'step-card' + (isCleared ? ' cleared' : '') + (isRec ? ' recommended' : '');
                 card.innerHTML = `
                     <div class="step-top">
-                        <span class="step-num">STEP ${step.id + 1}</span>
+                        <span class="step-num">STEP ${step.id + 1}${bestRank ? ` <span class="step-rank rank-${bestRank}" title="最高ランク" aria-label="最高ランク ${bestRank}">${bestRank}</span>` : ''}</span>
                         ${isCleared
                             ? '<span class="step-status cleared">★ 12キー制覇</span>'
                             : (isRec ? '<span class="step-status next">▶ おすすめ</span>' : '')}
@@ -2357,6 +2512,11 @@
         score = 0;
         hitCount = 0;
         justCount = 0;
+        perfectCount = 0;
+        missCount = 0;
+        combo = 0;
+        maxCombo = 0;
+        attemptScore = 0;
         hitStreak = 0;
         targetStreak = PROGRESSIONS[config.song].length * config.lapsToClear;
         blocks = [];
@@ -2433,18 +2593,42 @@
     function updateStatsUI() {
         const songLen = PROGRESSIONS[config.song].length;
         const currentLap = Math.min(config.lapsToClear, Math.floor(hitStreak / songLen) + 1);
-        dom.scoreDisplay.textContent = String(score);
+        dom.scoreDisplay.textContent = String(Math.max(0, score));
         dom.lapDisplay.textContent = `${currentLap}/${config.lapsToClear}周 (${hitStreak}/${targetStreak})`;
         // 予告表示は描画ループで毎フレーム作らず、状態が変わるここでだけ再計算する
         const remain = targetStreak - hitStreak;
         nextKeyPreview = (isCourseMode && remain > 0 && remain <= 2) ? getNextKeyPreview() : null;
     }
 
-    function getJustRateText() {
-        return hitCount > 0 ? ` ／ ジャスト率 ${Math.round(justCount / hitCount * 100)}%` : '';
+    function renderResultStats() {
+        const finalScore = Math.max(0, score);
+        const result = {
+            score: finalScore, combo: maxCombo,
+            just: hitCount > 0 ? Math.round(justCount / hitCount * 100) : 0,
+            rank: computeRank({ hits: hitCount, perfect: perfectCount, just: justCount, misses: missCount })
+        };
+        const { prev, isNewScore } = recordResult(result);
+        const perfectRate = hitCount > 0 ? Math.round(perfectCount / hitCount * 100) : 0;
+
+        dom.resultRank.textContent = result.rank;
+        dom.resultRank.className = `result-rank rank-${result.rank}`;
+        dom.resultRank.setAttribute('aria-label', `ランク ${result.rank}`);
+        dom.resultNew.classList.toggle('hidden', !isNewScore);
+
+        const best = prev ? `<span class="best">（自己ベスト ${prev.score}）</span>` : '';
+        const rows = [
+            ['Score', `${finalScore}${best}`],
+            ['ジャスト率', `${result.just}%`],
+            ['Perfect 率', `${perfectRate}%`],
+            ['最大コンボ', String(maxCombo)],
+            ['ミス', String(missCount)]
+        ];
+        dom.resultStats.innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+        return isNewScore;
     }
 
     function openResultModal() {
+        const isNewScore = renderResultStats();
         if (isCourseMode) {
             clearedSteps.add(COURSE_STEPS[currentStepIdx].key);
             saveClearedSteps();
@@ -2455,17 +2639,18 @@
                 const nextStep = COURSE_STEPS[currentStepIdx + 1];
                 dom.btnResultNext.classList.remove('hidden');
                 dom.btnResultNext.textContent = `次へ ▶ Step ${nextStep.id + 1}: ${nextStep.title}`;
-                dom.resultDesc.textContent = `Step ${currentStepIdx + 1} の全12キー（復習含む）をノーミス制覇しました！（Score: ${score}${getJustRateText()}）`;
+                dom.resultDesc.textContent = `Step ${currentStepIdx + 1} の全12キー（復習含む）をノーミス制覇しました！`;
             } else {
                 dom.btnResultNext.classList.add('hidden');
-                dom.resultDesc.textContent = `全13ステップ・12キー完全制覇おめでとうございます！（Score: ${score}${getJustRateText()}）`;
+                dom.resultDesc.textContent = `全${COURSE_STEPS.length}ステップ・12キー完全制覇おめでとうございます！`;
             }
         } else {
             dom.resultTitle.textContent = 'STAGE CLEAR!';
             dom.btnResultNext.classList.add('hidden');
             dom.btnResultBack.textContent = 'フリー設定へ';
-            dom.resultDesc.textContent = `${config.lapsToClear}周ノーミス達成！（Score: ${score}${getJustRateText()}）`;
+            dom.resultDesc.textContent = `${config.lapsToClear}周ノーミス達成！`;
         }
+        if (isNewScore) announce('自己ベスト更新');
         showOverlay('result-screen');
     }
 
@@ -2540,6 +2725,7 @@
         const meta = SONG_META[config.song];
         config.cofIdx = meta.keyOrder[nextPos];
         hitStreak = 0;
+        attemptScore = 0;
         hadMissInCurrentKey = false;
         lastPlayedMidiNotes = [];
         pressedLabelDirty = true;
@@ -2689,12 +2875,21 @@
         }
         const bonus = timing === 'Just' ? JUST_BONUS : 0;
         if (bonus) justCount++;
+        if (pts === 100) perfectCount++;
+        combo++;
+        if (combo > maxCombo) maxCombo = combo;
 
-        score += pts + bonus;
+        const isReviewHit = isCourseMode && isReviewPhase;
+        const gained = isReviewHit ? 0 : pts + bonus;
+        score += gained;
+        attemptScore += gained;
         updateStatsUI();
         const y = Math.max(40, hitY - blockH * 0.85);
-        addParticle(`${msg} +${pts}`, y, col, 26);
-        const sub = [bonus ? `Just +${bonus}` : timing];
+        addParticle(isReviewHit ? `${msg}（復習）` : `${msg} +${pts}`, y, col, 26);
+        if (COMBO_MILESTONES.includes(combo) || (combo > 100 && combo % 100 === 0)) {
+            addParticle(`${combo} COMBO!`, Math.max(40, y - 34), COLORS.smooth, 30);
+        }
+        const sub = [isReviewHit ? timing : (bonus ? `Just +${bonus}` : timing)];
         if (wrongCount === 1) sub.push('余分な音1つ');
         addParticle(sub.join(' ・ '), y + 26, timing === 'Just' ? COLORS.textSub : COLORS.degree, 15);
         return true;
@@ -2760,6 +2955,10 @@
         } else if (missedBlock) {
             hitStreak = 0;
             hadMissInCurrentKey = true;
+            missCount++;
+            combo = 0;
+            score -= attemptScore + MISS_PENALTY; // 途中では負にもなる（表示と記録は0以上）
+            attemptScore = 0;
             // 仕様：ミスしたらそのキーの最初（1コード目）からやり直し
             restartProgressionAt(missedBlock.targetBeat + missedBlock.beats);
             updateStatsUI();
@@ -3018,6 +3217,15 @@
             ctx.font = fonts.hud;
             ctx.textAlign = 'left';
             ctx.fillText(pressedLabel, 18, hudY + 13);
+            ctx.textAlign = 'center';
+        }
+
+        // コンボ表示（右下。押下中の音の表示と左右に分ける）
+        if (combo >= 2) {
+            ctx.fillStyle = COLORS.smooth;
+            ctx.font = fonts.combo;
+            ctx.textAlign = 'right';
+            ctx.fillText(`${combo} COMBO`, canvasW - 14, canvasH - 23);
             ctx.textAlign = 'center';
         }
 
@@ -3294,6 +3502,7 @@
         fonts.bannerTitle = `${COLORS.wBlack} 14px ${f}`;
         fonts.small = `${COLORS.wBold} 13px ${f}`;
         fonts.hud = `${COLORS.wBold} 12px ${f}`;
+        fonts.combo = `${COLORS.wBlack} 18px ${f}`;
         fonts.pauseTitle = `${COLORS.wBlack} 22px ${f}`;
         fonts.pauseSub = `600 14px ${f}`;
         fonts.keyLabel = `${COLORS.wBold} 10px ${f}`;

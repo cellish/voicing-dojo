@@ -16,9 +16,10 @@ function loadScript() {
     globalThis.__t = {
         startCourseStep, startFreeSession, updateTimeline, drawFrame, pressNote, releaseNote,
         buildChordTarget, getDegreeText, getHitWindowBeats, getLookaheadBeats, resizeApp, applyTheme, initAudio,
-        transposeChordLabel, spellInKey, PROGRESSIONS, SONG_META, CIRCLE_OF_FIFTHS, COURSE_STEPS,
+        transposeChordLabel, spellInKey, PROGRESSIONS, SONG_META, CIRCLE_OF_FIFTHS, COURSE_STEPS, computeRank, getStepBestRank,
         state: () => ({ currentBeat, hitStreak, targetStreak, blocks, courseOrderPos, keyStatuses, isReviewPhase,
-                        reviewQueue, resultPending, score, config, clearedSteps })
+                        reviewQueue, resultPending, score, config, clearedSteps,
+                        combo, maxCombo, missCount, perfectCount, hitCount, records })
     };
 ` + js.slice(tail);
     return js;
@@ -102,7 +103,9 @@ export function loadApp({ storage = {} } = {}) {
         }
     });
     vm.runInContext(loadScript(), context, { filename: 'index.html' });
-    return { T: context.__t, audioLog, store, elements, setNow: (v) => { now = v; } };
+    // 結果画面を開く（setTimeout で待っている処理を実行する）
+    const runPendingTimeout = () => { const f = context.__pendingTimeout; context.__pendingTimeout = null; if (f) f(); };
+    return { T: context.__t, audioLog, store, elements, setNow: (v) => { now = v; }, runPendingTimeout };
 }
 
 /**
