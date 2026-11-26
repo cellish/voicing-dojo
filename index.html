@@ -23,6 +23,7 @@
             --degree: #ffcc00;
             --green: #10b981;
             --orange: #f59e0b;
+            --gold: #f5b301;
             --danger: #ff4d5a;
             --text: #f8fafc;
             --muted: #94a3b8;
@@ -484,7 +485,7 @@
             line-height: 1;
             color: var(--primary);
         }
-        .result-rank.rank-S { color: #f5b301; }
+        .result-rank.rank-S { color: var(--gold); }
         .result-rank.rank-A { color: var(--smooth); }
         .result-new {
             padding: 4px 10px;
@@ -515,8 +516,76 @@
             font-size: 0.72rem;
             color: var(--muted, #94a3b8);
         }
-        .step-rank.rank-S { color: #f5b301; }
+        .step-rank.rank-S { color: var(--gold); }
         .step-rank.rank-A { color: var(--smooth); }
+        .result-rank.rank-bpm { font-size: 2.2rem; color: var(--smooth); }
+        .result-achv {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px;
+            margin: -12px 0 18px;
+        }
+        .achv-pill {
+            padding: 3px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            font-size: 0.8rem;
+            font-weight: 800;
+        }
+        .confetti {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .confetti span {
+            position: absolute;
+            top: -12px;
+            width: 8px;
+            height: 12px;
+            border-radius: 2px;
+            animation-name: confetti-fall;
+            animation-timing-function: ease-in;
+            animation-fill-mode: forwards;
+        }
+        @keyframes confetti-fall {
+            0% { translate: 0 0; opacity: 1; }
+            100% { translate: 20px 105vh; rotate: 540deg; opacity: 0.3; }
+        }
+        .streak-badge {
+            margin: 0 0 14px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+        .challenge-card:disabled { opacity: 0.55; cursor: not-allowed; }
+        .achievement-list {
+            list-style: none;
+            margin: 0 0 24px;
+            padding: 0;
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 8px;
+        }
+        .achv {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            font-size: 0.78rem;
+            opacity: 0.55;
+        }
+        .achv.got { opacity: 1; border-color: var(--gold); }
+        .achv.got strong { color: var(--gold); }
+        .achv span { opacity: 0.8; }
         .result-actions {
             display: flex;
             flex-direction: column;
@@ -699,10 +768,16 @@
             transition: transform 0.15s, background 0.15s, border-color 0.15s;
         }
         .key-badge.perfect {
-            background: rgba(16, 185, 129, 0.22);
-            color: #34d399;
-            border-color: var(--green);
+            background: rgba(245, 179, 1, 0.2);
+            color: #f5b301;
+            border-color: #f5b301;
         }
+        .key-badge.recovered {
+            background: rgba(148, 163, 184, 0.22);
+            color: #cbd5e1;
+            border-color: #94a3b8;
+        }
+        .key-badge.skip { opacity: 0.35; }
         .key-badge.review {
             background: rgba(245, 158, 11, 0.22);
             color: #fbbf24;
@@ -945,6 +1020,7 @@
             --green: #047857;
             --green-soft: rgba(4, 120, 87, 0.1);
             --orange: #b45309;
+            --gold: #a16207;
             --orange-soft: rgba(217, 119, 6, 0.12);
             --danger: #dc2626;
             --text: #111827;
@@ -973,6 +1049,7 @@
                 --green: #34d399;
                 --green-soft: rgba(52, 211, 153, 0.12);
                 --orange: #f59e0b;
+                --gold: #fbbf24;
                 --orange-soft: rgba(245, 158, 11, 0.14);
                 --danger: #f87171;
                 --text: #e5e7eb;
@@ -1083,7 +1160,8 @@
         html[data-theme="modern"] #key-tracker { background: var(--bg); }
         html[data-theme="modern"] .tracker-phase-pill { background: var(--orange-soft); border-color: var(--orange); color: var(--orange); font-weight: 700; }
         html[data-theme="modern"] .key-badge { font-weight: 600; color: var(--muted); }
-        html[data-theme="modern"] .key-badge.perfect { background: var(--green-soft); color: var(--green); border-color: var(--green); }
+        html[data-theme="modern"] .key-badge.perfect { background: rgba(245, 179, 1, 0.16); color: var(--gold); border-color: var(--gold); }
+        html[data-theme="modern"] .key-badge.recovered { background: var(--surface-2); color: var(--text); border-color: var(--border-strong); }
         html[data-theme="modern"] .key-badge.review { background: var(--orange-soft); color: var(--orange); border-color: var(--orange); }
         html[data-theme="modern"] .key-badge.current {
             background: var(--primary);
@@ -1146,6 +1224,8 @@
                 MIDI鍵盤・画面鍵盤（マルチタッチ）・PCキーボード（A〜L）で演奏できます。
             </p>
 
+            <p class="streak-badge hidden" id="streak-badge"></p>
+
             <div class="home-cards">
                 <button class="mode-card course" id="btn-open-course" type="button">
                     <span class="card-pill">はじめての方はこちら・全19ステップ</span>
@@ -1157,6 +1237,12 @@
                     <span class="card-pill">全7進行・自由設定</span>
                     <h2><span class="ico">🎹 </span>フリー練習</h2>
                     <p>進行・キー・難易度・ボイシング・テンポを選んで練習。コード名を隠す耳コピモードもあります。</p>
+                </button>
+
+                <button class="mode-card" id="btn-open-challenge" type="button">
+                    <span class="card-pill">腕試し・毎日の練習</span>
+                    <h2><span class="ico">🏆 </span>チャレンジ</h2>
+                    <p>今日のドリル、だんだん速くなるスピードアップ、耳コピ、苦手キー克服。実績も集めよう。</p>
                 </button>
             </div>
 
@@ -1181,7 +1267,7 @@
 
             <div class="course-toolbar">
                 <div class="course-toolbar-info">
-                    <span style="color:var(--green);font-weight:800;">✓ 緑</span> = 一発合格　<strong>↻ 橙</strong> = 要復習（12キー終了後に再出題）<br>
+                    <strong style="color:var(--gold);">★ 金</strong> = 一発合格　<strong style="color:var(--text);">✓ 銀</strong> = 復習で合格　<strong>↻ 橙</strong> = 要復習（12キー終了後に再出題）<br>
                     ミスするとそのキーの1コード目からやり直しです。
                 </div>
                 <label class="laps-selector">
@@ -1307,9 +1393,52 @@
     </section>
 
     <!-- =====================================================================
+         3b. チャレンジ画面
+         ===================================================================== -->
+    <section id="challenge-screen" class="overlay-screen hidden">
+        <div class="screen-inner">
+            <div class="sub-header">
+                <button class="btn" id="btn-challenge-back" type="button">◀ ホームへ</button>
+                <h2><span class="ico">🏆 </span>チャレンジ</h2>
+                <div style="width: 84px;"></div>
+            </div>
+
+            <div class="course-toolbar">
+                <label class="laps-selector">
+                    <span>進行:</span>
+                    <select id="ch-song"></select>
+                </label>
+                <label class="laps-selector">
+                    <span>ボイシング:</span>
+                    <select id="ch-level">
+                        <option value="triad">3和音・フル</option>
+                        <option value="guide">ガイドトーン</option>
+                        <option value="seventh" selected>4和音・フル</option>
+                        <option value="rootless">5和音・ルートレス</option>
+                    </select>
+                </label>
+                <label class="laps-selector">
+                    <span>耳コピのヒント:</span>
+                    <select id="ch-hint">
+                        <option value="chord" selected>コード和音</option>
+                        <option value="bass_melody">ベース＋メロディ</option>
+                    </select>
+                </label>
+                <div class="course-toolbar-info">進行とボイシングは、スピードアップ・耳コピ・苦手キー克服に使います（今日のドリルは日替わり）。</div>
+            </div>
+
+            <div class="course-grid challenge-grid" id="challenge-grid"></div>
+
+            <h3 class="phase-heading"><span class="phase-tag">実績</span><span>集めた実績</span><span class="phase-count" id="achievement-count">0 / 0</span></h3>
+            <ul class="achievement-list" id="achievement-list"></ul>
+        </div>
+    </section>
+
+    <!-- =====================================================================
          4. リザルト画面
          ===================================================================== -->
     <section id="result-screen" class="overlay-screen overlay-modal hidden" role="dialog" aria-modal="true" aria-labelledby="result-title" aria-describedby="result-desc">
+        <div class="confetti hidden" id="confetti" aria-hidden="true"></div>
         <div class="result-box">
             <h2 id="result-title">STAGE CLEAR!</h2>
             <div class="result-rank-row">
@@ -1318,6 +1447,7 @@
             </div>
             <p id="result-desc">クリアおめでとうございます！</p>
             <dl class="result-stats" id="result-stats"></dl>
+            <div class="result-achv hidden" id="result-achv"></div>
             <div class="result-actions">
                 <button class="btn btn-primary" id="btn-result-next" type="button">次のステップへ進む</button>
                 <button class="btn btn-smooth" id="btn-result-retry" type="button">もう一度同じ課題を練習</button>
@@ -1392,8 +1522,11 @@
     const STORAGE_KEY = 'chord_master_cleared_steps_v4';
     const LEGACY_STORAGE_KEY = 'chord_master_cleared_steps_v3';
     const PREFS_KEY = 'chord_master_prefs_v1';
-    const RECORDS_KEY = 'chord_master_records_v1'; // 自己ベスト（ステップ・フリー設定ごと）
-    const OVERLAY_IDS = ['start-screen', 'course-menu-screen', 'free-settings-screen', 'result-screen'];
+    const RECORDS_KEY = 'chord_master_records_v1'; // 自己ベスト（ステップ・フリー設定・チャレンジごと）
+    const ACTIVITY_KEY = 'chord_master_activity_v1'; // 練習した日（連続日数）と今日のドリル
+    const KEYSTATS_KEY = 'chord_master_keystats_v1'; // キーごとのミス・ノーミス回数（苦手キー克服用）
+    const ACHIEVEMENTS_KEY = 'chord_master_achievements_v1'; // 解除した実績
+    const OVERLAY_IDS = ['start-screen', 'course-menu-screen', 'free-settings-screen', 'challenge-screen', 'result-screen'];
 
     // Canvas 用の配色（テーマ別）。描画ループ内で CSS を参照しないよう JS 側に保持する。
     const CANVAS_THEMES = Object.freeze({
@@ -1738,6 +1871,9 @@
     let currentStepIdx = 0;
     let clearedSteps = loadClearedSteps();
     let records = loadRecords();
+    let activity = loadJson(ACTIVITY_KEY, {});      // { last, streak, best, total, daily: { date, step, pos, done } }
+    let keyStats = loadJson(KEYSTATS_KEY, {});
+    let achievements = new Set(Array.isArray(loadJson(ACHIEVEMENTS_KEY, null)) ? loadJson(ACHIEVEMENTS_KEY, null) : []);
 
     const config = {
         song: 'ii_V_I_maj',
@@ -1754,6 +1890,12 @@
 
     // コースモード用12キー＆自動復習ステート
     let courseOrderPos = 0;         // 現在の五度圏進行位置（0..11）
+    let keyPlan = [];               // このセッションで弾くキーの位置（コースは 0..11、チャレンジは一部だけのことも）
+    let planIdx = 0;                // keyPlan の何番目か
+    let challengeType = null;       // チャレンジ中なら 'daily' | 'speed' | 'ear' | 'weak'
+    let challengeLevel = 'seventh'; // チャレンジのボイシング（CHALLENGE_LEVELS のキー）
+    let speedKeysCleared = 0;       // スピードチャレンジでクリアしたキー数
+    let speedBestBpm = 0;           // スピードチャレンジでキーをクリアできた最高 BPM
     let keyStatuses = [];           // 各位置(0..11)の状態: 'pending' | 'perfect' | 'review'
     let isReviewPhase = false;      // 1周終了後の復習フェーズか
     let reviewQueue = [];           // 復習待ちの位置インデックス配列
@@ -1799,6 +1941,46 @@
         { rank: 'C', maxMiss: Infinity, perfect: 0, just: 0 }
     ]);
     const RANK_ORDER = 'SABC';
+
+    // ---- チャレンジ ----
+    const CHALLENGE_LEVELS = Object.freeze({
+        triad:    { diff: 'beginner',     mode: 'full',     label: '3和音・フル' },
+        guide:    { diff: 'intermediate', mode: 'guide',    label: 'ガイドトーン' },
+        seventh:  { diff: 'intermediate', mode: 'full',     label: '4和音・フル' },
+        rootless: { diff: 'advanced',     mode: 'rootless', label: '5和音・ルートレス' }
+    });
+    const CHALLENGES = Object.freeze([
+        { id: 'daily', title: '今日のドリル', desc: '日替わりの課題を1つ（1キー・2周）。毎日続けて連続日数を伸ばそう' },
+        { id: 'speed', title: 'スピードアップ', desc: 'キーをクリアするたびに BPM +5。ミスしたら終了。どこまで速く弾けるか' },
+        { id: 'ear',   title: '耳コピチャレンジ', desc: 'コード名を隠して12キー。出てくる前に鳴るヒントの音だけを頼りに弾く' },
+        { id: 'weak',  title: '苦手キー克服', desc: 'これまでにミスの多かったキーだけを集中練習（各2周）' }
+    ]);
+    const SPEED_START_BPM = 70;
+    const SPEED_STEP_BPM = 5;
+    const SPEED_MAX_BPM = 200;
+    const WEAK_KEY_COUNT = 4;
+
+    // ---- 実績（結果画面で判定。ctx は今回の結果と保存済みの記録） ----
+    const ACHIEVEMENTS = Object.freeze([
+        { id: 'first_clear', title: 'はじめの一歩', desc: 'コースのステップを1つ制覇', check: c => c.clearedCount >= 1 },
+        { id: 'phase_1', title: 'Phase 1 修了', desc: 'Phase 1 をすべて制覇', check: c => c.phaseDone(1) },
+        { id: 'phase_2', title: 'Phase 2 修了', desc: 'Phase 2 をすべて制覇', check: c => c.phaseDone(2) },
+        { id: 'phase_3', title: 'Phase 3 修了', desc: 'Phase 3 をすべて制覇', check: c => c.phaseDone(3) },
+        { id: 'phase_4', title: 'Phase 4 修了', desc: 'Phase 4 をすべて制覇', check: c => c.phaseDone(4) },
+        { id: 'all_steps', title: '免許皆伝', desc: 'コースの全ステップを制覇', check: c => c.clearedCount >= COURSE_STEPS.length },
+        { id: 'rank_s', title: 'S ランク', desc: 'どこかで S ランクを取る', check: c => c.rank === 'S' },
+        { id: 'combo_50', title: '50 コンボ', desc: '1回で50コンボ', check: c => c.maxCombo >= 50 },
+        { id: 'combo_100', title: '100 コンボ', desc: '1回で100コンボ', check: c => c.maxCombo >= 100 },
+        { id: 'just_90', title: 'ジャストの達人', desc: '24コード以上でジャスト率90%以上', check: c => c.hits >= 24 && c.justRate >= 0.9 },
+        { id: 'speed_120', title: 'BPM 120', desc: 'スピードアップで BPM 120 のキーをクリア', check: c => c.speedBpm >= 120 },
+        { id: 'speed_160', title: 'BPM 160', desc: 'スピードアップで BPM 160 のキーをクリア', check: c => c.speedBpm >= 160 },
+        { id: 'ear_clear', title: '耳で弾く', desc: '耳コピチャレンジで12キー制覇', check: c => c.challengeType === 'ear' },
+        { id: 'weak_clear', title: '苦手に挑む', desc: '苦手キー克服をやりきる', check: c => c.challengeType === 'weak' },
+        { id: 'daily_1', title: '今日も一歩', desc: '今日のドリルをクリア', check: c => c.challengeType === 'daily' },
+        { id: 'streak_3', title: '3日連続', desc: '3日続けて練習', check: c => c.streak >= 3 },
+        { id: 'streak_7', title: '7日連続', desc: '7日続けて練習', check: c => c.streak >= 7 },
+        { id: 'streak_30', title: '30日連続', desc: '30日続けて練習', check: c => c.streak >= 30 }
+    ]);
     function getHitWindowBeats() {
         const spb = 60 / config.bpm;
         const sec = Math.min(HIT_WINDOW_MAX_SEC, Math.max(HIT_WINDOW_MIN_SEC, HIT_WINDOW_BEAT_RATIO * spb));
@@ -1886,6 +2068,11 @@
         resultRank: document.getElementById('result-rank'),
         resultNew: document.getElementById('result-new'),
         resultStats: document.getElementById('result-stats'),
+        resultAchv: document.getElementById('result-achv'),
+        confetti: document.getElementById('confetti'),
+        chSong: document.getElementById('ch-song'),
+        chLevel: document.getElementById('ch-level'),
+        chHint: document.getElementById('ch-hint'),
         btnResultNext: document.getElementById('btn-result-next'),
         btnResultBack: document.getElementById('btn-result-back'),
         gameShell: document.getElementById('game-shell'),
@@ -1926,6 +2113,10 @@
         dom.gameShell.inert = true;
         if (id === 'course-menu-screen') {
             renderCourseMenu();
+        } else if (id === 'challenge-screen') {
+            renderChallengeMenu();
+        } else if (id === 'start-screen') {
+            updateStreakBadge();
         }
         // キーボード利用者のためにフォーカスを画面内へ移す（結果画面は主ボタン）
         if (!moveFocus) return;
@@ -1982,6 +2173,9 @@
 
     // スコアは弾くコード数（周回数）で変わるので、周回数も記録キーに含める
     function getRecordKey() {
+        if (challengeType === 'daily') return `challenge:daily:${activity.daily.step}:${activity.daily.pos}`;
+        if (challengeType === 'ear') return `challenge:ear:${config.song}:${challengeLevel}:${config.blindMode}`;
+        if (challengeType) return `challenge:${challengeType}:${config.song}:${challengeLevel}`;
         if (isCourseMode) return `course:${COURSE_STEPS[currentStepIdx].key}:laps${config.lapsToClear}`;
         return `free:${config.song}:${config.cofIdx}:${config.diff}:${config.mode}:laps${config.lapsToClear}:blind-${config.blindMode}`;
     }
@@ -2006,18 +2200,124 @@
         return best;
     }
 
-    // 今回の結果を記録し、更新前の記録と「スコアの自己ベスト更新か」を返す
-    function recordResult(result) {
+    // 今回の結果を記録し、更新前の記録と「自己ベスト更新か」を返す（primary の項目で判定。数値はそれぞれの最高値を残す）
+    function recordResult(result, primary = 'score') {
         const key = getRecordKey();
         const prev = records[key] || null;
-        records[key] = {
-            score: Math.max(prev ? prev.score : 0, result.score),
-            rank: betterRank(prev && prev.rank, result.rank),
-            just: Math.max(prev ? prev.just : 0, result.just),
-            combo: Math.max(prev ? prev.combo : 0, result.combo)
-        };
+        const next = {};
+        for (const k in result) {
+            next[k] = k === 'rank' ? betterRank(prev && prev.rank, result.rank) : Math.max(prev && prev[k] || 0, result[k]);
+        }
+        records[key] = next;
         saveRecords();
-        return { prev, isNewScore: !prev || result.score > prev.score };
+        return { prev, isNewScore: result[primary] > 0 && (!prev || result[primary] > (prev[primary] || 0)) };
+    }
+
+    function loadJson(key, fallback) {
+        try {
+            const v = JSON.parse(localStorage.getItem(key) || 'null');
+            if (v && typeof v === 'object') return v;
+        } catch {}
+        return fallback;
+    }
+    function saveJson(key, value) {
+        try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+    }
+
+    // ---- 練習した日（連続日数） ----
+    function dateStr(d) {
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+    function todayStr() { return dateStr(new Date()); }
+    function yesterdayStr() {
+        const d = new Date();
+        return dateStr(new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1));
+    }
+
+    // 今の連続日数（最後に練習したのが昨日より前なら途切れている）
+    function getStreak() {
+        if (activity.last === todayStr() || activity.last === yesterdayStr()) return activity.streak || 0;
+        return 0;
+    }
+
+    function recordActivityDay() {
+        const today = todayStr();
+        if (activity.last === today) return;
+        activity.streak = activity.last === yesterdayStr() ? (activity.streak || 0) + 1 : 1;
+        activity.best = Math.max(activity.best || 0, activity.streak);
+        activity.total = (activity.total || 0) + 1;
+        activity.last = today;
+        saveJson(ACTIVITY_KEY, activity);
+    }
+
+    function updateStreakBadge() {
+        const el = document.getElementById('streak-badge');
+        if (!el) return;
+        const streak = getStreak();
+        el.classList.toggle('hidden', !activity.total);
+        el.textContent = streak > 0
+            ? `${streak}日連続で練習中（最長 ${activity.best}日・累計 ${activity.total}日）`
+            : `練習した日：累計 ${activity.total || 0}日（今日やると連続記録スタート）`;
+    }
+
+    // ---- キーごとのミス記録（苦手キー克服） ----
+    function keyStatId(song, diff, mode, cofIdx) { return `${song}|${diff}|${mode}|${cofIdx}`; }
+
+    // clean = そのキーをノーミスで弾き切った、false = ミスした
+    function recordKeyStat(clean) {
+        const id = keyStatId(config.song, config.diff, config.mode, config.cofIdx);
+        const st = keyStats[id] || (keyStats[id] = { miss: 0, clean: 0 });
+        if (clean) st.clean++; else st.miss++;
+        saveJson(KEYSTATS_KEY, keyStats);
+    }
+
+    // ミスがノーミスより多いキーを、差の大きい順に最大 WEAK_KEY_COUNT 個（keyOrder 上の位置で返す）
+    function pickWeakKeyPositions(song, diff, mode) {
+        const order = getSongKeyOrder(song);
+        const list = [];
+        for (let pos = 0; pos < order.length; pos++) {
+            const st = keyStats[keyStatId(song, diff, mode, order[pos])];
+            if (st && st.miss > st.clean) list.push({ pos, weight: st.miss - st.clean });
+        }
+        list.sort((a, b) => b.weight - a.weight || a.pos - b.pos);
+        return list.slice(0, WEAK_KEY_COUNT).map(x => x.pos).sort((a, b) => a - b);
+    }
+
+    // ---- 今日のドリル：その日に最初に開いたときに決め、1日のあいだは変えない ----
+    function hashStr(str) {
+        let h = 2166136261;
+        for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+        return h >>> 0;
+    }
+    function getDailyDrill() {
+        const today = todayStr();
+        if (!activity.daily || activity.daily.date !== today || !COURSE_STEPS.some(s => s.key === activity.daily.step)) {
+            // 制覇済みのステップと、次に挑戦するステップから選ぶ（難しすぎる課題を出さない）
+            let recIdx = COURSE_STEPS.findIndex(st => !clearedSteps.has(st.key));
+            if (recIdx === -1) recIdx = COURSE_STEPS.length - 1;
+            const h = hashStr(today);
+            const step = COURSE_STEPS[h % (recIdx + 1)];
+            activity.daily = { date: today, step: step.key, pos: (h >>> 8) % 12, done: false };
+            saveJson(ACTIVITY_KEY, activity);
+        }
+        const step = COURSE_STEPS.find(st => st.key === activity.daily.step);
+        return { step, pos: activity.daily.pos, done: !!activity.daily.done };
+    }
+
+    // ---- 実績 ----
+    function checkAchievements(result) {
+        const phaseDone = (ph) => COURSE_STEPS.filter(st => st.phase === ph).every(st => clearedSteps.has(st.key));
+        const ctx = {
+            ...result, phaseDone, clearedCount: clearedSteps.size, streak: getStreak(),
+            justRate: hitCount > 0 ? justCount / hitCount : 0, hits: hitCount
+        };
+        const unlocked = [];
+        for (const a of ACHIEVEMENTS) {
+            if (achievements.has(a.id)) continue;
+            if (a.check(ctx)) { achievements.add(a.id); unlocked.push(a); }
+        }
+        if (unlocked.length) saveJson(ACHIEVEMENTS_KEY, Array.from(achievements));
+        return unlocked;
     }
 
     function mod12(n) {
@@ -2058,10 +2358,11 @@
         const isMinor = SONG_META[config.song].isMinor;
 
         if (!isReviewPhase) {
-            if (courseOrderPos + 1 < 12) {
-                const nextInfo = getCofInfoByPos(config.song, courseOrderPos + 1);
+            if (planIdx + 1 < keyPlan.length || challengeType === 'speed') {
+                const nextInfo = getCofInfoByPos(config.song, keyPlan[(planIdx + 1) % keyPlan.length]);
                 const p = getKeyDisplayParts(nextInfo, isMinor);
-                return { label: `${p.full} (${p.sig})`, isReview: false };
+                const bpmNote = challengeType === 'speed' ? `  BPM ${Math.min(SPEED_MAX_BPM, config.bpm + SPEED_STEP_BPM)}` : '';
+                return { label: `${p.full} (${p.sig})${bpmNote}`, isReview: false };
             }
             // 12キー目（最後）の後は、復習リストがあれば復習フェーズへ
             const willReview = reviewQueue.length > 0 || hadMissInCurrentKey;
@@ -2346,6 +2647,54 @@
         container.appendChild(frag);
     }
 
+    function renderChallengeMenu() {
+        const song = dom.chSong.value, level = dom.chLevel.value;
+        const lv = CHALLENGE_LEVELS[level] || CHALLENGE_LEVELS.seventh;
+        const daily = getDailyDrill();
+        const dailyKey = getKeyDisplayParts(getCofInfoByPos(daily.step.song, daily.pos), SONG_META[daily.step.song].isMinor);
+        const weak = pickWeakKeyPositions(song, lv.diff, lv.mode);
+        const songMeta = SONG_META[song];
+        const weakNames = weak.map(pos => getKeyDisplayParts(getCofInfoByPos(song, pos), songMeta.isMinor).short).join('・');
+        const rec = (k) => records[k] || null;
+
+        const info = {
+            daily: { sub: `Step ${daily.step.id + 1} ${daily.step.title}／${dailyKey.full}`, status: daily.done ? '✓ 今日はクリア済み' : '今日の課題' },
+            speed: { sub: `${songMeta.name}（${lv.label}）`, status: (r => r && r.bpm ? `最高 BPM ${r.bpm}` : '')(rec(`challenge:speed:${song}:${level}`)) },
+            ear:   { sub: `${songMeta.name}（${lv.label}）`, status: (r => r && r.rank ? `最高ランク ${r.rank}` : '')(rec(`challenge:ear:${song}:${level}:${dom.chHint.value}`)) },
+            weak:  { sub: weak.length ? `苦手：${weakNames}` : 'この進行・ボイシングでは、まだ苦手なキーがありません', status: '', disabled: weak.length === 0 }
+        };
+
+        const grid = document.getElementById('challenge-grid');
+        grid.innerHTML = '';
+        for (const ch of CHALLENGES) {
+            const inf = info[ch.id];
+            const card = document.createElement('button');
+            card.type = 'button';
+            card.className = 'step-card challenge-card' + (ch.id === 'daily' && daily.done ? ' cleared' : '');
+            card.disabled = !!inf.disabled;
+            card.innerHTML = `
+                <div class="step-top">
+                    <span class="step-num">${ch.id === 'daily' ? todayStr() : 'CHALLENGE'}</span>
+                    ${inf.status ? `<span class="step-status ${ch.id === 'daily' && daily.done ? 'cleared' : 'next'}">${inf.status}</span>` : ''}
+                </div>
+                <h4 class="step-title">${ch.title}</h4>
+                <div class="step-meta"><span class="meta-pill">${inf.sub}</span></div>
+                <p class="step-desc">${ch.desc}</p>`;
+            card.addEventListener('click', (e) => {
+                if (e.detail > 0) e.currentTarget.blur();
+                startChallenge(ch.id);
+            });
+            grid.appendChild(card);
+        }
+
+        const list = document.getElementById('achievement-list');
+        list.innerHTML = ACHIEVEMENTS.map(a => {
+            const got = achievements.has(a.id);
+            return `<li class="achv${got ? ' got' : ''}" title="${a.desc}"><strong>${got ? '★' : '☆'} ${a.title}</strong><span>${a.desc}</span></li>`;
+        }).join('');
+        document.getElementById('achievement-count').textContent = `${achievements.size} / ${ACHIEVEMENTS.length}`;
+    }
+
     function initKeyTrackerDOM() {
         const meta = SONG_META[config.song];
         rangeCache.sig = '';
@@ -2401,9 +2750,11 @@
 
             el.classList.toggle('current', isCurr);
             el.classList.toggle('perfect', !isCurr && st === 'perfect');
+            el.classList.toggle('recovered', !isCurr && st === 'recovered');
             el.classList.toggle('review', !isCurr && st === 'review');
+            el.classList.toggle('skip', !isCurr && st === 'skip');
 
-            el.setAttribute('aria-label', `${base}: ${isCurr ? '演奏中' : st === 'perfect' ? '一発合格' : st === 'review' ? '要復習' : '未挑戦'}`);
+            el.setAttribute('aria-label', `${base}: ${isCurr ? '演奏中' : ({ perfect: '一発合格', recovered: '復習で合格', review: '要復習', skip: '今回は弾かない' })[st] || '未挑戦'}`);
             // 狭い画面ではキー一覧が横スクロールになるので、演奏中のキーを中央に寄せる（ページ自体はスクロールさせない）
             if (isCurr && dom.keyTracker.scrollWidth > dom.keyTracker.clientWidth) {
                 dom.keyTracker.scrollLeft = el.offsetLeft - (dom.keyTracker.clientWidth - el.offsetWidth) * 0.5;
@@ -2411,6 +2762,8 @@
             if (isCurr) {
                 el.textContent = base;
             } else if (st === 'perfect') {
+                el.textContent = `${base} ★`;
+            } else if (st === 'recovered') {
                 el.textContent = `${base} ✓`;
             } else if (st === 'review') {
                 el.textContent = `${base} ↻`;
@@ -2436,14 +2789,8 @@
         config.lookaheadSec = Number(dom.courseSpeedSelect.value) || 2.8;
         config.blindMode = 'off';
 
-        // 12キー＆自動復習ステート初期化
-        courseOrderPos = 0;
-        keyStatuses = new Array(12).fill('pending');
-        isReviewPhase = false;
-        reviewQueue = [];
-        currentReviewPos = -1;
-        hadMissInCurrentKey = false;
-        config.cofIdx = getSongKeyOrder(config.song)[0];
+        challengeType = null;
+        resetKeyPlan([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
 
         dom.btnNavSub.innerHTML = '☰<span class="lbl"> コース一覧</span>';
         dom.btnNavSub.setAttribute('aria-label', 'コース一覧');
@@ -2455,8 +2802,75 @@
         await launchSession();
     }
 
+    async function startChallenge(type) {
+        isCourseMode = true;
+        challengeType = type;
+        config.lookaheadSec = Number(dom.courseSpeedSelect.value) || 2.8;
+        config.blindMode = 'off';
+        config.lapsToClear = 1;
+        let plan = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+        let title, desc;
+
+        if (type === 'daily') {
+            const d = getDailyDrill();
+            Object.assign(config, { song: d.step.song, diff: d.step.diff, mode: d.step.mode, bpm: d.step.bpm, lapsToClear: 2 });
+            challengeLevel = null;
+            plan = [d.pos];
+            title = `今日のドリル：${d.step.title}`;
+            desc = d.step.mission;
+        } else {
+            const level = CHALLENGE_LEVELS[dom.chLevel.value] ? dom.chLevel.value : 'seventh';
+            const lv = CHALLENGE_LEVELS[level];
+            Object.assign(config, { song: dom.chSong.value in SONG_META ? dom.chSong.value : 'ii_V_I_maj', diff: lv.diff, mode: lv.mode, bpm: 80 });
+            challengeLevel = level;
+            const name = `${SONG_META[config.song].name}（${lv.label}）`;
+            if (type === 'speed') {
+                config.bpm = SPEED_START_BPM;
+                title = `スピードアップ：${name}`;
+                desc = `キーをクリアするたびに BPM +${SPEED_STEP_BPM}。ミスしたら終了`;
+            } else if (type === 'ear') {
+                config.blindMode = dom.chHint.value === 'bass_melody' ? 'bass_melody' : 'chord';
+                title = `耳コピチャレンジ：${name}`;
+                desc = 'コード名は隠れています。ブロックが出るときに鳴るヒントの音で判断';
+            } else {
+                plan = pickWeakKeyPositions(config.song, config.diff, config.mode);
+                if (plan.length === 0) return;
+                config.lapsToClear = 2;
+                title = `苦手キー克服：${name}`;
+                desc = 'ミスの多かったキーを各2周。ノーミスで弾くと苦手が減ります';
+            }
+        }
+        resetKeyPlan(plan);
+
+        dom.btnNavSub.innerHTML = '☰<span class="lbl"> チャレンジ一覧</span>';
+        dom.btnNavSub.setAttribute('aria-label', 'チャレンジ一覧');
+        dom.missionTitle.textContent = title;
+        dom.missionDegrees.textContent = getDegreeText(config.song, config.diff);
+        dom.missionDesc.textContent = desc;
+        dom.missionDesc.title = desc;
+
+        await launchSession();
+    }
+
+    // 12キー＆自動復習ステート初期化（plan＝弾くキーの位置の並び）
+    function resetKeyPlan(plan) {
+        keyPlan = plan.slice();
+        planIdx = 0;
+        courseOrderPos = keyPlan[0];
+        keyStatuses = new Array(12).fill('pending');
+        for (let pos = 0; pos < 12; pos++) if (!keyPlan.includes(pos)) keyStatuses[pos] = 'skip';
+        isReviewPhase = false;
+        reviewQueue = [];
+        currentReviewPos = -1;
+        hadMissInCurrentKey = false;
+        speedKeysCleared = 0;
+        speedBestBpm = 0;
+        config.cofIdx = getSongKeyOrder(config.song)[courseOrderPos];
+    }
+
     async function startFreeSession() {
         isCourseMode = false;
+        challengeType = null;
         config.song = dom.freeSong.value;
         config.cofIdx = Number(dom.freeKey.value) || 0;
         config.lapsToClear = Number(dom.freeLaps.value) || 1;
@@ -2567,6 +2981,7 @@
     }
 
     function changeBpm(delta) {
+        if (challengeType === 'speed') return; // スピードチャレンジのテンポは自動で上がる
         config.bpm = Math.max(60, Math.min(140, config.bpm + delta));
         dom.ingameBpmVal.innerHTML = `<span class="lbl">BPM </span>${config.bpm}`;
     }
@@ -2600,38 +3015,104 @@
         nextKeyPreview = (isCourseMode && remain > 0 && remain <= 2) ? getNextKeyPreview() : null;
     }
 
+    // 結果を記録して表に出す。返り値 { isNew, rank }
     function renderResultStats() {
         const finalScore = Math.max(0, score);
-        const result = {
-            score: finalScore, combo: maxCombo,
-            just: hitCount > 0 ? Math.round(justCount / hitCount * 100) : 0,
-            rank: computeRank({ hits: hitCount, perfect: perfectCount, just: justCount, misses: missCount })
-        };
-        const { prev, isNewScore } = recordResult(result);
+        const justPct = hitCount > 0 ? Math.round(justCount / hitCount * 100) : 0;
         const perfectRate = hitCount > 0 ? Math.round(perfectCount / hitCount * 100) : 0;
+        let rows, isNew, rank = null;
 
-        dom.resultRank.textContent = result.rank;
-        dom.resultRank.className = `result-rank rank-${result.rank}`;
-        dom.resultRank.setAttribute('aria-label', `ランク ${result.rank}`);
-        dom.resultNew.classList.toggle('hidden', !isNewScore);
-
-        const best = prev ? `<span class="best">（自己ベスト ${prev.score}）</span>` : '';
-        const rows = [
-            ['Score', `${finalScore}${best}`],
-            ['ジャスト率', `${result.just}%`],
-            ['Perfect 率', `${perfectRate}%`],
-            ['最大コンボ', String(maxCombo)],
-            ['ミス', String(missCount)]
-        ];
+        if (challengeType === 'speed') {
+            // スピードは到達 BPM が記録（ランクの代わりに BPM を大きく出す）
+            const result = { bpm: speedBestBpm, keys: speedKeysCleared, score: finalScore, combo: maxCombo };
+            const r = recordResult(result, 'bpm');
+            isNew = r.isNewScore;
+            dom.resultRank.textContent = speedBestBpm > 0 ? `BPM ${speedBestBpm}` : '—';
+            dom.resultRank.className = 'result-rank rank-bpm';
+            dom.resultRank.setAttribute('aria-label', speedBestBpm > 0 ? `到達 BPM ${speedBestBpm}` : 'キーのクリアなし');
+            const best = r.prev && r.prev.bpm ? `<span class="best">（自己ベスト ${r.prev.bpm}）</span>` : '';
+            rows = [
+                ['到達 BPM', `${speedBestBpm || '—'}${best}`],
+                ['クリアしたキー', String(speedKeysCleared)],
+                ['Score', String(finalScore)],
+                ['最大コンボ', String(maxCombo)]
+            ];
+        } else {
+            rank = computeRank({ hits: hitCount, perfect: perfectCount, just: justCount, misses: missCount });
+            const r = recordResult({ score: finalScore, rank, just: justPct, combo: maxCombo });
+            isNew = r.isNewScore;
+            dom.resultRank.textContent = rank;
+            dom.resultRank.className = `result-rank rank-${rank}`;
+            dom.resultRank.setAttribute('aria-label', `ランク ${rank}`);
+            const best = r.prev ? `<span class="best">（自己ベスト ${r.prev.score}）</span>` : '';
+            rows = [
+                ['Score', `${finalScore}${best}`],
+                ['ジャスト率', `${justPct}%`],
+                ['Perfect 率', `${perfectRate}%`],
+                ['最大コンボ', String(maxCombo)],
+                ['ミス', String(missCount)]
+            ];
+        }
+        dom.resultNew.classList.toggle('hidden', !isNew);
         dom.resultStats.innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
-        return isNewScore;
+        return { isNew, rank };
+    }
+
+    // 紙吹雪（動きを減らす設定のときは出さない）
+    function showConfetti(on) {
+        const layer = dom.confetti;
+        layer.innerHTML = '';
+        const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        layer.classList.toggle('hidden', !on || reduce);
+        if (!on || reduce) return;
+        const colors = ['#f5b301', '#3b82f6', '#10b981', '#ec4899', '#8b5cf6', '#f97316'];
+        for (let i = 0; i < 40; i++) {
+            const el = document.createElement('span');
+            el.style.left = `${Math.random() * 100}%`;
+            el.style.background = colors[i % colors.length];
+            el.style.animationDelay = `${(Math.random() * 0.6).toFixed(2)}s`;
+            el.style.animationDuration = `${(1.6 + Math.random() * 1.2).toFixed(2)}s`;
+            el.style.transform = `rotate(${Math.round(Math.random() * 360)}deg)`;
+            layer.appendChild(el);
+        }
+    }
+
+    function getKeyListText(positions) {
+        const meta = SONG_META[config.song];
+        return positions.map(pos => getKeyDisplayParts(getCofInfoByPos(config.song, pos), meta.isMinor).short).join('・');
     }
 
     function openResultModal() {
-        const isNewScore = renderResultStats();
-        if (isCourseMode) {
+        const isCourseRun = isCourseMode && !challengeType;
+        if (isCourseRun) {
             clearedSteps.add(COURSE_STEPS[currentStepIdx].key);
             saveClearedSteps();
+        }
+        if (challengeType === 'daily' && activity.daily) activity.daily.done = true;
+        recordActivityDay();
+        saveJson(ACTIVITY_KEY, activity);
+        updateStreakBadge();
+
+        const { isNew, rank } = renderResultStats();
+        const unlocked = checkAchievements({ rank, maxCombo, challengeType, speedBpm: challengeType === 'speed' ? speedBestBpm : 0 });
+        dom.resultAchv.classList.toggle('hidden', unlocked.length === 0);
+        dom.resultAchv.innerHTML = unlocked.map(a => `<span class="achv-pill" title="${a.desc}">実績解除：${a.title}</span>`).join('');
+        showConfetti(isNew || rank === 'S' || (isCourseRun && clearedSteps.size === COURSE_STEPS.length) || unlocked.length > 0);
+
+        if (challengeType) {
+            const labels = {
+                daily: ['DAILY CLEAR!', `今日のドリルをクリアしました！（${getStreak()}日連続）`],
+                speed: ['SPEED CHALLENGE', speedKeysCleared > 0
+                    ? `${speedKeysCleared}キーをクリアし、BPM ${speedBestBpm} まで到達しました。`
+                    : `最初のキーでミスしました。BPM ${SPEED_START_BPM} から再挑戦！`],
+                ear: ['12 KEYS BY EAR!', '耳コピで12キーを制覇しました！'],
+                weak: ['WEAK KEYS CLEARED!', `苦手キー（${getKeyListText(keyPlan)}）をクリアしました！`]
+            };
+            dom.resultTitle.textContent = labels[challengeType][0];
+            dom.resultDesc.textContent = labels[challengeType][1];
+            dom.btnResultNext.classList.add('hidden');
+            dom.btnResultBack.textContent = 'チャレンジ一覧へ';
+        } else if (isCourseMode) {
             dom.resultTitle.textContent = '12 KEYS MASTERED!';
             dom.btnResultBack.textContent = 'コース一覧へ';
 
@@ -2650,15 +3131,15 @@
             dom.btnResultBack.textContent = 'フリー設定へ';
             dom.resultDesc.textContent = `${config.lapsToClear}周ノーミス達成！`;
         }
-        if (isNewScore) announce('自己ベスト更新');
+        if (isNew) announce('自己ベスト更新');
         showOverlay('result-screen');
     }
 
     /* =========================================================================
        10. BPM同期ゲームループ（転調・自動復習・描画・判定）
        ========================================================================= */
-    function addParticle(text, y, color, fontSize = 26) {
-        particles.push({ text, x: canvasW * 0.5, y, life: 1.0, color, fontSize, font: `${fontSize >= 20 ? COLORS.wBlack : COLORS.wBold} ${fontSize}px ${COLORS.family}` });
+    function addParticle(text, y, color, fontSize = 26, vx = 0, xOffset = 0) {
+        particles.push({ text, x: canvasW * 0.5 + xOffset, y, vx, life: 1.0, color, fontSize, font: `${fontSize >= 20 ? COLORS.wBlack : COLORS.wBold} ${fontSize}px ${COLORS.family}` });
         if (particles.length > 24) particles.shift();
     }
 
@@ -2751,8 +3232,23 @@
     }
 
     function handleKeyCleared(nextStartBeat) {
+        if (!hadMissInCurrentKey) recordKeyStat(true); // ミスはミスした時点で記録済み
         if (!isCourseMode) {
             finishSession(320);
+            return;
+        }
+
+        if (challengeType === 'speed') {
+            // スピードチャレンジ：ミスは即終了なので、ここに来るのはノーミスのキーだけ。キーごとに BPM を上げ、12キーの後は最初へ戻って続ける
+            keyStatuses[courseOrderPos] = 'perfect';
+            speedKeysCleared++;
+            speedBestBpm = Math.max(speedBestBpm, config.bpm);
+            config.bpm = Math.min(SPEED_MAX_BPM, config.bpm + SPEED_STEP_BPM);
+            updateControlBarUI();
+            planIdx = (planIdx + 1) % keyPlan.length;
+            if (planIdx === 0) keyStatuses = keyStatuses.map(st => st === 'skip' ? st : 'pending');
+            courseOrderPos = keyPlan[planIdx];
+            transitionToCourseKey(courseOrderPos, false, nextStartBeat);
             return;
         }
 
@@ -2765,8 +3261,9 @@
                 keyStatuses[courseOrderPos] = 'perfect';
             }
 
-            if (courseOrderPos + 1 < 12) {
-                courseOrderPos++;
+            if (planIdx + 1 < keyPlan.length) {
+                planIdx++;
+                courseOrderPos = keyPlan[planIdx];
                 transitionToCourseKey(courseOrderPos, false, nextStartBeat);
             } else if (reviewQueue.length > 0) {
                 // 12キー終了後、要復習キーがあれば復習フェーズへ自動移行
@@ -2777,12 +3274,12 @@
                 finishSession(350);
             }
         } else {
-            // 復習フェーズ中：ミスがあれば末尾へ再投入、ノーミスなら緑に昇格
+            // 復習フェーズ中：ミスがあれば末尾へ再投入、ノーミスなら銀（復習で合格）に
             if (hadMissInCurrentKey) {
                 keyStatuses[currentReviewPos] = 'review';
                 reviewQueue.push(currentReviewPos);
             } else {
-                keyStatuses[currentReviewPos] = 'perfect';
+                keyStatuses[currentReviewPos] = 'recovered';
             }
 
             if (reviewQueue.length > 0) {
@@ -2886,6 +3383,10 @@
         updateStatsUI();
         const y = Math.max(40, hitY - blockH * 0.85);
         addParticle(isReviewHit ? `${msg}（復習）` : `${msg} +${pts}`, y, col, 26);
+        if (pts === 100 && bonus) {
+            // 和音もタイミングも満点：左右に星を飛ばす
+            for (const dir of [-1, 1]) addParticle('✦', y + 4, '#f5b301', 20, dir * 90, dir * 70);
+        }
         if (COMBO_MILESTONES.includes(combo) || (combo > 100 && combo % 100 === 0)) {
             addParticle(`${combo} COMBO!`, Math.max(40, y - 34), COLORS.smooth, 30);
         }
@@ -2959,8 +3460,15 @@
             combo = 0;
             score -= attemptScore + MISS_PENALTY; // 途中では負にもなる（表示と記録は0以上）
             attemptScore = 0;
-            // 仕様：ミスしたらそのキーの最初（1コード目）からやり直し
-            restartProgressionAt(missedBlock.targetBeat + missedBlock.beats);
+            recordKeyStat(false);
+            if (challengeType === 'speed') {
+                // スピードチャレンジはミスしたら終了
+                keyStatuses[courseOrderPos] = 'review';
+                finishSession(900);
+            } else {
+                // 仕様：ミスしたらそのキーの最初（1コード目）からやり直し
+                restartProgressionAt(missedBlock.targetBeat + missedBlock.beats);
+            }
             updateStatsUI();
             const y = Math.max(40, hitY - 22);
             addParticle(
@@ -2985,6 +3493,7 @@
         for (let i = particles.length - 1; i >= 0; i--) {
             const p = particles[i];
             p.y -= 44 * dt;
+            p.x += p.vx * dt;
             p.life -= 1.15 * dt;
             if (p.life <= 0) particles.splice(i, 1);
         }
@@ -3616,7 +4125,8 @@
                 song: dom.freeSong.value, key: dom.freeKey.value, laps: dom.freeLaps.value,
                 diff: dom.freeDiff.value, mode: dom.freeMode.value, bpm: dom.freeBpm.value,
                 blind: dom.freeBlind.value, melody: config.melodyOn, beat: config.beatOn, speed: dom.freeSpeed.value,
-                courseLaps: dom.courseLapsSelect.value, octave: baseOctave, theme: currentTheme
+                courseLaps: dom.courseLapsSelect.value, octave: baseOctave, theme: currentTheme,
+                chSong: dom.chSong.value, chLevel: dom.chLevel.value, chHint: dom.chHint.value
             }));
         } catch {}
     }
@@ -3638,6 +4148,9 @@
         setSelect(dom.freeBlind, pr.blind);
         setSelect(dom.courseLapsSelect, pr.courseLaps);
         setSelect(dom.freeSpeed, pr.speed);
+        setSelect(dom.chSong, pr.chSong);
+        setSelect(dom.chLevel, pr.chLevel);
+        setSelect(dom.chHint, pr.chHint);
         setSelect(dom.courseSpeedSelect, pr.speed);
         const bpm = Number(pr.bpm);
         if (bpm >= 60 && bpm <= 140) {
@@ -3663,6 +4176,8 @@
     }
 
     function initApp() {
+        // チャレンジの進行の選択肢は SONG_META から作る（保存した選択を loadPrefs で戻す前に）
+        dom.chSong.innerHTML = Object.keys(SONG_META).map(id => `<option value="${id}">${SONG_META[id].name}</option>`).join('');
         populateFreeKeySelect();
         applyTheme(currentTheme); // 既定テーマ（モダン）を適用。保存済みテーマは loadPrefs で上書き
         loadPrefs();
@@ -3687,6 +4202,11 @@
         // ナビゲーション
         bindButton('btn-open-course', () => showOverlay('course-menu-screen'));
         bindButton('btn-open-free', () => showOverlay('free-settings-screen'));
+        bindButton('btn-open-challenge', () => showOverlay('challenge-screen'));
+        bindButton('btn-challenge-back', () => showOverlay('start-screen'));
+        for (const el of [dom.chSong, dom.chLevel, dom.chHint]) {
+            el.addEventListener('change', () => { savePrefs(); renderChallengeMenu(); });
+        }
         bindButton('btn-course-back', () => showOverlay('start-screen'));
         bindButton('btn-free-back', () => showOverlay('start-screen'));
         bindButton('btn-start-free', () => startFreeSession());
@@ -3706,7 +4226,7 @@
 
         // ゲーム中コントロール
         bindButton('btn-nav-home', () => showOverlay('start-screen'));
-        bindButton('btn-nav-sub', () => showOverlay(isCourseMode ? 'course-menu-screen' : 'free-settings-screen'));
+        bindButton('btn-nav-sub', () => showOverlay(challengeType ? 'challenge-screen' : (isCourseMode ? 'course-menu-screen' : 'free-settings-screen')));
         bindButton('btn-play-pause', () => togglePlayPause());
         bindButton('btn-bpm-down', () => changeBpm(-5));
         bindButton('btn-bpm-up', () => changeBpm(5));
@@ -3748,11 +4268,12 @@
             }
         });
         bindButton('btn-result-retry', () => {
-            if (isCourseMode) startCourseStep(currentStepIdx);
+            if (challengeType) startChallenge(challengeType);
+            else if (isCourseMode) startCourseStep(currentStepIdx);
             else startFreeSession();
         });
         bindButton('btn-result-back', () => {
-            showOverlay(isCourseMode ? 'course-menu-screen' : 'free-settings-screen');
+            showOverlay(challengeType ? 'challenge-screen' : (isCourseMode ? 'course-menu-screen' : 'free-settings-screen'));
         });
 
         // リサイズ＆バックグラウンド監視

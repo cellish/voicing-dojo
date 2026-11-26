@@ -14,12 +14,13 @@ function loadScript() {
     const tail = js.lastIndexOf('})();');
     js = js.slice(0, tail) + `
     globalThis.__t = {
-        startCourseStep, startFreeSession, updateTimeline, drawFrame, pressNote, releaseNote,
+        startCourseStep, startFreeSession, startChallenge, pickWeakKeyPositions, getDailyDrill, getStreak, recordActivityDay, updateTimeline, drawFrame, pressNote, releaseNote,
         buildChordTarget, getDegreeText, getHitWindowBeats, getLookaheadBeats, resizeApp, applyTheme, initAudio,
         transposeChordLabel, spellInKey, PROGRESSIONS, SONG_META, CIRCLE_OF_FIFTHS, COURSE_STEPS, computeRank, getStepBestRank,
         state: () => ({ currentBeat, hitStreak, targetStreak, blocks, courseOrderPos, keyStatuses, isReviewPhase,
                         reviewQueue, resultPending, score, config, clearedSteps,
-                        combo, maxCombo, missCount, perfectCount, hitCount, records })
+                        combo, maxCombo, missCount, perfectCount, hitCount, records,
+                        keyPlan, challengeType, speedKeysCleared, speedBestBpm, activity, keyStats, achievements })
     };
 ` + js.slice(tail);
     return js;
@@ -113,9 +114,19 @@ export function loadApp({ storage = {} } = {}) {
  * @param {number} missAt  この番目（0始まり）のコードだけわざと弾かない（-1 なら全部弾く）
  * @returns {{ done: boolean, chords: number, state: object }}
  */
-export function playCourseStep(app, stepId, { missAt = -1, maxSeconds = 4000 } = {}) {
+export function playCourseStep(app, stepId, opts = {}) {
+    app.T.startCourseStep(stepId);
+    return playLoop(app, opts);
+}
+
+/** チャレンジを通しプレイする（missAt は playCourseStep と同じ） */
+export function playChallenge(app, type, opts = {}) {
+    app.T.startChallenge(type);
+    return playLoop(app, opts);
+}
+
+function playLoop(app, { missAt = -1, maxSeconds = 4000 } = {}) {
     const { T } = app;
-    T.startCourseStep(stepId);
     const dt = 1 / 60;
     let t = app.__t || 0;
     let chords = 0;

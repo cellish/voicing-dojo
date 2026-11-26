@@ -1,7 +1,7 @@
 // 実行：node --test
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadApp, playCourseStep } from './harness.mjs';
+import { loadApp, playCourseStep, playChallenge } from './harness.mjs';
 
 // アプリは vm の別環境で動くので、配列は JSON 経由でこちらの環境の値にしてから比べる
 const plain = (x) => JSON.parse(JSON.stringify(x));
@@ -29,7 +29,8 @@ test('ミスするとそのキーの1コード目からやり直し、12キー�
     const r = playCourseStep(app, stepIndex('p1-pop'), { missAt: 2 });
     assert.equal(r.done, true);
     assert.equal(r.chords, 55);
-    assert.ok(r.state.keyStatuses.every(s => s === 'perfect'), '復習でノーミスなら緑に戻る');
+    assert.equal(r.state.keyStatuses[0], 'recovered', '復習でノーミスなら銀（復習で合格）');
+    assert.ok(r.state.keyStatuses.slice(1).every(s => s === 'perfect'), 'ほかのキーは金（一発合格）');
 });
 
 test('循環進行の4ステップ（3和音・ガイドトーン・4和音・ルートレス）を通しプレイできる', () => {
@@ -165,4 +166,85 @@ test('保存済みの進捗を引き継ぐ（v3 の数値ID、旧 p2-autumn / p3
     assert.deepEqual(plain([...v3.T.state().clearedSteps].sort()), ['p1-maj', 'p2-passacaglia', 'p4-citypop']);
     const renamed = loadApp({ storage: { chord_master_cleared_steps_v4: JSON.stringify(['p1-maj', 'p2-autumn', 'p3-autumn']) } });
     assert.deepEqual(plain([...renamed.T.state().clearedSteps].sort()), ['p1-maj', 'p2-passacaglia', 'p3-passacaglia']);
+});
+
+test('スピードアップ：キーごとに BPM +5、ミスしたら終了', () => {
+    const app = loadApp();
+    app.elements['ch-song'].value = 'ii_V_I_maj';
+    app.elements['ch-level'].value = 'triad';
+    // 4コード × 3キー をノーミスで弾き、4キー目の1コード目でミス
+    const r = playChallenge(app, 'speed', { missAt: 12 });
+    assert.equal(r.done, true);
+    assert.equal(r.state.speedKeysCleared, 3);
+    assert.equal(r.state.speedBestBpm, 70 + 5 * 2, '3キー目は BPM 80 でクリア');
+    assert.equal(r.state.config.bpm, 85);
+    app.runPendingTimeout();
+    const rec = JSON.parse(app.store.chord_master_records_v1)['challenge:speed:ii_V_I_maj:triad'];
+    assert.equal(rec.bpm, 80);
+    assert.equal(rec.keys, 3);
+});
+
+test('耳コピチャレンジ：コード名を隠して12キー、制覇で実績', () => {
+    const app = loadApp();
+    app.elements['ch-song'].value = 'pop';
+    app.elements['ch-level'].value = 'seventh';
+    app.elements['ch-hint'].value = 'chord';
+    const r = playChallenge(app, 'ear');
+    assert.equal(r.done, true);
+    assert.equal(r.chords, 4 * 12);
+    assert.equal(r.state.config.blindMode, 'chord');
+    assert.ok(r.state.blocks.every(b => b.isBlind));
+    app.runPendingTimeout();
+    assert.ok(r.state.achievements.has('ear_clear'));
+});
+
+test('苦手キー克服：ミスの多いキーだけを出す', () => {
+    const app = loadApp();
+    const { T } = app;
+    assert.deepEqual(plain(T.pickWeakKeyPositions('pop', 'beginner', 'full')), [], '記録がなければ無し');
+    // 王道進行の3和音で1キー目をミス → そのキーが苦手に
+    playCourseStep(app, stepIndex('p1-pop'), { missAt: 2 });
+    // 1キー目はミス1・ノーミス1（復習）なので、まだ苦手ではない。もう一度ミスを記録する
+    playCourseStep(app, stepIndex('p1-pop'), { missAt: 2 });
+    const st = T.state().keyStats;
+    assert.deepEqual(plain(st['pop|beginner|full|0']), { miss: 2, clean: 2 });
+    st['pop|beginner|full|1'] = { miss: 3, clean: 0 }; // 五度圏の2番目＝F
+    assert.deepEqual(plain(T.pickWeakKeyPositions('pop', 'beginner', 'full')), [1]);
+    app.elements['ch-song'].value = 'pop';
+    app.elements['ch-level'].value = 'triad';
+    const r = playChallenge(app, 'weak');
+    assert.equal(r.done, true);
+    assert.equal(r.chords, 4 * 2, '1キー × 2周');
+});
+
+test('今日のドリル：1キー2周、クリアで今日の分が済み・連続日数が付く', () => {
+    const app = loadApp();
+    const d1 = app.T.getDailyDrill();
+    assert.equal(d1.step.key, 'p1-maj', '未制覇なら最初のステップから選ぶ');
+    assert.deepEqual(plain(app.T.getDailyDrill()), plain(d1), '同じ日は同じ課題');
+    const r = playChallenge(app, 'daily');
+    assert.equal(r.done, true);
+    assert.equal(r.chords, 4 * 2);
+    app.runPendingTimeout();
+    assert.equal(app.T.getDailyDrill().done, true);
+    assert.equal(app.T.getStreak(), 1);
+    assert.ok(r.state.achievements.has('daily_1'));
+});
+
+test('連続日数：昨日練習していれば伸び、空いたら1から', () => {
+    const pad = (n) => String(n).padStart(2, '0');
+    const ds = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const now = new Date();
+    const yesterday = ds(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
+    const longAgo = ds(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 5));
+    let app = loadApp({ storage: { chord_master_activity_v1: JSON.stringify({ last: yesterday, streak: 4, best: 4, total: 10 }) } });
+    assert.equal(app.T.getStreak(), 4);
+    app.T.recordActivityDay();
+    assert.equal(app.T.getStreak(), 5);
+    assert.equal(app.T.state().activity.total, 11);
+    app = loadApp({ storage: { chord_master_activity_v1: JSON.stringify({ last: longAgo, streak: 4, best: 4, total: 10 }) } });
+    assert.equal(app.T.getStreak(), 0);
+    app.T.recordActivityDay();
+    assert.equal(app.T.getStreak(), 1);
+    assert.equal(app.T.state().activity.best, 4);
 });

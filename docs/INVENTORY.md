@@ -12,8 +12,10 @@
 - **主な機能**
   - 12キー制覇コース（全19ステップ・4フェーズ、ミスしたキーは最後に自動復習）… `COURSE_STEPS`, `handleKeyCleared`
   - フリー練習（進行・キー・難易度・ボイシング・BPM・周回・表示時間・耳コピを設定）… `startFreeSession`
+  - チャレンジ（今日のドリル・スピードアップ・耳コピ・苦手キー克服）… `startChallenge`, `renderChallengeMenu`
+  - 自己ベスト・ランク・コンボ・実績・連続練習日数 … `recordResult`, `computeRank`, `ACHIEVEMENTS`, `recordActivityDay`
   - 3種のボイシング判定: フル / ガイドトーン / ルートレス … `buildChordTarget`, `tryJudgeHit`
-  - 6種の進行: メジャー ii-V-I、マイナー ii-V-i、王道、カノン（オンコード）、パッサカリア（ヘンデル）、丸サ … `PROGRESSIONS`
+  - 7種の進行: メジャー ii-V-I、マイナー ii-V-i、循環進行、王道、カノン（オンコード）、パッサカリア（ヘンデル）、丸サ … `PROGRESSIONS`
   - 伴奏（ベース・ガイドトーン旋律・ドラム）、耳コピモード（コード名を隠してヒント音を再生）
   - テーマ（モダン＝既定・OS のライト/ダークに追従 / ネオン）… `applyTheme`
 - **言語・フレームワーク**: 素の HTML / CSS / JavaScript（ES2020 程度、IIFE 1つ）。フレームワークなし。
@@ -31,7 +33,7 @@
 | `LICENSE` | 著作権表示（All rights reserved、日英） |
 | `THIRD_PARTY_NOTICES.md` | 利用している他者のソフトウェア（Tone.js） |
 
-| `test/harness.mjs` | テスト用の土台：`index.html` のスクリプトを DOM・Canvas・Tone.js・localStorage のスタブの上で動かし、内部関数を取り出す（`loadApp`, `playCourseStep`） |
+| `test/harness.mjs` | テスト用の土台：`index.html` のスクリプトを DOM・Canvas・Tone.js・localStorage のスタブの上で動かし、内部関数を取り出す（`loadApp`, `playCourseStep`, `playChallenge`） |
 | `test/app.test.mjs` | 自動テスト（`node --test`）：通しプレイ、ミス時のやり直しと復習、ベースの形、綴り、ガイドトーン、表示時間、判定幅、進捗の引き継ぎ |
 
 ---
