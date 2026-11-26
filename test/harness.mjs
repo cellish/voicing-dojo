@@ -16,7 +16,7 @@ function loadScript() {
     globalThis.__t = {
         startCourseStep, startFreeSession, startChallenge, buildKeyPlan, pickWeakKeyPositions, getDailyDrill, getStreak, recordActivityDay, updateTimeline, drawFrame, pressNote, releaseNote,
         buildChordTarget, getDegreeText, getHitWindowBeats, getLookaheadBeats, resizeApp, applyTheme, initAudio,
-        transposeChordLabel, spellInKey, PROGRESSIONS, SONG_META, CIRCLE_OF_FIFTHS, COURSE_STEPS, computeRank, getStepBestRank,
+        transposeChordLabel, spellInKey, PROGRESSIONS, SONG_META, CIRCLE_OF_FIFTHS, COURSE_STEPS, COURSE_PHASES, ACHIEVEMENTS, computeRank, getStepBestRank,
         state: () => ({ currentBeat, hitStreak, targetStreak, blocks, courseOrderPos, keyStatuses, isReviewPhase,
                         reviewQueue, resultPending, score, config, clearedSteps,
                         combo, maxCombo, missCount, perfectCount, hitCount, records,

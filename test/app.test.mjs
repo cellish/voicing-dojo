@@ -7,10 +7,10 @@ import { loadApp, playCourseStep, playChallenge } from './harness.mjs';
 const plain = (x) => JSON.parse(JSON.stringify(x));
 const stepIndex = (key) => loadApp().T.COURSE_STEPS.findIndex(s => s.key === key);
 
-test('コースは 5 / 4 / 6 / 4 / 4 ステップ', () => {
+test('コースは表示順に 5 / 5 / 3 / 6 / 4 / 4 ステップ', () => {
     const { T } = loadApp();
-    const counts = [1, 2, 3, 4, 5].map(p => T.COURSE_STEPS.filter(s => s.phase === p).length);
-    assert.deepEqual(plain(counts), [5, 4, 6, 4, 4]);
+    const counts = [1, 2, 6, 3, 4, 5].map(p => T.COURSE_STEPS.filter(s => s.phase === p).length);
+    assert.deepEqual(plain(counts), [5, 5, 3, 6, 4, 4]);
     assert.ok(T.COURSE_STEPS.every((s, i) => s.id === i), 'id は並び順と一致');
 });
 
@@ -48,7 +48,7 @@ test('丸サ進行（2拍のコードを含む）とルートレスの5和音を
     assert.equal(playCourseStep(app, stepIndex('p4-citypop')).done, true);
 });
 
-test('Phase 4 のメジャー・マイナー ii-V-I（ルートレス）を通しプレイできる', () => {
+test('ルートレスのメジャー・マイナー ii-V-I（ルートレス）を通しプレイできる', () => {
     const app = loadApp();
     for (const key of ['p4-maj', 'p4-min']) {
         const r = playCourseStep(app, stepIndex(key));
@@ -268,7 +268,7 @@ test('キーの順番：五度圏順・半音ずつ上がる順・ランダム',
     assert.equal(r.chords, 4 * 12);
 });
 
-test('Phase 5 のジャズの定番進行を通しプレイでき、コード名は調に沿って綴る', () => {
+test('応用フェーズのジャズの定番進行を通しプレイでき、コード名は調に沿って綴る', () => {
     const app = loadApp();
     for (const key of ['p5-blues', 'p5-dominant', 'p5-tritone', 'p5-backdoor']) {
         const step = app.T.COURSE_STEPS[stepIndex(key)];
@@ -307,4 +307,54 @@ test('シェル：ルート（指定ベース）＋3度＋7度、ルートが一
     assert.equal(r.state.config.mode, 'shell');
     assert.equal(r.state.speedKeysCleared, 4);
     assert.equal(r.state.perfectCount, 16, 'ハーネスはベース音を一番下に弾くので全部 Perfect');
+});
+
+test('シェルのフェーズ：ガイドトーンと4和音の間に3ステップ、通しプレイできる', () => {
+    const app = loadApp();
+    const { T } = app;
+    assert.deepEqual(plain(T.COURSE_PHASES.map(p => [p.id, p.tag])),
+        [[1, 'Phase 1'], [2, 'Phase 2'], [6, 'Phase 3'], [3, 'Phase 4'], [4, 'Phase 5'], [5, 'Phase 6']]);
+    // ステップは表示順（フェーズの並び順）に並んでいる
+    const order = T.COURSE_PHASES.map(p => p.id);
+    const seq = T.COURSE_STEPS.map(s => order.indexOf(s.phase));
+    assert.deepEqual(plain(seq), plain([...seq].sort((a, b) => a - b)));
+    for (const key of ['ps-maj', 'ps-min', 'ps-turnaround']) {
+        const r = playCourseStep(app, stepIndex(key));
+        assert.equal(r.done, true, key);
+        assert.equal(r.chords, 4 * 12, key);
+        assert.equal(r.state.config.mode, 'shell', key);
+        assert.equal(r.state.perfectCount, 4 * 12, key);
+    }
+});
+
+test('保存済みの進捗と実績はフェーズを足しても対応がずれない', () => {
+    const done = loadApp().T.COURSE_STEPS.filter(s => s.phase === 3).map(s => s.key);
+    const app = loadApp({ storage: {
+        chord_master_cleared_steps_v4: JSON.stringify(done),
+        chord_master_achievements_v1: JSON.stringify(['phase_3'])
+    } });
+    assert.deepEqual(plain([...app.T.state().clearedSteps]), plain(done));
+    const byId = Object.fromEntries(app.T.ACHIEVEMENTS.map(a => [a.id, a.title]));
+    assert.equal(byId.phase_3, 'Phase 4 修了', '4和音のフェーズ（id 3）は表示上 Phase 4');
+    assert.equal(byId.phase_6, 'Phase 3 修了', '新しいシェルのフェーズ');
+    assert.equal(app.T.ACHIEVEMENTS.length, 20);
+});
+
+test('テーマ：保存した配色を引き継ぎ、どの配色でも描画できる', () => {
+    for (const theme of ['modern', 'light', 'dark', 'soft', 'lavender', 'retro']) {
+        const app = loadApp({ storage: { chord_master_prefs_v1: JSON.stringify({ theme }) } });
+        assert.equal(app.elements['theme-select'].value, theme);
+        app.T.startCourseStep(0);
+        app.T.updateTimeline(1 / 60);
+        app.T.drawFrame();
+    }
+});
+
+test('Phase 2 のマイナー ii-V-i：2〜3音で12キーを通せる', () => {
+    const app = loadApp();
+    const r = playCourseStep(app, stepIndex('p2-min'));
+    assert.equal(r.done, true);
+    assert.equal(r.chords, 4 * 12);
+    assert.equal(r.state.config.mode, 'guide');
+    assert.equal(r.state.missCount, 0);
 });

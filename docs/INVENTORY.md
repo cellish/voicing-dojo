@@ -10,14 +10,14 @@
 - **アプリ名**: Voicing Dojo（旧称 Chord Master。フォルダ名は `chord-shooter`）
 - **目的**: 上から降りてくるコードを判定ラインで鍵盤で弾き、コード進行のボイシング（押さえ方）と声部の動きを全12キーで練習する。
 - **主な機能**
-  - 12キー制覇コース（全23ステップ・5フェーズ、ミスしたキーは最後に自動復習）… `COURSE_STEPS`, `handleKeyCleared`
+  - 12キー制覇コース（全27ステップ・6フェーズ、ミスしたキーは最後に自動復習）… `COURSE_STEPS`, `handleKeyCleared`
   - フリー練習（進行・キー・難易度・ボイシング・BPM・周回・表示時間・耳コピを設定）… `startFreeSession`
   - チャレンジ（今日のドリル・スピードアップ・耳コピ・苦手キー克服）… `startChallenge`, `renderChallengeMenu`
   - 自己ベスト・ランク・コンボ・実績・連続練習日数 … `recordResult`, `computeRank`, `ACHIEVEMENTS`, `recordActivityDay`
   - 4種のボイシング判定: フル / シェル / ガイドトーン / ルートレス … `buildChordTarget`, `tryJudgeHit`
   - 11種の進行: メジャー ii-V-I、マイナー ii-V-i、循環進行、ブルース12小節、ドミナントの連鎖、裏コード、バックドア、王道、カノン（オンコード）、パッサカリア（ヘンデル）、丸サ … `PROGRESSIONS`
   - 伴奏（ベース・ガイドトーン旋律・ドラム）、耳コピモード（コード名を隠してヒント音を再生）
-  - テーマ（モダン＝既定・OS のライト/ダークに追従 / ネオン）… `applyTheme`
+  - テーマ（モダン：自動＝既定・ライト・ダーク・ソフト（ピンク・ラベンダー） / ネオン）… `applyTheme`
 - **言語・フレームワーク**: 素の HTML / CSS / JavaScript（ES2020 程度、IIFE 1つ）。フレームワークなし。
 - **ビルド**: なし（単一ファイルをそのままブラウザで開く）。
 - **公開方法**: GitHub の公開リポジトリ `cellish/voicing-dojo` を GitHub Pages（main ブランチのルート）で公開：https://cellish.github.io/voicing-dojo/ 。CI は**なし**。
@@ -152,7 +152,7 @@ passacaglia: { name: 'パッサカリア（ヘンデル）', isMinor: true, base
 | 著作権表示 | あり | `LICENSE`（All rights reserved）、`THIRD_PARTY_NOTICES.md`、`README.md` の「著作権・ライセンス」（収録進行ごとの権利の状態）、ホーム画面下部の `<footer class="app-foot">`。コードのコメントにパッサカリアの出典（ヘンデル HWV 432、利用者が用意した楽譜画像から書き起こし）（`PROGRESSIONS.passacaglia` の直前） |
 
 その他の機能:
-- テーマ: CSS 変数＋`html[data-theme="modern"|"retro"]`、Canvas は `CANVAS_THEMES`（retro / modernLight / modernDark）… `applyTheme`, `buildFonts`
+- テーマ: CSS 変数＋`html[data-theme="modern"|"retro"]`＋`data-variant="light"|"dark"|"soft"|"lavender"`、Canvas は `CANVAS_THEMES`（retro / modernLight / modernDark / modernSoft / modernLavender）… `applyTheme`, `buildFonts`
 - アクセシビリティ: `aria-pressed`、`inert`、読み上げ通知 `announce()`（`#sr-live`）、キーボード操作時のみフォーカス枠
 
 ---

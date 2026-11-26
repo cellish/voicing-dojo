@@ -6,9 +6,13 @@
     <title>Voicing Dojo - コード＆ボイスリーディング練習</title>
     <script>
         // 保存済みテーマを描画前に反映（ちらつき防止）
+        // モダンの配色（ライト/ダーク/ソフト）は data-variant。「自動」は OS の設定で決める
         try {
             var savedPrefs = JSON.parse(localStorage.getItem('chord_master_prefs_v1') || '{}');
-            if (savedPrefs && savedPrefs.theme === 'retro') document.documentElement.dataset.theme = 'retro';
+            var savedTheme = savedPrefs && savedPrefs.theme;
+            if (savedTheme === 'retro') document.documentElement.dataset.theme = 'retro';
+            document.documentElement.dataset.variant = ['light', 'dark', 'soft', 'lavender'].indexOf(savedTheme) >= 0 ? savedTheme
+                : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         } catch (e) {}
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
@@ -275,20 +279,43 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            margin: 0 0 10px;
-            font-size: 0.92rem;
+            margin: 0 0 8px;
+            font-size: 1.08rem;
             font-weight: 800;
             color: var(--degree);
-            border-bottom: 1px solid var(--border);
+            border-bottom: 3px solid var(--degree);
             padding-bottom: 6px;
         }
         .phase-tag {
             background: rgba(255, 204, 0, 0.15);
             border: 1px solid rgba(255, 204, 0, 0.4);
             color: var(--degree);
-            padding: 2px 8px;
+            padding: 3px 10px;
             border-radius: 6px;
-            font-size: 0.72rem;
+            font-size: 0.82rem;
+            white-space: nowrap;
+        }
+        /* コース一覧：幅を広げ、カードを詰めて見渡しやすくする */
+        #course-menu-screen .screen-inner { max-width: 1200px; }
+        #course-menu-screen .course-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+        #course-menu-screen .step-card { padding: 8px 10px; gap: 4px; border-radius: 10px; }
+        #course-menu-screen .step-title { font-size: 0.92rem; }
+        #course-menu-screen .step-desc { font-size: 0.74rem; line-height: 1.45; }
+        .phase-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            width: 100%;
+            margin-bottom: 14px;
+        }
+        .phase-nav button { padding: 5px 11px; font-size: 0.8rem; }
+        .phase-nav .count { color: var(--muted); margin-left: 6px; }
+        .phase-nav .done .count { color: var(--green); }
+        .phase-count { white-space: nowrap; }
+        /* 度数が2行になるカードで、丸いテーマでも楕円にしない */
+        html[data-theme] #course-menu-screen .meta-pill.deg { border-radius: 9px; }
+        @media (max-width: 600px) {
+            #course-menu-screen .course-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
         }
         .course-grid {
             display: grid;
@@ -1004,7 +1031,7 @@
 
         /* =====================================================================
            モダンテーマ（ネオン・グロー・グラデーション文字・絵文字を使わないフラットなデザイン）
-           ライト/ダークは OS の設定に追従。色はすべて変数経由で指定する。
+           配色はライト（下の値）・ダーク・ソフト（ピンク/ラベンダー）を data-variant で切り替える。色はすべて変数経由で指定する。
            ===================================================================== */
         html[data-theme="modern"] {
             --bg: #f5f6f8;
@@ -1034,35 +1061,89 @@
             --scrim: rgba(17, 24, 39, 0.35);
             color-scheme: light;
         }
-        @media (prefers-color-scheme: dark) {
-            html[data-theme="modern"] {
-                --bg: #0f1115;
-                --surface: #171a21;
-                --surface-2: #1f232c;
-                --border: #2a2f3a;
-                --border-strong: #3a404d;
-                --primary: #60a5fa;
-                --primary-soft: rgba(96, 165, 250, 0.12);
-                --on-primary: #0b1220;
-                --smooth: #a78bfa;
-                --degree: #fbbf24;
-                --green: #34d399;
-                --green-soft: rgba(52, 211, 153, 0.12);
-                --orange: #f59e0b;
-                --gold: #fbbf24;
-                --orange-soft: rgba(245, 158, 11, 0.14);
-                --danger: #f87171;
-                --text: #e5e7eb;
-                --muted: #9ca3af;
-                --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-                --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
-                --key-white: #f3f4f6;
-                --key-white-active: #93c5fd;
-                --key-black: #111318;
-                --key-black-active: #3b82f6;
-                --scrim: rgba(0, 0, 0, 0.55);
-                color-scheme: dark;
-            }
+        html[data-theme="modern"][data-variant="dark"] {
+            --bg: #0f1115;
+            --surface: #171a21;
+            --surface-2: #1f232c;
+            --border: #2a2f3a;
+            --border-strong: #3a404d;
+            --primary: #60a5fa;
+            --primary-soft: rgba(96, 165, 250, 0.12);
+            --on-primary: #0b1220;
+            --smooth: #a78bfa;
+            --degree: #fbbf24;
+            --green: #34d399;
+            --green-soft: rgba(52, 211, 153, 0.12);
+            --orange: #f59e0b;
+            --gold: #fbbf24;
+            --orange-soft: rgba(245, 158, 11, 0.14);
+            --danger: #f87171;
+            --text: #e5e7eb;
+            --muted: #9ca3af;
+            --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+            --key-white: #f3f4f6;
+            --key-white-active: #93c5fd;
+            --key-black: #111318;
+            --key-black-active: #3b82f6;
+            --scrim: rgba(0, 0, 0, 0.55);
+            color-scheme: dark;
+        }
+        html[data-theme="modern"][data-variant="soft"] {
+            --bg: #fff5f7;
+            --surface: #ffffff;
+            --surface-2: #fdecf0;
+            --border: #f6d8e0;
+            --border-strong: #e9bac7;
+            --primary: #bf3f6c;
+            --primary-soft: rgba(191, 63, 108, 0.1);
+            --on-primary: #ffffff;
+            --smooth: #7c55b8;
+            --degree: #9f5518;
+            --green: #2c7766;
+            --green-soft: rgba(44, 119, 102, 0.12);
+            --orange: #a8591a;
+            --gold: #8f6410;
+            --orange-soft: rgba(224, 138, 60, 0.15);
+            --danger: #c22f42;
+            --text: #4a2c39;
+            --muted: #8b6473;
+            --shadow: 0 2px 8px rgba(191, 63, 108, 0.08);
+            --shadow-lg: 0 14px 34px rgba(191, 63, 108, 0.18);
+            --key-white: #fffdfd;
+            --key-white-active: #f8c3d4;
+            --key-black: #5e3c4b;
+            --key-black-active: #d6557f;
+            --scrim: rgba(74, 44, 57, 0.35);
+            color-scheme: light;
+        }
+        html[data-theme="modern"][data-variant="lavender"] {
+            --bg: #f7f5fd;
+            --surface: #ffffff;
+            --surface-2: #efebfa;
+            --border: #e2dcf4;
+            --border-strong: #c8bfe6;
+            --primary: #6d55b5;
+            --primary-soft: rgba(109, 85, 181, 0.1);
+            --on-primary: #ffffff;
+            --smooth: #a84a7e;
+            --degree: #955a14;
+            --green: #2c7766;
+            --green-soft: rgba(44, 119, 102, 0.12);
+            --orange: #a8591a;
+            --gold: #8a650f;
+            --orange-soft: rgba(224, 138, 60, 0.15);
+            --danger: #c22f42;
+            --text: #352d4a;
+            --muted: #6f668a;
+            --shadow: 0 2px 8px rgba(109, 85, 181, 0.08);
+            --shadow-lg: 0 14px 34px rgba(109, 85, 181, 0.18);
+            --key-white: #fefdff;
+            --key-white-active: #d6ccf5;
+            --key-black: #4a4066;
+            --key-black-active: #8a6fd1;
+            --scrim: rgba(53, 45, 74, 0.35);
+            color-scheme: light;
         }
 
         html[data-theme="modern"] body,
@@ -1113,8 +1194,8 @@
 
         html[data-theme="modern"] .course-toolbar,
         html[data-theme="modern"] .settings-card { box-shadow: var(--shadow); }
-        html[data-theme="modern"] .phase-heading { color: var(--text); font-weight: 700; }
-        html[data-theme="modern"] .phase-tag { background: var(--surface-2); border-color: var(--border); color: var(--muted); }
+        html[data-theme="modern"] .phase-heading { color: var(--text); font-weight: 800; border-bottom-color: var(--primary); }
+        html[data-theme="modern"] .phase-tag { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
         html[data-theme="modern"] .step-card { border: 1px solid var(--border); box-shadow: var(--shadow); }
         html[data-theme="modern"] .step-card:hover { transform: translateY(-1px); border-color: var(--primary); }
         html[data-theme="modern"] .step-card.recommended {
@@ -1195,6 +1276,16 @@
         }
         html[data-theme="modern"] .key-black.active { background: var(--key-black-active); box-shadow: none; }
         html[data-theme="modern"] .oct-controls { background: var(--surface); box-shadow: var(--shadow); font-weight: 600; }
+
+        /* ソフト系（ピンク・ラベンダー）：丸ゴシックと大きめの角丸 */
+        html[data-theme="modern"]:is([data-variant="soft"], [data-variant="lavender"]),
+        html[data-theme="modern"]:is([data-variant="soft"], [data-variant="lavender"]) body {
+            font-family: ui-rounded, 'Hiragino Maru Gothic ProN', 'M PLUS Rounded 1c', system-ui, sans-serif;
+        }
+        html[data-theme="modern"]:is([data-variant="soft"], [data-variant="lavender"]) :is(.mode-card, .step-card, .result-box, .settings-card, .course-toolbar) { border-radius: 20px; }
+        html[data-theme="modern"]:is([data-variant="soft"], [data-variant="lavender"]) :is(.btn, .ctrl-chip, .stat-pill, .meta-pill, .bpm-box, .key-badge, select) { border-radius: 999px; }
+        html[data-theme="modern"][data-variant="soft"] .key-white.active { color: #7a1f41; }
+        html[data-theme="modern"][data-variant="lavender"] .key-white.active { color: #3d2b78; }
     </style>
 </head>
 <body>
@@ -1212,7 +1303,11 @@
                 <label class="theme-picker">
                     <span>テーマ</span>
                     <select id="theme-select">
-                        <option value="modern">モダン</option>
+                        <option value="modern">モダン（自動）</option>
+                        <option value="light">モダン：ライト</option>
+                        <option value="dark">モダン：ダーク</option>
+                        <option value="soft">ソフト：ピンク</option>
+                        <option value="lavender">ソフト：ラベンダー</option>
                         <option value="retro">ネオン</option>
                     </select>
                 </label>
@@ -1228,9 +1323,9 @@
 
             <div class="home-cards">
                 <button class="mode-card course" id="btn-open-course" type="button">
-                    <span class="card-pill">はじめての方はこちら・全23ステップ</span>
+                    <span class="card-pill">はじめての方はこちら・全27ステップ</span>
                     <h2><span class="ico">🔰 </span>12キー制覇コース</h2>
-                    <p>3和音 → ガイドトーン → 4和音 → 5和音ルートレス → ジャズの定番進行の順に、全12キーで。ミスしたキーは最後に自動で復習します。</p>
+                    <p>3和音 → ガイドトーン → シェル → 4和音 → 5和音ルートレス → ジャズの定番進行の順に、全12キーで。ミスしたキーは最後に自動で復習します。</p>
                 </button>
 
                 <button class="mode-card" id="btn-open-free" type="button">
@@ -1255,13 +1350,13 @@
     </section>
 
     <!-- =====================================================================
-         2. コース選択画面（全23ステップ・Phase別・周回数設定）
+         2. コース選択画面（全27ステップ・Phase別・周回数設定）
          ===================================================================== -->
     <section id="course-menu-screen" class="overlay-screen hidden">
         <div class="screen-inner">
             <div class="sub-header">
                 <button class="btn" id="btn-course-back" type="button">◀ ホームへ</button>
-                <h2><span class="ico">🔰 </span>12キー制覇コース（全23ステップ）</h2>
+                <h2><span class="ico">🔰 </span>12キー制覇コース（全27ステップ）</h2>
                 <span class="status-badge" id="course-clear-badge">クリア: 0 / 13</span>
             </div>
 
@@ -1590,6 +1685,32 @@
             textStrong: '#f3f4f6', textSub: '#d1d5db', textMuted: '#9ca3af',
             hudBg: 'rgba(22, 25, 32, 0.94)', hudText: '#60a5fa', pauseOverlay: 'rgba(15, 17, 21, 0.72)', bannerBg: 'rgba(22, 25, 32, 0.96)',
             previewBg: 'rgba(96, 165, 250, 0.12)', previewText: '#60a5fa', previewReviewBg: 'rgba(245, 158, 11, 0.14)', previewReviewText: '#fbbf24'
+        }),
+        modernSoft: Object.freeze({
+            family: 'ui-rounded, "Hiragino Maru Gothic ProN", system-ui, sans-serif', wBold: 700, wBlack: 700, blockRadius: 16, blockStroke: 1, hitLineW: 3,
+            bg: '#fff5f7', laneBg: '#ffffff', laneBorder: '#f6d8e0', hitZone: 'rgba(191, 63, 108, 0.07)',
+            primary: '#bf3f6c', smooth: '#7c55b8', degree: '#9f5518', green: '#2c7766', orange: '#a8591a', danger: '#c22f42',
+            blockNormal: '#bf3f6c', blockNormalStroke: '#a8335c',
+            blockBlind: '#7c55b8', blockBlindStroke: '#69459f',
+            blockMissed: '#fde2e4', blockMissedStroke: '#c22f42',
+            blockText: '#ffffff', blockSub: 'rgba(255, 255, 255, 0.9)', missedText: '#8f1f2e', missedSub: '#a8293a',
+            badgeBg: 'rgba(255, 255, 255, 0.22)', badgeText: '#ffffff', missedBadgeBg: 'rgba(194, 47, 66, 0.12)', missedBadgeText: '#8f1f2e',
+            textStrong: '#4a2c39', textSub: '#684553', textMuted: '#8b6473',
+            hudBg: 'rgba(255, 255, 255, 0.94)', hudText: '#bf3f6c', pauseOverlay: 'rgba(255, 245, 247, 0.8)', bannerBg: 'rgba(255, 255, 255, 0.96)',
+            previewBg: 'rgba(191, 63, 108, 0.08)', previewText: '#bf3f6c', previewReviewBg: 'rgba(224, 138, 60, 0.14)', previewReviewText: '#a8591a'
+        }),
+        modernLavender: Object.freeze({
+            family: 'ui-rounded, "Hiragino Maru Gothic ProN", system-ui, sans-serif', wBold: 700, wBlack: 700, blockRadius: 16, blockStroke: 1, hitLineW: 3,
+            bg: '#f7f5fd', laneBg: '#ffffff', laneBorder: '#e2dcf4', hitZone: 'rgba(109, 85, 181, 0.07)',
+            primary: '#6d55b5', smooth: '#a84a7e', degree: '#955a14', green: '#2c7766', orange: '#a8591a', danger: '#c22f42',
+            blockNormal: '#6d55b5', blockNormalStroke: '#5c46a0',
+            blockBlind: '#a84a7e', blockBlindStroke: '#913d6b',
+            blockMissed: '#fde2e4', blockMissedStroke: '#c22f42',
+            blockText: '#ffffff', blockSub: 'rgba(255, 255, 255, 0.9)', missedText: '#8f1f2e', missedSub: '#a8293a',
+            badgeBg: 'rgba(255, 255, 255, 0.22)', badgeText: '#ffffff', missedBadgeBg: 'rgba(194, 47, 66, 0.12)', missedBadgeText: '#8f1f2e',
+            textStrong: '#352d4a', textSub: '#51476b', textMuted: '#6f668a',
+            hudBg: 'rgba(255, 255, 255, 0.94)', hudText: '#6d55b5', pauseOverlay: 'rgba(247, 245, 253, 0.8)', bannerBg: 'rgba(255, 255, 255, 0.96)',
+            previewBg: 'rgba(109, 85, 181, 0.08)', previewText: '#6d55b5', previewReviewBg: 'rgba(224, 138, 60, 0.14)', previewReviewText: '#a8591a'
         })
     });
     let COLORS = CANVAS_THEMES.retro;
@@ -1761,94 +1882,110 @@
     });
 
     /* =========================================================================
-       3. 12キー制覇コース（全23ステップ・5フェーズ）
+       3. 12キー制覇コース（全27ステップ・6フェーズ）
        ========================================================================= */
+    // 並び順が表示順（tag はその順の番号）。id は保存済みの実績（phase_<id>）と対応するので変えない
     const COURSE_PHASES = Object.freeze([
-        { id: 1, tag: 'Phase 1', title: '3和音で一通りマスター（Triad・フル）' },
-        { id: 2, tag: 'Phase 2', title: 'ガイドトーン（3度・7度の2音で滑らかに繋ぐ）' },
-        { id: 3, tag: 'Phase 3', title: '4和音・7thを習得（4和音・フル）' },
-        { id: 4, tag: 'Phase 4', title: '5和音・ルートレス（プロ仕様の洗練ボイシング）' },
-        { id: 5, tag: 'Phase 5', title: '応用：ジャズの定番進行（4和音・フル）' }
+        { id: 1, tag: 'Phase 1', short: '3和音', title: '3和音で一通りマスター（Triad・フル）' },
+        { id: 2, tag: 'Phase 2', short: 'ガイドトーン', title: 'ガイドトーン（3度・7度の2音で滑らかに繋ぐ）' },
+        { id: 6, tag: 'Phase 3', short: 'シェル', title: 'シェル（ルート・3度・7度の3音）' },
+        { id: 3, tag: 'Phase 4', short: '4和音', title: '4和音・7thを習得（4和音・フル）' },
+        { id: 4, tag: 'Phase 5', short: 'ルートレス', title: '5和音・ルートレス（プロ仕様の洗練ボイシング）' },
+        { id: 5, tag: 'Phase 6', short: '定番進行', title: '応用：ジャズの定番進行（4和音・フル）' }
     ]);
 
     // key は保存用の安定ID（並び替えても進捗がずれない）。度数表記は進行データから自動生成。
     const COURSE_STEPS = Object.freeze([
         // Phase 1（3和音・フル）
         { id: 0, key: 'p1-maj', phase: 1, title: 'メジャー ii-V-I', song: 'ii_V_I_maj', diff: 'beginner', mode: 'full', badge: '3和音・フル', bpm: 80,
-          goal: '曲の終わりで最もよく使う「ii-V-I」の解決を12キーで（Iは2回）',
+          goal: 'いちばんよく使う解決の形（I は2回）',
           mission: '一番低い音を指定ベース（＝ルート）にすると Perfect +100' },
-        { id: 1, key: 'p1-min', phase: 1, title: 'マイナー ii°-V-i', song: 'ii_V_i_min', diff: 'beginner', mode: 'full', badge: '3和音・フル', bpm: 80,
-          goal: '減三和音 ii° と、導音を含む V（和声的短音階）で短調に解決する響き',
+        { id: 1, key: 'p1-min', phase: 1, title: 'マイナー ii-V-i', song: 'ii_V_i_min', diff: 'beginner', mode: 'full', badge: '3和音・フル', bpm: 80,
+          goal: '減三和音と導音で解決する短調の響き',
           mission: 'V の3度（導音）は短調でも半音上げた音。最低音をルートにすると Perfect +100' },
-        { id: 2, key: 'p1-turnaround', phase: 1, title: '循環進行 I-VI-ii-V', song: 'turnaround', diff: 'beginner', mode: 'full', badge: '3和音・フル', bpm: 80,
-          goal: 'ii-V の前に VI を置いた循環。VI は ii へ向かうドミナントなので長三和音（C なら A：ラ・ド♯・ミ）',
+        { id: 2, key: 'p1-turnaround', phase: 1, title: '循環進行', song: 'turnaround', diff: 'beginner', mode: 'full', badge: '3和音・フル', bpm: 80,
+          goal: 'VI は ii へ向かうドミナントなので長三和音',
           mission: 'VI の3度は調の外の音（半音上げる）。最低音をルートにすると Perfect +100' },
         { id: 3, key: 'p1-pop', phase: 1, title: '王道進行', song: 'pop', diff: 'beginner', mode: 'full', badge: '3和音・フル', bpm: 85,
-          goal: 'J-POP定番。IV→V で盛り上げ、トニックに行かず iii→vi へ逃げる切なさ',
+          goal: 'J-POP の定番。トニックを避けて vi へ逃げる切なさ',
           mission: '共通音を残して近い形で移ろう。最低音をルートにすると Perfect +100' },
-        { id: 4, key: 'p1-canon', phase: 1, title: 'カノン進行（オンコード）', song: 'canon', diff: 'beginner', mode: 'full', badge: '3和音・オンコード', bpm: 80,
-          goal: 'ベースが C-B-A-G-F-E と順次下行するオンコードを習得',
+        { id: 4, key: 'p1-canon', phase: 1, title: 'カノン進行', song: 'canon', diff: 'beginner', mode: 'full', badge: '3和音・オンコード', bpm: 80,
+          goal: 'ベースが順次下行するオンコード',
           mission: 'G/B なら「シ」、C/E なら「ミ」を一番低く弾くと Perfect +100' },
 
         // Phase 2（ガイドトーン）
         { id: 5, key: 'p2-maj', phase: 2, title: 'メジャー ii-V-I（ガイドトーン）', song: 'ii_V_I_maj', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
-          goal: '7度が半音下がって次の3度になる、ii-V-I の声部進行を体感',
+          goal: '7度が半音下がって次の3度になる声部進行',
           mission: 'ベースは自動。3度＋7度の2音を近い鍵盤で繋ぐと Smooth +100' },
-        { id: 6, key: 'p2-turnaround', phase: 2, title: '循環進行（ガイドトーン）', song: 'turnaround', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
-          goal: 'Imaj7 → VI7 → ii7 → V7 で、各コードの7度が半音下がって次の3度になる流れを体感',
+        { id: 6, key: 'p2-min', phase: 2, title: 'マイナー ii-V-i（ガイドトーン）', song: 'ii_V_i_min', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2〜3音）', bpm: 85,
+          goal: '短調の声部進行。iiø7 は ♭5 も弾く',
+          mission: '3度＋7度（iiø7 は♭5も）を最小移動で繋ぐと Smooth +100' },
+        { id: 7, key: 'p2-turnaround', phase: 2, title: '循環進行（ガイドトーン）', song: 'turnaround', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
+          goal: '7度が半音下がって次の3度になる流れの循環版',
           mission: 'ベースは自動。3度＋7度の2音を近い鍵盤で繋ぐと Smooth +100' },
-        { id: 7, key: 'p2-pop', phase: 2, title: '王道進行（ガイドトーン）', song: 'pop', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
-          goal: '最小の指移動で J-POP 進行を伴奏する',
+        { id: 8, key: 'p2-pop', phase: 2, title: '王道進行（ガイドトーン）', song: 'pop', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
+          goal: '最小の指移動で J-POP を伴奏',
           mission: '3度＋7度の2音。平均2.5半音以内の移動で Smooth +100' },
-        { id: 8, key: 'p2-passacaglia', phase: 2, title: 'パッサカリア（ガイドトーン）', song: 'passacaglia', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2〜3音）', bpm: 85,
-          goal: 'ヘンデルの旋律に合わせ、4度上行の連鎖で3度と7度が交互に入れ替わる流れを体感',
+        { id: 9, key: 'p2-passacaglia', phase: 2, title: 'パッサカリア（ガイドトーン）', song: 'passacaglia', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2〜3音）', bpm: 85,
+          goal: 'ヘンデルの旋律つき。3度と7度が交互に入れ替わる',
           mission: '3度＋7度（iiø7 は♭5も）を最小移動で繋ぐと Smooth +100' },
 
-        // Phase 3（4和音・フル）
-        { id: 9, key: 'p3-maj', phase: 3, title: 'メジャー ii7-V7-Imaj7', song: 'ii_V_I_maj', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
-          goal: '7thコードの全構成音を12キーで（2回目のIは I6）',
+        // Phase 3（シェル）
+        { id: 10, key: 'ps-maj', phase: 6, title: 'メジャー ii-V-I（シェル）', song: 'ii_V_I_maj', diff: 'intermediate', mode: 'shell', badge: 'シェル（3音）', bpm: 80,
+          goal: '左手の基本形。5度は弾かない（2回目の I は6度）',
+          mission: 'ルートを一番下にすると Perfect +100' },
+        { id: 11, key: 'ps-min', phase: 6, title: 'マイナー ii-V-i（シェル）', song: 'ii_V_i_min', diff: 'intermediate', mode: 'shell', badge: 'シェル（3〜4音）', bpm: 80,
+          goal: '短調を左手の形で。♭5 が短調らしさを出す',
+          mission: 'iiø7 は ♭5 も入れる（4音）。ルートを一番下にすると Perfect +100' },
+        { id: 12, key: 'ps-turnaround', phase: 6, title: '循環進行（シェル）', song: 'turnaround', diff: 'intermediate', mode: 'shell', badge: 'シェル（3音）', bpm: 80,
+          goal: '5度を省くと VI7 の調外の3度がよく聞こえる',
+          mission: 'ルート＋3度＋7度の3音。ルートを一番下にすると Perfect +100' },
+
+        // Phase 4（4和音・フル）
+        { id: 13, key: 'p3-maj', phase: 3, title: 'メジャー ii-V-I（4和音）', song: 'ii_V_I_maj', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+          goal: '全構成音を弾く（2回目の I は6度）',
           mission: '7th（I6 は6度）まで押さえ、最低音をルートにすると Perfect +100' },
-        { id: 10, key: 'p3-min', phase: 3, title: 'マイナー iiø7-V7(b9)-im7', song: 'ii_V_i_min', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
-          goal: 'ハーフディミニッシュと♭9で作る本格的な短調の ii-V-i（2回目は im6）',
+        { id: 14, key: 'p3-min', phase: 3, title: 'マイナー ii-V-i（4和音）', song: 'ii_V_i_min', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+          goal: 'ハーフディミニッシュと♭9の本格的な短調（2回目は im6）',
           mission: 'V7(b9) は5度省略OK（4音でも可）。最低音をルートにすると Perfect +100' },
-        { id: 11, key: 'p3-turnaround', phase: 3, title: '循環進行 Imaj7-VI7-ii7-V7', song: 'turnaround', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
-          goal: 'VI7 は ii へのセカンダリードミナント。調の外の3度（C なら ド♯）を含む循環を12キーで',
+        { id: 15, key: 'p3-turnaround', phase: 3, title: '循環進行（4和音）', song: 'turnaround', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+          goal: 'VI7 は ii へのセカンダリードミナント',
           mission: 'VI7 の3度は半音上がった音。最低音をルートにすると Perfect +100' },
-        { id: 12, key: 'p3-pop', phase: 3, title: '王道進行（4和音）', song: 'pop', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 85,
-          goal: 'IVmaj7 の浮遊感と iiim7・vim7 の切なさを4和音で',
+        { id: 16, key: 'p3-pop', phase: 3, title: '王道進行（4和音）', song: 'pop', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 85,
+          goal: 'IVmaj7 の浮遊感と、iii・vi の切なさ',
           mission: '7thまで押さえ、最低音をルートにすると Perfect +100' },
-        { id: 13, key: 'p3-passacaglia', phase: 3, title: 'パッサカリア（4和音）', song: 'passacaglia', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
-          goal: 'バロックからジャズまで使われる4度上行の循環を、ヘンデルの旋律とともに4和音で',
+        { id: 17, key: 'p3-passacaglia', phase: 3, title: 'パッサカリア（4和音）', song: 'passacaglia', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+          goal: '4度上行の循環を、ヘンデルの旋律とともに',
           mission: '8コードすべて7thまで。最低音をルートにすると Perfect +100' },
-        { id: 14, key: 'p3-citypop', phase: 3, title: '丸サ進行（4和音）', song: 'citypop', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 85,
-          goal: 'III7（vi へのセカンダリードミナント）と vm7-I7（IV への ii-V）で作るシティポップの循環',
+        { id: 18, key: 'p3-citypop', phase: 3, title: '丸サ進行（4和音）', song: 'citypop', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 85,
+          goal: 'III7 と vm7-I7（IV への ii-V）のシティポップ循環',
           mission: '最終小節は vm7・I7 が2拍ずつ。最低音をルートにすると Perfect +100' },
 
-        // Phase 4（5和音・ルートレス）
-        { id: 15, key: 'p4-maj', phase: 4, title: 'メジャー ii-V-I（5和音ルートレス）', song: 'ii_V_I_maj', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 80,
-          goal: 'ルートをベースに任せ、9th を含む4音で弾くジャズの基本形（3度か7度を一番下にした2つの形）',
+        // Phase 5（5和音・ルートレス）
+        { id: 19, key: 'p4-maj', phase: 4, title: 'メジャー ii-V-I（5和音ルートレス）', song: 'ii_V_I_maj', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 80,
+          goal: 'ルートはベースに任せる、3度か7度が下のジャズの基本形',
           mission: 'ルート抜きの4音。転回して最小移動で繋ぐと Smooth +100' },
-        { id: 16, key: 'p4-min', phase: 4, title: 'マイナー ii-V-i（5和音ルートレス）', song: 'ii_V_i_min', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 80,
-          goal: 'iiø11 → V7(b9) → im9。V7(b9) はルートを抜くと減7の形になる',
+        { id: 20, key: 'p4-min', phase: 4, title: 'マイナー ii-V-i（5和音ルートレス）', song: 'ii_V_i_min', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 80,
+          goal: 'V7(b9) はルートを抜くと減7の形',
           mission: 'ルート抜きの4音。転回して最小移動で繋ぐと Smooth +100' },
-        { id: 17, key: 'p4-turnaround', phase: 4, title: '循環進行（5和音ルートレス）', song: 'turnaround', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 80,
-          goal: '9th・♭9 を含むルート抜きの4音で。VI7(b9) はルートを抜くと減7の形になる',
+        { id: 21, key: 'p4-turnaround', phase: 4, title: '循環進行（5和音ルートレス）', song: 'turnaround', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 80,
+          goal: 'VI7(b9) はルートを抜くと減7の形',
           mission: 'ルート抜きの4音。転回して最小移動で繋ぐと Smooth +100' },
-        { id: 18, key: 'p4-citypop', phase: 4, title: '丸サ進行（5和音ルートレス）', song: 'citypop', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 85,
-          goal: 'ルートをベースに任せ、9th・♭9を含む4音で弾くプロ仕様の響き',
+        { id: 22, key: 'p4-citypop', phase: 4, title: '丸サ進行（5和音ルートレス）', song: 'citypop', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 85,
+          goal: '9th・♭9 を加えたプロ仕様の響き',
           mission: 'ルート抜きの4音。転回して最小移動で繋ぐと Smooth +100' },
-        // Phase 5（応用：ジャズの定番進行）
-        { id: 19, key: 'p5-blues', phase: 5, title: 'ブルース12小節', song: 'blues', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 100,
-          goal: '全部がドミナント7th。I7 の3度と IV7 の7度が半音で行き来する（C なら ミ ⇄ ミ♭）',
+        // Phase 6（応用：ジャズの定番進行）
+        { id: 23, key: 'p5-blues', phase: 5, title: 'ブルース12小節', song: 'blues', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 100,
+          goal: '全部ドミナント7th。I7 と IV7 で半音の行き来',
           mission: '12小節で1キー。最低音をルートにすると Perfect +100' },
-        { id: 20, key: 'p5-dominant', phase: 5, title: 'ドミナントの連鎖', song: 'dominant_chain', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
-          goal: 'III7-VI7-II7-V7 と4度ずつドミナントが続き I へ。7度が半音下がって次の3度になる流れが続く',
+        { id: 24, key: 'p5-dominant', phase: 5, title: 'ドミナントの連鎖', song: 'dominant_chain', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+          goal: '4度ずつドミナントが続いて I へ',
           mission: '調の外の3度（C なら ソ♯・ド♯・ファ♯）に注意。最低音をルートにすると Perfect +100' },
-        { id: 21, key: 'p5-tritone', phase: 5, title: '裏コード ii-♭II7-I', song: 'tritone_sub', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
-          goal: 'V7 の代わりに半音上の ♭II7。3度と7度は V7 と同じ音で、ベースが半音で下がる',
+        { id: 25, key: 'p5-tritone', phase: 5, title: '裏コード', song: 'tritone_sub', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+          goal: 'V7 の代わりに♭II7。ベースが半音で下がる',
           mission: '♭II7 の7度は V7 の3度と同じ音。最低音をルートにすると Perfect +100' },
-        { id: 22, key: 'p5-backdoor', phase: 5, title: 'バックドア ivm7-♭VII7-I', song: 'backdoor', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
-          goal: '同主短調から借りた ivm7 と ♭VII7 で、V7 を通らずに I へ',
+        { id: 26, key: 'p5-backdoor', phase: 5, title: 'バックドア', song: 'backdoor', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+          goal: '同主短調からの借用で、V7 を通らず I へ',
           mission: '♭VII7 の7度（C なら ラ♭）が I の5度へ下がる。最低音をルートにすると Perfect +100' }
     ]);
 
@@ -2042,11 +2179,9 @@
     // ---- 実績（結果画面で判定。ctx は今回の結果と保存済みの記録） ----
     const ACHIEVEMENTS = Object.freeze([
         { id: 'first_clear', title: 'はじめの一歩', desc: 'コースのステップを1つ制覇', check: c => c.clearedCount >= 1 },
-        { id: 'phase_1', title: 'Phase 1 修了', desc: 'Phase 1 をすべて制覇', check: c => c.phaseDone(1) },
-        { id: 'phase_2', title: 'Phase 2 修了', desc: 'Phase 2 をすべて制覇', check: c => c.phaseDone(2) },
-        { id: 'phase_3', title: 'Phase 3 修了', desc: 'Phase 3 をすべて制覇', check: c => c.phaseDone(3) },
-        { id: 'phase_4', title: 'Phase 4 修了', desc: 'Phase 4 をすべて制覇', check: c => c.phaseDone(4) },
-        { id: 'phase_5', title: 'Phase 5 修了', desc: 'Phase 5 をすべて制覇', check: c => c.phaseDone(5) },
+        ...COURSE_PHASES.map(ph => ({
+            id: `phase_${ph.id}`, title: `${ph.tag} 修了`, desc: `${ph.tag} をすべて制覇`, check: c => c.phaseDone(ph.id)
+        })),
         { id: 'all_steps', title: '免許皆伝', desc: 'コースの全ステップを制覇', check: c => c.clearedCount >= COURSE_STEPS.length },
         { id: 'rank_s', title: 'S ランク', desc: 'どこかで S ランクを取る', check: c => c.rank === 'S' },
         { id: 'combo_50', title: '50 コンボ', desc: '1回で50コンボ', check: c => c.maxCombo >= 50 },
@@ -2678,6 +2813,12 @@
 
         const frag = document.createDocumentFragment();
 
+        // 目次：フェーズごとの進み具合。押すとその場所へ移動する
+        const nav = document.createElement('nav');
+        nav.className = 'phase-nav';
+        nav.setAttribute('aria-label', 'フェーズへ移動');
+        frag.appendChild(nav);
+
         for (let p = 0; p < COURSE_PHASES.length; p++) {
             const phase = COURSE_PHASES[p];
             const section = document.createElement('div');
@@ -2691,6 +2832,18 @@
             heading.innerHTML = `<span class="phase-tag">${phase.tag}</span><span>${phase.title}</span>` +
                 `<span class="phase-count">${clearedInPhase} / ${stepsInPhase.length}</span>`;
             section.appendChild(heading);
+
+            const jump = document.createElement('button');
+            jump.type = 'button';
+            jump.className = 'btn' + (clearedInPhase === stepsInPhase.length ? ' done' : '');
+            jump.innerHTML = `${phase.tag.replace('Phase ', '')}. ${phase.short}<span class="count">${clearedInPhase}/${stepsInPhase.length}</span>`;
+            jump.addEventListener('click', () => section.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+            nav.appendChild(jump);
+
+            // フェーズ内で共通の弾き方は見出しで分かるので、違うカードにだけバッジを出す
+            const badges = stepsInPhase.map(st => st.badge);
+            const commonBadge = badges.slice().sort((a, b) =>
+                badges.filter(x => x === b).length - badges.filter(x => x === a).length)[0];
 
             const grid = document.createElement('div');
             grid.className = 'course-grid';
@@ -2712,9 +2865,9 @@
                             ? '<span class="step-status cleared">★ 12キー制覇</span>'
                             : (isRec ? '<span class="step-status next">▶ おすすめ</span>' : '')}
                     </div>
-                    <h4 class="step-title">${step.title}</h4>
+                    <h4 class="step-title">${step.title.replace(/（(ガイドトーン|シェル|4和音|5和音ルートレス)）$/, '')}</h4>
                     <div class="step-meta">
-                        <span class="meta-pill">${step.badge}</span>
+                        ${step.badge === commonBadge ? '' : `<span class="meta-pill">${step.badge}</span>`}
                         <span class="meta-pill deg">${getDegreeText(step.song, step.diff)}</span>
                     </div>
                     <p class="step-desc">${step.goal}</p>
@@ -4139,14 +4292,16 @@
         return font;
     }
 
-    // ---- テーマ（ネオン / モダン）。モダンは OS のライト/ダーク設定に追従 ----
+    // ---- テーマ。'modern' は OS のライト/ダークに追従、'light' / 'dark' / 'soft' / 'lavender' はモダンの固定配色、'retro' はネオン ----
     const darkMedia = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+    const THEME_NAMES = Object.freeze(['modern', 'light', 'dark', 'soft', 'lavender', 'retro']);
+    const VARIANT_COLORS = Object.freeze({ light: 'modernLight', dark: 'modernDark', soft: 'modernSoft', lavender: 'modernLavender' });
     function applyTheme(name) {
-        currentTheme = name === 'modern' ? 'modern' : 'retro';
-        document.documentElement.dataset.theme = currentTheme;
-        COLORS = currentTheme === 'modern'
-            ? (darkMedia && darkMedia.matches ? CANVAS_THEMES.modernDark : CANVAS_THEMES.modernLight)
-            : CANVAS_THEMES.retro;
+        currentTheme = THEME_NAMES.includes(name) ? name : 'retro';
+        const variant = VARIANT_COLORS[currentTheme] ? currentTheme : (darkMedia && darkMedia.matches ? 'dark' : 'light');
+        document.documentElement.dataset.theme = currentTheme === 'retro' ? 'retro' : 'modern';
+        document.documentElement.dataset.variant = variant;
+        COLORS = currentTheme === 'retro' ? CANVAS_THEMES.retro : CANVAS_THEMES[VARIANT_COLORS[variant]];
         buildFonts();
         if (isPaused && activeOverlayId === null) drawFrame();
     }
@@ -4275,7 +4430,7 @@
         if (typeof pr.beat === 'boolean') config.beatOn = dom.freeBeat.checked = pr.beat;
         const oct = Number(pr.octave);
         if (oct >= 2 && oct <= 4) baseOctave = oct;
-        if (pr.theme === 'modern' || pr.theme === 'retro') applyTheme(pr.theme);
+        if (THEME_NAMES.includes(pr.theme)) applyTheme(pr.theme);
     }
 
     function bindButton(id, handler) {
