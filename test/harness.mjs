@@ -19,7 +19,7 @@ function loadScript() {
         transposeChordLabel, spellInKey, PROGRESSIONS, SONG_META, CIRCLE_OF_FIFTHS, COURSE_STEPS, COURSE_PHASES, ACHIEVEMENTS, badgeSvg, keyElements, computeRank, getStepBestRank,
         state: () => ({ currentBeat, hitStreak, targetStreak, blocks, courseOrderPos, keyStatuses, isReviewPhase,
                         reviewQueue, resultPending, score, config, clearedSteps,
-                        combo, maxCombo, missCount, perfectCount, hitCount, records, heldNotes: Array.from(noteSources.keys()),
+                        combo, maxCombo, missCount, perfectCount, hitCount, records, heldNotes: Array.from(noteSources.keys()), isPaused,
                         keyPlan, challengeType, speedKeysCleared, speedBestBpm, activity, keyStats, achievements })
     };
 ` + js.slice(tail);

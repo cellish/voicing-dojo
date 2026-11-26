@@ -491,3 +491,22 @@ test('画面の鍵盤は複数の指を同時に押せる（鍵ごとに別の�
     fire('touchmove', [a, c, outside], a);
     assert.deepEqual(plain(held()), [48, 55]);
 });
+
+test('⚙ の設定：開くと一時停止し、閉じると再開する。再開ボタンでも閉じる', () => {
+    const app = loadApp();
+    app.T.startCourseStep(0);
+    const click = (id) => app.elements[id].listeners.click({ detail: 0 });
+    const open = () => app.elements['bar-settings'].classList.contains('open');
+    const paused = () => app.T.state().isPaused;
+    click('btn-settings');
+    assert.deepEqual([open(), paused()], [true, true]);
+    click('btn-settings');
+    assert.deepEqual([open(), paused()], [false, false]);
+    click('btn-settings');
+    click('btn-play-pause');
+    assert.deepEqual([open(), paused()], [false, false]);
+    click('btn-play-pause'); // 先に一時停止していたら、⚙ を閉じても再開しない
+    click('btn-settings');
+    click('btn-settings');
+    assert.deepEqual([open(), paused()], [false, true]);
+});
