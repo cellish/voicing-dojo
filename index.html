@@ -133,6 +133,21 @@
             line-height: 1.6;
         }
 
+        /* ホーム：目標のある練習（コース・チャレンジ）と、自由な練習を枠で分ける */
+        .home-group {
+            width: 100%;
+            max-width: 720px;
+            margin-bottom: 18px;
+            padding: 12px 14px 14px;
+            border: 1px solid var(--border);
+            border-radius: 22px;
+        }
+        .home-group-title {
+            margin: 0 0 10px;
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--muted);
+        }
         .home-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -1183,6 +1198,8 @@
             font-weight: 700;
         }
         html[data-theme="modern"] .mode-card h2 { font-weight: 700; }
+        html[data-theme="modern"] .home-group { background: var(--surface-2); }
+        html[data-theme="modern"] .home-group-title { color: var(--text); }
 
         html[data-theme="modern"] .sub-header h2 { color: var(--text); font-weight: 700; }
         html[data-theme="modern"] .btn { background: var(--surface); box-shadow: var(--shadow); font-weight: 600; }
@@ -1321,17 +1338,13 @@
 
             <p class="streak-badge hidden" id="streak-badge"></p>
 
-            <div class="home-cards">
+            <section class="home-group" aria-labelledby="home-goal-title">
+                <h2 class="home-group-title" id="home-goal-title">目標に挑戦する</h2>
+                <div class="home-cards">
                 <button class="mode-card course" id="btn-open-course" type="button">
                     <span class="card-pill">はじめての方はこちら・全27ステップ</span>
                     <h2><span class="ico">🔰 </span>12キー制覇コース</h2>
                     <p>3和音 → ガイドトーン → シェル → 4和音 → 5和音ルートレス → ジャズの定番進行の順に、全12キーで。ミスしたキーは最後に自動で復習します。</p>
-                </button>
-
-                <button class="mode-card" id="btn-open-free" type="button">
-                    <span class="card-pill">全11進行・自由設定</span>
-                    <h2><span class="ico">🎹 </span>フリー練習</h2>
-                    <p>進行・キー・難易度・ボイシング・テンポを選んで練習。コード名を隠す耳コピモードもあります。</p>
                 </button>
 
                 <button class="mode-card" id="btn-open-challenge" type="button">
@@ -1339,7 +1352,18 @@
                     <h2><span class="ico">🏆 </span>チャレンジ</h2>
                     <p>今日のドリル、だんだん速くなるスピードアップ、耳コピ、苦手キー克服。実績も集めよう。</p>
                 </button>
-            </div>
+                </div>
+            </section>
+            <section class="home-group" aria-labelledby="home-free-title">
+                <h2 class="home-group-title" id="home-free-title">自由に練習する</h2>
+                <div class="home-cards">
+                <button class="mode-card" id="btn-open-free" type="button">
+                    <span class="card-pill">全11進行・自由設定</span>
+                    <h2><span class="ico">🎹 </span>フリー練習</h2>
+                    <p>進行・キー・難易度・ボイシング・テンポを選んで練習。コード名を隠す耳コピモードもあります。</p>
+                </button>
+                </div>
+            </section>
 
             <footer class="app-foot">
                 <span>© 2026 jun　All rights reserved.</span>
@@ -1917,24 +1941,24 @@
         { id: 5, key: 'p2-maj', phase: 2, title: 'メジャー ii-V-I（ガイドトーン）', song: 'ii_V_I_maj', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
           goal: '7度が半音下がって次の3度になる声部進行',
           mission: 'ベースは自動。3度＋7度の2音を近い鍵盤で繋ぐと Smooth +100' },
-        { id: 6, key: 'p2-min', phase: 2, title: 'マイナー ii-V-i（ガイドトーン）', song: 'ii_V_i_min', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2〜3音）', bpm: 85,
-          goal: '短調の声部進行。iiø7 は ♭5 も弾く',
-          mission: '3度＋7度（iiø7 は♭5も）を最小移動で繋ぐと Smooth +100' },
+        { id: 6, key: 'p2-min', phase: 2, title: 'マイナー ii-V-i（ガイドトーン）', song: 'ii_V_i_min', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
+          goal: '短調の声部進行。iiø7 の♭5は弾いても弾かなくてもよい',
+          mission: '3度＋7度（iiø7 の♭5は任意）を最小移動で繋ぐと Smooth +100' },
         { id: 7, key: 'p2-turnaround', phase: 2, title: '循環進行（ガイドトーン）', song: 'turnaround', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
           goal: '7度が半音下がって次の3度になる流れの循環版',
           mission: 'ベースは自動。3度＋7度の2音を近い鍵盤で繋ぐと Smooth +100' },
         { id: 8, key: 'p2-pop', phase: 2, title: '王道進行（ガイドトーン）', song: 'pop', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
           goal: '最小の指移動で J-POP を伴奏',
           mission: '3度＋7度の2音。平均2.5半音以内の移動で Smooth +100' },
-        { id: 9, key: 'p2-passacaglia', phase: 2, title: 'パッサカリア（ガイドトーン）', song: 'passacaglia', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2〜3音）', bpm: 85,
+        { id: 9, key: 'p2-passacaglia', phase: 2, title: 'パッサカリア（ガイドトーン）', song: 'passacaglia', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
           goal: 'ヘンデルの旋律つき。3度と7度が交互に入れ替わる',
-          mission: '3度＋7度（iiø7 は♭5も）を最小移動で繋ぐと Smooth +100' },
+          mission: '3度＋7度（iiø7 の♭5は任意）を最小移動で繋ぐと Smooth +100' },
 
         // Phase 3（シェル）
         { id: 10, key: 'ps-maj', phase: 6, title: 'メジャー ii-V-I（シェル）', song: 'ii_V_I_maj', diff: 'intermediate', mode: 'shell', badge: 'シェル（3音）', bpm: 80,
           goal: '左手の基本形。5度は弾かない（2回目の I は6度）',
           mission: 'ルートを一番下にすると Perfect +100' },
-        { id: 11, key: 'ps-min', phase: 6, title: 'マイナー ii-V-i（シェル）', song: 'ii_V_i_min', diff: 'intermediate', mode: 'shell', badge: 'シェル（3〜4音）', bpm: 80,
+        { id: 11, key: 'ps-min', phase: 6, title: 'マイナー ii-V-i（シェル）', song: 'ii_V_i_min', diff: 'intermediate', mode: 'shell', badge: 'iiø7 は♭5も', bpm: 80,
           goal: '短調を左手の形で。♭5 が短調らしさを出す',
           mission: 'iiø7 は ♭5 も入れる（4音）。ルートを一番下にすると Perfect +100' },
         { id: 12, key: 'ps-turnaround', phase: 6, title: '循環進行（シェル）', song: 'turnaround', diff: 'intermediate', mode: 'shell', badge: 'シェル（3音）', bpm: 80,
@@ -2721,7 +2745,7 @@
     }
 
     // ガイドトーン：ルートからの音程で判定（配列の並び順に依存しない）
-    // 3度（無ければsus4/sus2）＋ 7度（無ければ6度 → 9度 → 5度）。ハーフディミニッシュは♭5も加える。
+    // 3度（無ければsus4/sus2）＋ 7度（無ければ6度 → 9度 → 5度）。ハーフディミニッシュは♭5も加える（シェルのみ。ガイドトーンでは♭5は任意）。
     function pickGuideTones(notes, root, isHalfDim) {
         const byInt = new Map(notes.map(pc => [mod12(pc - root), pc]));
         const pick = (cands) => { for (const i of cands) if (byInt.has(i)) return byInt.get(i); return null; };
@@ -2757,7 +2781,9 @@
         if (config.mode === 'rootless') {
             required = notes.filter(pc => pc !== root);
         } else if (config.mode === 'guide') {
-            required = pickGuideTones(notes, root, !!chordDef.isHalfDim);
+            required = pickGuideTones(notes, root, false);
+            // iiø7 の♭5はガイドトーンではないので、弾いても弾かなくてもよい
+            if (chordDef.isHalfDim) optional = [mod12(root + 6)].filter(pc => notes.includes(pc));
         } else if (config.mode === 'shell') {
             // シェル：ベース音（ふつうはルート）＋ガイドトーン（3度・7度）。左手の基本形
             const bassPc = mod12(bassMidi);

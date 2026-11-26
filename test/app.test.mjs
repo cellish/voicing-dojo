@@ -128,12 +128,16 @@ test('コード名は調に沿って綴る（G♭メジャーの IV は C♭、G
     assert.deepEqual(plain(labelsIn('turnaround', 'C', 'advanced').map(d => d.label)), ['Cmaj9', 'A7(b9)', 'Dm9', 'G9']);
 });
 
-test('ガイドトーンは音程で選ぶ（iiø7 は 3度・♭5・7度）', () => {
+test('ガイドトーンは音程で選ぶ（iiø7 の♭5はガイドトーンでは任意、シェルでは必須）', () => {
     const { T } = loadApp();
     const cfg = T.state().config;
     Object.assign(cfg, { song: 'passacaglia', diff: 'intermediate', mode: 'guide', cofIdx: T.SONG_META.passacaglia.keyOrder[0] });
     const iiHalfDim = T.buildChordTarget(T.PROGRESSIONS.passacaglia[5]); // Am7(b5)
-    assert.deepEqual(plain(iiHalfDim.required), [0, 3, 7]); // C, E♭, G
+    assert.deepEqual(plain(iiHalfDim.required), [0, 7]); // C, G
+    assert.deepEqual(plain([...iiHalfDim.optionalSet]), [3]); // E♭
+    assert.equal(iiHalfDim.hintText, 'ド・ソ・(ミ♭)');
+    cfg.mode = 'shell';
+    assert.ok(T.buildChordTarget(T.PROGRESSIONS.passacaglia[5]).required.includes(3));
 });
 
 test('表示時間は画面の高さ・テンポによらず一定（低い画面で短いコードが続くときだけ縮める）', () => {
@@ -350,7 +354,7 @@ test('テーマ：保存した配色を引き継ぎ、どの配色でも描画�
     }
 });
 
-test('Phase 2 のマイナー ii-V-i：2〜3音で12キーを通せる', () => {
+test('Phase 2 のマイナー ii-V-i：2音で12キーを通せる', () => {
     const app = loadApp();
     const r = playCourseStep(app, stepIndex('p2-min'));
     assert.equal(r.done, true);
