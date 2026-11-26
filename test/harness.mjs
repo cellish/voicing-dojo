@@ -19,7 +19,7 @@ function loadScript() {
         transposeChordLabel, spellInKey, PROGRESSIONS, SONG_META, CIRCLE_OF_FIFTHS, COURSE_STEPS, COURSE_PHASES, ACHIEVEMENTS, badgeSvg, keyElements, computeRank, getStepBestRank,
         state: () => ({ currentBeat, hitStreak, targetStreak, blocks, courseOrderPos, keyStatuses, isReviewPhase,
                         reviewQueue, resultPending, score, config, clearedSteps,
-                        combo, maxCombo, missCount, perfectCount, hitCount, records,
+                        combo, maxCombo, missCount, perfectCount, hitCount, records, heldNotes: Array.from(noteSources.keys()),
                         keyPlan, challengeType, speedKeysCleared, speedBestBpm, activity, keyStats, achievements })
     };
 ` + js.slice(tail);
@@ -35,7 +35,7 @@ function makeElement() {
             add: (...cs) => cs.forEach(c => classes.add(c)), remove: (...cs) => cs.forEach(c => classes.delete(c)), contains: c => classes.has(c),
             toggle: (c, f) => { if (f === undefined) f = !classes.has(c); f ? classes.add(c) : classes.delete(c); }
         },
-        addEventListener() {}, setAttribute(k, v) { this['@' + k] = v; }, querySelector() { return null; },
+        addEventListener(type, f) { (this.listeners ||= {})[type] = f; }, contains(el) { return !!el && el.inKeyboard === true; }, setAttribute(k, v) { this['@' + k] = v; }, querySelector() { return null; },
         focus() {}, blur() {}, appendChild(c) { this.children.push(c); return c; },
         getContext() {
             // Canvas 2D：描画命令は何もしない。measureText だけ文字数に比例した幅を返す
@@ -106,7 +106,7 @@ export function loadApp({ storage = {}, width = 800 } = {}) {
     vm.runInContext(loadScript(), context, { filename: 'index.html' });
     // 結果画面を開く（setTimeout で待っている処理を実行する）
     const runPendingTimeout = () => { const f = context.__pendingTimeout; context.__pendingTimeout = null; if (f) f(); };
-    return { T: context.__t, audioLog, store, elements, setNow: (v) => { now = v; }, runPendingTimeout };
+    return { T: context.__t, document: context.document, audioLog, store, elements, setNow: (v) => { now = v; }, runPendingTimeout };
 }
 
 /**

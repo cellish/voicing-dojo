@@ -469,3 +469,25 @@ test('2段の鍵盤：幅の狭い画面で2オクターブになり、全12キ�
         assert.equal(r.state.perfectCount, r.chords, key);
     }
 });
+
+test('画面の鍵盤は複数の指を同時に押せる（鍵ごとに別の要素でも前の指が離れない）', () => {
+    const app = loadApp();
+    app.T.startCourseStep(0);
+    const keyboard = app.elements['keyboard-container'];
+    // 座標の x を MIDI ノート番号として扱い、その鍵が指の下にあることにする
+    app.document.elementFromPoint = (x) => ({ closest: () => ({ dataset: { note: String(x) } }) });
+    const touch = (id, note, inKeyboard = true) => ({ identifier: id, clientX: note, clientY: 0, target: { inKeyboard } });
+    const fire = (type, touches, changed) =>
+        keyboard.listeners[type]({ preventDefault() {}, touches, targetTouches: [changed], changedTouches: [changed] });
+    const held = () => app.audioLog && [...app.T.state().heldNotes].sort((a, b) => a - b);
+    const [a, b, c] = [touch(1, 48), touch(2, 52), touch(3, 55)];
+    fire('touchstart', [a], a);
+    fire('touchstart', [a, b], b);
+    fire('touchstart', [a, b, c], c);
+    assert.deepEqual(plain(held()), [48, 52, 55]);
+    fire('touchend', [a, c], b);
+    assert.deepEqual(plain(held()), [48, 55], '離した指の音だけ消える');
+    const outside = touch(4, 60, false); // 鍵盤の外で始まったタッチは鳴らさない
+    fire('touchmove', [a, c, outside], a);
+    assert.deepEqual(plain(held()), [48, 55]);
+});

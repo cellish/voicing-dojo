@@ -4349,9 +4349,11 @@
         e.preventDefault();
         if (!audioReady) initAudio();
         const activeIds = new Set();
-        // targetTouches：鍵盤上で始まったタッチだけを扱う（他要素で始まったタッチが鍵盤上を通過しても鳴らさない）
-        for (let i = 0; i < e.targetTouches.length; i++) {
-            const t = e.targetTouches[i];
+        // 鍵盤上で始まったタッチだけを扱う（他要素で始まったタッチが鍵盤上を通過しても鳴らさない）。
+        // targetTouches は「同じ鍵（要素）で始まったタッチ」しか含まず、2本目の指で1本目が離れた扱いになるので使わない
+        for (let i = 0; i < e.touches.length; i++) {
+            const t = e.touches[i];
+            if (!dom.keyboardContainer.contains(t.target)) continue;
             const id = 'touch-' + t.identifier;
             activeIds.add(id);
             const note = getNoteFromPoint(t.clientX, t.clientY);
