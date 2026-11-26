@@ -972,6 +972,11 @@
             border-bottom-width: 1px;
             box-shadow: 0 0 12px rgba(0, 229, 255, 0.85);
         }
+        /* 鍵盤ヒント：次に弾く音。押している音（.active）とは別の色。一番下の音は下端に帯を付ける */
+        html .key-white.hint:not(.active) { background: #fdecb4; color: #78350f; }
+        html .key-black.hint:not(.active) { background: #d9a85c; }
+        html .key-white.hint-low:not(.active) { box-shadow: inset 0 -9px 0 #e6ae52; }
+        html .key-black.hint-low:not(.active) { box-shadow: inset 0 -9px 0 #a8762f; }
         .oct-controls {
             position: absolute;
             top: -32px;
@@ -1687,6 +1692,7 @@
                 <button class="ctrl-chip active-on" id="btn-beat-toggle" type="button" aria-pressed="true"><span class="ico">🥁 </span>ビート ON</button>
                 <button class="ctrl-chip active-on" id="btn-melody-toggle" type="button" aria-pressed="true"><span class="ico">🎵 </span><span class="lbl">メロディ</span><span class="lbl-narrow">旋律</span> ON</button>
                 <button class="ctrl-chip active-on" id="btn-names-toggle" type="button" aria-pressed="true" title="コードの下に出る音名">音名 ON</button>
+                <button class="ctrl-chip" id="btn-keyhint-toggle" type="button" aria-pressed="false" title="次に弾く音を鍵盤に色で示す"><span class="lbl">鍵盤ヒント</span><span class="lbl-narrow">鍵盤</span> OFF</button>
             </div>
 
             <div class="bar-group">
@@ -2205,6 +2211,7 @@
         melodyOn: true,
         beatOn: true,
         namesOn: true, // ブロックにコードの構成音の音名を出すか
+        keyHintOn: false, // 次に弾く音を鍵盤の色で示すか
         blindMode: 'off'
     };
 
@@ -2337,6 +2344,8 @@
     let nextKeyPreview = null;  // NEXT KEY 予告（状態変化時のみ再計算）
     let pressedLabel = '';      // 押下中ノート表示文字列（押鍵変化時のみ再計算）
     let playInfoCache = ''; // 上の Key・形の欄に出している内容（変わったときだけ書き換える）
+    let hintBlock = null;   // 鍵盤ヒントを出しているブロック
+    let hintNotes = [];     // 鍵盤ヒントの MIDI ノート（低い順）
     let pressedLabelDirty = false;
     let rangeCache = { sig: '', bassShift: 0, melShift: 0 };
     const fonts = { labelSize: 20, hintSize: 12, degSize: 14, bannerSub: '', bannerTitle: '', small: '', hud: '', combo: '', pauseTitle: '', pauseSub: '', keyLabel: '', keyMain: '', keySig: '' };
@@ -2367,6 +2376,7 @@
         btnBeatToggle: document.getElementById('btn-beat-toggle'),
         btnMelodyToggle: document.getElementById('btn-melody-toggle'),
         btnNamesToggle: document.getElementById('btn-names-toggle'),
+        btnKeyHintToggle: document.getElementById('btn-keyhint-toggle'),
         infoKey: document.getElementById('info-key'),
         infoKeyName: document.getElementById('info-key-name'),
         infoKeySig: document.getElementById('info-key-sig'),
@@ -3339,6 +3349,9 @@
         initKeyTrackerDOM();
         resetTimelineState();
         playInfoCache = '';
+        hintBlock = null;
+        hintNotes = [];
+        for (const el of keyElements.values()) el.classList.remove('hint', 'hint-low');
         updatePlayInfo();
         resizeApp();
         updateControlBarUI();
@@ -3436,6 +3449,10 @@
         dom.btnNamesToggle.textContent = `音名 ${config.namesOn ? 'ON' : 'OFF'}`;
         dom.btnNamesToggle.classList.toggle('active-on', config.namesOn);
         dom.btnNamesToggle.setAttribute('aria-pressed', String(config.namesOn));
+
+        dom.btnKeyHintToggle.innerHTML = `<span class="lbl">鍵盤ヒント</span><span class="lbl-narrow">鍵盤</span> ${config.keyHintOn ? 'ON' : 'OFF'}`;
+        dom.btnKeyHintToggle.classList.toggle('active-on', config.keyHintOn);
+        dom.btnKeyHintToggle.setAttribute('aria-pressed', String(config.keyHintOn));
 
         dom.octDisplay.textContent = `C${baseOctave}`;
     }
@@ -3943,15 +3960,69 @@
         else ctx.rect(x, y, w, h);
     }
 
+    // 次に弾くブロック（まだ弾いておらず、ミスもしていない中で一番早いもの）
+    function nextTargetBlock() {
+        let next = null;
+        for (const b of blocks) {
+            if (!b.hit && !b.missed && (!next || b.targetBeat < next.targetBeat)) next = b;
+        }
+        return next;
+    }
+
+    // 鍵盤ヒントの押さえ方を1つ選ぶ。最低音が決まる弾き方はその音を一番下に、そうでなければ
+    // どの音を下にするかも選ぶ。画面の鍵盤に収まり、前の和音（無ければ鍵盤の中央）に近いものにする
+    function pickHintNotes(data, prev, lo, hi) {
+        let pcs = data.required;
+        let lows = pcs;
+        if (config.mode === 'full' || config.mode === 'shell') {
+            if (!pcs.includes(data.bassPc)) pcs = [data.bassPc, ...pcs];
+            lows = [data.bassPc];
+        } else if (config.mode === 'rootless_ab') {
+            lows = [data.formLowPc];
+        }
+        let best = [], bestScore = Infinity;
+        for (const low of lows) {
+            const offsets = pcs.map(pc => mod12(pc - low)).sort((a, b) => a - b);
+            for (let base = lo - 12 + mod12(low - lo); base <= hi; base += 12) {
+                const notes = offsets.map(o => base + o);
+                const outside = notes.filter(n => n < lo || n > hi).length;
+                let dist = 0;
+                if (prev.length) {
+                    for (const n of notes) dist += Math.min(...prev.map(p => Math.abs(n - p)));
+                    dist /= notes.length;
+                } else {
+                    dist = Math.abs((notes[0] + notes[notes.length - 1]) / 2 - (lo + hi) / 2);
+                }
+                const score = outside * 1000 + dist;
+                if (score < bestScore) { bestScore = score; best = notes; }
+            }
+        }
+        return best;
+    }
+
+    // 鍵盤ヒントの表示（次のブロックが変わったときだけ書き換える）。耳コピでは答えになるので出さない
+    function updateKeyHint() {
+        const next = config.keyHintOn ? nextTargetBlock() : null;
+        const target = next && !next.isBlind ? next : null;
+        if (target === hintBlock) return;
+        hintBlock = target;
+        for (const el of keyElements.values()) el.classList.remove('hint', 'hint-low');
+        if (!target) { hintNotes = []; return; }
+        const keys = Array.from(keyElements.keys());
+        const prev = lastPlayedMidiNotes.length ? lastPlayedMidiNotes : hintNotes;
+        hintNotes = pickHintNotes(target.data, prev, Math.min(...keys), Math.max(...keys));
+        hintNotes.forEach((n, i) => {
+            const el = keyElements.get(n);
+            if (!el) return;
+            el.classList.add('hint');
+            if (i === 0) el.classList.add('hint-low');
+        });
+    }
+
     // キーと、次に弾くコードの形（ルートレス A/B のとき）を画面上の欄に出す
     function updatePlayInfo() {
         const parts = getKeyDisplayParts(getCurrentKeyInfo(), SONG_META[config.song].isMinor);
-        let next = null;
-        if (config.mode === 'rootless_ab') {
-            for (const b of blocks) {
-                if (!b.hit && !b.missed && (!next || b.targetBeat < next.targetBeat)) next = b;
-            }
-        }
+        const next = config.mode === 'rootless_ab' ? nextTargetBlock() : null;
         const form = next ? next.data.form : '';
         const flash = !!keyChangeBanner; // 転調直後は目立たせる
         const cache = `${parts.full}|${parts.sig}|${config.mode}|${form}|${flash}`;
@@ -4067,6 +4138,7 @@
         }
 
         updatePlayInfo();
+        updateKeyHint();
         const TOP_BADGE_Y = 10, TOP_BADGE_H = 30;
 
         // 最終コード付近の「NEXT KEY」予告バッジ（コースモード）。
@@ -4413,6 +4485,7 @@
 
         dom.keyboardContainer.innerHTML = '';
         keyElements.clear();
+        hintBlock = null; // 鍵を作り直したのでヒントも付け直す
         const frag = document.createDocumentFragment();
         const blacks = new Set([1, 3, 6, 8, 10]);
 
@@ -4566,7 +4639,7 @@
             localStorage.setItem(PREFS_KEY, JSON.stringify({
                 song: dom.freeSong.value, key: dom.freeKey.value, laps: dom.freeLaps.value,
                 diff: dom.freeDiff.value, mode: dom.freeMode.value, bpm: dom.freeBpm.value,
-                blind: dom.freeBlind.value, melody: config.melodyOn, beat: config.beatOn, names: config.namesOn, speed: dom.freeSpeed.value,
+                blind: dom.freeBlind.value, melody: config.melodyOn, beat: config.beatOn, names: config.namesOn, keyHint: config.keyHintOn, speed: dom.freeSpeed.value,
                 courseLaps: dom.courseLapsSelect.value, octave: baseOctave, theme: currentTheme,
                 chSong: dom.chSong.value, chLevel: dom.chLevel.value, chHint: dom.chHint.value,
                 keyOrder: dom.courseOrderSelect.value
@@ -4605,6 +4678,7 @@
         if (typeof pr.melody === 'boolean') config.melodyOn = dom.freeMelody.checked = pr.melody;
         if (typeof pr.beat === 'boolean') config.beatOn = dom.freeBeat.checked = pr.beat;
         if (typeof pr.names === 'boolean') config.namesOn = pr.names;
+        if (typeof pr.keyHint === 'boolean') config.keyHintOn = pr.keyHint;
         const oct = Number(pr.octave);
         if (oct >= 2 && oct <= 4) baseOctave = oct;
         if (THEME_NAMES.includes(pr.theme)) applyTheme(pr.theme);
@@ -4698,6 +4772,13 @@
             updateControlBarUI();
             savePrefs();
             if (isPaused && activeOverlayId === null) drawFrame();
+        });
+
+        bindButton('btn-keyhint-toggle', () => {
+            config.keyHintOn = !config.keyHintOn;
+            updateControlBarUI();
+            savePrefs();
+            updateKeyHint();
         });
 
         bindButton('btn-oct-down', () => {

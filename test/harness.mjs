@@ -16,7 +16,7 @@ function loadScript() {
     globalThis.__t = {
         startCourseStep, startFreeSession, startChallenge, buildKeyPlan, pickWeakKeyPositions, getDailyDrill, getStreak, recordActivityDay, updateTimeline, drawFrame, pressNote, releaseNote,
         buildChordTarget, getDegreeText, getHitWindowBeats, getLookaheadBeats, resizeApp, applyTheme, initAudio,
-        transposeChordLabel, spellInKey, PROGRESSIONS, SONG_META, CIRCLE_OF_FIFTHS, COURSE_STEPS, COURSE_PHASES, ACHIEVEMENTS, badgeSvg, computeRank, getStepBestRank,
+        transposeChordLabel, spellInKey, PROGRESSIONS, SONG_META, CIRCLE_OF_FIFTHS, COURSE_STEPS, COURSE_PHASES, ACHIEVEMENTS, badgeSvg, keyElements, computeRank, getStepBestRank,
         state: () => ({ currentBeat, hitStreak, targetStreak, blocks, courseOrderPos, keyStatuses, isReviewPhase,
                         reviewQueue, resultPending, score, config, clearedSteps,
                         combo, maxCombo, missCount, perfectCount, hitCount, records,
@@ -32,7 +32,7 @@ function makeElement() {
         style: {}, dataset: {}, children: [], value: '', checked: true, options: [], textContent: '', innerHTML: '',
         clientWidth: 400, clientHeight: 600, scrollWidth: 400, offsetLeft: 0, offsetWidth: 40, inert: false,
         classList: {
-            add: c => classes.add(c), remove: c => classes.delete(c), contains: c => classes.has(c),
+            add: (...cs) => cs.forEach(c => classes.add(c)), remove: (...cs) => cs.forEach(c => classes.delete(c)), contains: c => classes.has(c),
             toggle: (c, f) => { if (f === undefined) f = !classes.has(c); f ? classes.add(c) : classes.delete(c); }
         },
         addEventListener() {}, setAttribute(k, v) { this['@' + k] = v; }, querySelector() { return null; },
@@ -125,7 +125,7 @@ export function playChallenge(app, type, opts = {}) {
     return playLoop(app, opts);
 }
 
-function playLoop(app, { missAt = -1, maxSeconds = 4000, wrongForm = false } = {}) {
+function playLoop(app, { missAt = -1, maxSeconds = 4000, wrongForm = false, useHint = false } = {}) {
     const { T } = app;
     const dt = 1 / 60;
     let t = app.__t || 0;
@@ -144,6 +144,8 @@ function playLoop(app, { missAt = -1, maxSeconds = 4000, wrongForm = false } = {
                 const low = b.data.formLowPc === null ? null : (wrongForm ? b.data.required[1] : b.data.formLowPc);
                 held = low === null ? [36 + b.data.bassPc, ...b.data.required.map(pc => 60 + pc)]
                     : b.data.required.map(pc => 48 + low + ((pc - low + 12) % 12));
+                // useHint：鍵盤ヒントで色が付いた鍵だけを押さえる
+                if (useHint) held = [...T.keyElements].filter(([, el]) => el.classList.contains('hint')).map(([n]) => n).sort((x, y) => x - y);
                 held.forEach(n => T.pressNote(n, 'test'));
             }
             chords++;

@@ -425,3 +425,34 @@ test('音名の ON/OFF は保存した設定を引き継ぐ', () => {
     assert.equal(app.elements['btn-names-toggle'].textContent, '音名 OFF');
     assert.equal(app.elements['info-key-name'].textContent, 'C Major');
 });
+
+test('ビート・旋律・音名・鍵盤ヒントの ON/OFF は前回の設定を引き継ぐ', () => {
+    const app = loadApp({ storage: { chord_master_prefs_v1: JSON.stringify({ beat: false, melody: false, names: false, keyHint: true }) } });
+    app.T.startCourseStep(0);
+    const { beatOn, melodyOn, namesOn, keyHintOn } = app.T.state().config;
+    assert.deepEqual([beatOn, melodyOn, namesOn, keyHintOn], [false, false, false, true]);
+});
+
+test('鍵盤ヒント：色の付いた鍵を押さえれば、どの弾き方でも全部通る（最低音も満点）', () => {
+    const storage = { chord_master_prefs_v1: JSON.stringify({ keyHint: true }) };
+    for (const key of ['p1-maj', 'p1-canon', 'p2-maj', 'ps-min', 'p3-maj', 'p4-maj', 'p4-maj-ab', 'p4-maj-ba']) {
+        const r = playCourseStep(loadApp({ storage }), stepIndex(key), { useHint: true });
+        assert.equal(r.done, true, key);
+        assert.equal(r.state.missCount, 0, key);
+        assert.equal(r.state.perfectCount, r.chords, key);
+    }
+});
+
+test('鍵盤ヒント：OFF のときと耳コピでは色を付けない', () => {
+    const colored = (app) => [...app.T.keyElements.values()].filter(el => el.classList.contains('hint')).length;
+    const off = loadApp();
+    off.T.startCourseStep(0);
+    off.T.updateTimeline(1 / 60);
+    off.T.drawFrame();
+    assert.equal(colored(off), 0);
+    const ear = loadApp({ storage: { chord_master_prefs_v1: JSON.stringify({ keyHint: true }) } });
+    ear.T.startChallenge('ear');
+    ear.T.updateTimeline(1 / 60);
+    ear.T.drawFrame();
+    assert.equal(colored(ear), 0);
+});
