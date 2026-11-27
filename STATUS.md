@@ -29,6 +29,8 @@ os:                  # 対応 / 一部制限 / 非対応 / 未確認
 - 音源・音出し(Tone.js): 独自実装(他アプリと共通化を検討)
 - コード名・度数・構成音の綴り(`spellChordTones`・`spellInKey`): 独自実装(整合チェックの共通化は Phase D)
 - 楽譜表示: 不要(鍵盤とブロックの表示のみ)
+- MIDI 入力・画面鍵盤(`onMIDIMessage`・`noteSources`・`buildKeyboard`): 独自実装
+- 伴奏(ベース・旋律・ドラム。`scheduleAccompaniment`): 独自実装
 
 ## OS / ブラウザ対応状況
 - macOS: Chrome 対応(ヘッドレス Chrome でテーマ・画面を確認、通しプレイは `node --test`。2026-11 確認) / Safari 一部制限(Web MIDI が無く、MIDI 鍵盤は使えない。画面の鍵盤と PC キーボードは使える。Safari の Web MIDI 非対応は adlib-dojo-web-proto の REPORT で確認済みで、このアプリでの実機確認は未了)
