@@ -558,6 +558,16 @@
             font-size: 0.72rem;
             color: var(--muted, #94a3b8);
         }
+        .step-status { white-space: nowrap; }
+        .step-medal { margin-left: 6px; padding: 0 6px; border-radius: 999px; font-size: 0.72rem; font-weight: 800; color: #fff; }
+        .step-medal.medal-1 { background: #a8662f; }
+        .step-medal.medal-2 { background: #6f7b8a; }
+        .step-medal.medal-3 { background: #a8730a; }
+        .course-wait, .medal-rules { width: 100%; margin-bottom: 8px; font-size: 0.82rem; }
+        .medal-rules { padding: 6px 10px; border: 1px solid var(--border); border-radius: 10px; }
+        .medal-rules summary { cursor: pointer; font-weight: 700; }
+        .medal-rules table { border-collapse: collapse; width: 100%; }
+        .medal-rules th, .medal-rules td { border: 1px solid var(--border); padding: 3px 6px; text-align: center; }
         .step-rank.rank-S { color: var(--gold); }
         .step-rank.rank-A { color: var(--smooth); }
         .result-rank.rank-bpm { font-size: 2.2rem; color: var(--smooth); }
@@ -1131,6 +1141,9 @@
             #top-bar .ctrl-chip { padding: 5px 8px; min-height: 30px; }
             #top-bar .stat-pill { padding: 3px 6px; font-size: 0.72rem; white-space: nowrap; }
             #top-bar .bpm-val { min-width: 24px; }
+            #top-bar #bar-settings .onoff { display: none; }
+            #top-bar #bar-settings > .ctrl-chip:not(.active-on) { opacity: 0.65; }
+            #top-bar #bar-settings > .ctrl-chip:not(.active-on) span { text-decoration: line-through; }
         }
         @media (max-width: 350px) and (orientation: portrait) {
             #top-bar { gap: 5px 2px; padding: 5px 2px; }
@@ -1533,7 +1546,7 @@
             <div class="course-toolbar">
                 <div class="course-toolbar-info">
                     <strong style="color:var(--gold);">★ 金</strong> = 一発合格　<strong style="color:var(--text);">✓ 銀</strong> = 復習で合格　<strong>↻ 橙</strong> = 要復習（12キー終了後に再出題）<br>
-                    ミスするとそのキーの1コード目からやり直しです。
+                    ミスしても止まらず最後まで弾き、ミスのあった周は同じキーをもう1周します。
                 </div>
                 <label class="laps-selector">
                     <span>各キーのクリア周回数:</span>
@@ -1560,6 +1573,21 @@
                     </select>
                 </label>
             </div>
+
+            <label class="toggle-row course-wait">
+                <span>じっくりモード（コードが判定ラインで待つ。点・制覇・バッジには数えない）</span>
+                <input type="checkbox" id="course-wait">
+            </label>
+            <details class="medal-rules">
+                <summary>ステップのバッジ（銅・銀・金）の条件</summary>
+                <p>12キーを<strong>一度も間違えずに</strong>弾き切ると、そのステップのバッジが付きます。途中で設定を変えた場合は、その回でいちばんやさしい設定で判定します。</p>
+                <table>
+                    <tr><th></th><th>テンポ</th><th>鍵盤ヒント</th><th>音名</th><th>旋律・ベース</th></tr>
+                    <tr><th>銅</th><td>自由</td><td>使ってよい</td><td>表示してよい</td><td>鳴らしてよい</td></tr>
+                    <tr><th>銀</th><td>標準以上</td><td>OFF</td><td>表示してよい</td><td>鳴らしてよい</td></tr>
+                    <tr><th>金</th><td>標準＋20以上</td><td>OFF</td><td>OFF</td><td>両方 OFF</td></tr>
+                </table>
+            </details>
 
             <div id="course-phases-container" style="width:100%;"></div>
         </div>
@@ -1662,6 +1690,14 @@
                     <label class="toggle-row">
                         <span><span class="ico">🥁 </span>ドラムビート</span>
                         <input type="checkbox" id="free-beat" checked>
+                    </label>
+                    <label class="toggle-row">
+                        <span>ベース自動再生</span>
+                        <input type="checkbox" id="free-bass" checked>
+                    </label>
+                    <label class="toggle-row">
+                        <span>じっくりモード（正しく弾くまで待つ・記録しない）</span>
+                        <input type="checkbox" id="free-wait">
                     </label>
                 </div>
             </div>
@@ -1776,6 +1812,7 @@
                 </div>
                 <button class="ctrl-chip active-on" id="btn-beat-toggle" type="button" aria-pressed="true"><span class="ico">🥁 </span>ビート ON</button>
                 <button class="ctrl-chip active-on" id="btn-melody-toggle" type="button" aria-pressed="true"><span class="ico">🎵 </span><span class="lbl">メロディ</span><span class="lbl-narrow">旋律</span> ON</button>
+                <button class="ctrl-chip active-on" id="btn-bass-toggle" type="button" aria-pressed="true">ベース ON</button>
                 <button class="ctrl-chip active-on" id="btn-names-toggle" type="button" aria-pressed="true" title="コードの下に出る音名">音名 ON</button>
                 <button class="ctrl-chip" id="btn-keyhint-toggle" type="button" aria-pressed="false" title="次に弾く音を鍵盤に色で示す"><span class="lbl">鍵盤ヒント</span><span class="lbl-narrow">鍵盤</span> OFF</button>
                 </div>
@@ -1833,6 +1870,9 @@
     const ACTIVITY_KEY = 'chord_master_activity_v1'; // 練習した日（連続日数）と今日のドリル
     const KEYSTATS_KEY = 'chord_master_keystats_v1'; // キーごとのミス・ノーミス回数（苦手キー克服用）
     const ACHIEVEMENTS_KEY = 'chord_master_achievements_v1'; // 解除した実績
+    const MEDALS_KEY = 'chord_master_medals_v1'; // ステップのバッジ（stepKey → 1=銅 2=銀 3=金）
+    const MEDAL_NAMES = Object.freeze(['', '銅', '銀', '金']);
+    const MEDAL_GOLD_BPM = 20; // 金はステップの標準テンポよりこれだけ速く
     const OVERLAY_IDS = ['start-screen', 'course-menu-screen', 'free-settings-screen', 'challenge-screen', 'result-screen'];
 
     // Canvas 用の配色（テーマ別）。描画ループ内で CSS を参照しないよう JS 側に保持する。
@@ -2296,6 +2336,8 @@
         lapsToClear: 1, // デフォルト1周
         lookaheadSec: 2.8, // コードが出現してから判定ラインに届くまでの秒数
         melodyOn: true,
+        bassOn: true,    // ベースの伴奏を鳴らすか
+        waitMode: false, // じっくりモード：正しく弾くまでブロックが待つ（点・制覇・バッジには数えない）
         beatOn: true,
         namesOn: true, // ブロックにコードの構成音の音名を出すか
         keyHintOn: false, // 次に弾く音を鍵盤の色で示すか
@@ -2418,7 +2460,10 @@
     let missCount = 0;
     let combo = 0;                  // ミスなしで続けて弾けたコード数
     let maxCombo = 0;
-    let attemptScore = 0;           // 今のやり直し区間（ミスで最初から弾き直す単位）で得た点
+    let attemptScore = 0;           // 今の周で得た点（ミスのあった周の点は取り消す）
+    let lapJudged = 0;              // 今の周で判定の済んだコード数
+    let lapMissed = false;          // 今の周でミスしたか
+    let cleanLaps = 0;              // 今のキーで続けてノーミスだった周の数
     let lastNoteOnBeat = -Infinity; // 最後に新しく鍵盤を押した拍（タイミング評価用）
     let pressVersion = 0;           // 押鍵状態が変わるたびに増える（不足音の再計算を間引く）
     let hitStreak = 0;
@@ -2466,6 +2511,10 @@
         btnBeatToggle: document.getElementById('btn-beat-toggle'),
         btnMelodyToggle: document.getElementById('btn-melody-toggle'),
         btnNamesToggle: document.getElementById('btn-names-toggle'),
+        btnBassToggle: document.getElementById('btn-bass-toggle'),
+        freeBass: document.getElementById('free-bass'),
+        freeWait: document.getElementById('free-wait'),
+        courseWait: document.getElementById('course-wait'),
         btnKeyHintToggle: document.getElementById('btn-keyhint-toggle'),
         btnKbdRows: document.getElementById('btn-kbd-rows'),
         infoKey: document.getElementById('info-key'),
@@ -2556,7 +2605,8 @@
         const scr = document.getElementById(id);
         const first = id === 'result-screen'
             ? scr.querySelector('.result-actions .btn:not(.hidden)')
-            : (scr.querySelector('.step-card.recommended') || scr.querySelector('button, select'));
+            // 選択欄（ホームのテーマなど）にフォーカスすると iPhone で一覧が開くので、ボタンだけを対象にする
+            : (scr.querySelector('.step-card.recommended') || scr.querySelector('button'));
         if (first) first.focus({ preventScroll: true });
     }
 
@@ -2626,6 +2676,7 @@
     }
 
     // ステップの最高ランク（周回数の違う記録もまとめて見る。ランクは周回数によらない）
+    let medals = loadJson(MEDALS_KEY, {}) || {};
     function getStepBestRank(stepKey) {
         let best = null;
         const prefix = `course:${stepKey}:`;
@@ -2842,11 +2893,6 @@
                 const nextInfo = getCofInfoByPos(config.song, reviewQueue[0]);
                 const p = getKeyDisplayParts(nextInfo, isMinor);
                 return { label: `REVIEW: ${p.full} (${p.sig})`, isReview: true };
-            }
-            if (hadMissInCurrentKey) {
-                const nextInfo = getCofInfoByPos(config.song, currentReviewPos);
-                const p = getKeyDisplayParts(nextInfo, isMinor);
-                return { label: `RETRY: ${p.full} (${p.sig})`, isReview: true };
             }
             return { label: 'FINAL CLEAR!', isReview: false };
         }
@@ -3124,7 +3170,7 @@
                 card.className = 'step-card' + (isCleared ? ' cleared' : '') + (isRec ? ' recommended' : '');
                 card.innerHTML = `
                     <div class="step-top">
-                        <span class="step-num">STEP ${step.id + 1}${bestRank ? ` <span class="step-rank rank-${bestRank}" title="最高ランク" aria-label="最高ランク ${bestRank}">${bestRank}</span>` : ''}</span>
+                        <span class="step-num">STEP ${step.id + 1}${medals[step.key] ? ` <span class="step-medal medal-${medals[step.key]}" title="ノーミス制覇">${MEDAL_NAMES[medals[step.key]]}</span>` : ''}${bestRank ? ` <span class="step-rank rank-${bestRank}" title="最高ランク" aria-label="最高ランク ${bestRank}">${bestRank}</span>` : ''}</span>
                         ${isCleared
                             ? '<span class="step-status cleared">★ 12キー制覇</span>'
                             : (isRec ? '<span class="step-status next">▶ おすすめ</span>' : '')}
@@ -3302,7 +3348,7 @@
 
         dom.btnNavSub.innerHTML = `${ICONS.list}<span class="lbl"> コース一覧</span>`;
         dom.btnNavSub.setAttribute('aria-label', 'コース一覧');
-        dom.missionTitle.textContent = `Step ${step.id + 1}: ${step.title}`;
+        dom.missionTitle.textContent = `${config.waitMode ? '【じっくり】' : ''}Step ${step.id + 1}: ${step.title}`;
         dom.missionDegrees.textContent = getDegreeText(step.song, step.diff);
         dom.missionDesc.textContent = step.mission;
         dom.missionDesc.title = step.mission;
@@ -3408,6 +3454,7 @@
         config.blindMode = dom.freeBlind.value;
         config.melodyOn = dom.freeMelody.checked;
         config.beatOn = dom.freeBeat.checked;
+        config.bassOn = dom.freeBass.checked;
         hadMissInCurrentKey = false;
 
         const meta = SONG_META[config.song];
@@ -3416,7 +3463,7 @@
 
         dom.btnNavSub.innerHTML = `${ICONS.list}<span class="lbl"> 設定変更</span>`;
         dom.btnNavSub.setAttribute('aria-label', 'フリー練習の設定変更');
-        dom.missionTitle.textContent = `${meta.name}（${parts.short} / ${modeText}）`;
+        dom.missionTitle.textContent = `${config.waitMode ? '【じっくり】' : ''}${meta.name}（${parts.short} / ${modeText}）`;
         dom.missionDegrees.textContent = getDegreeText(config.song, config.diff);
         dom.missionDesc.textContent =
             config.mode === 'full'
@@ -3448,7 +3495,7 @@
         updatePlayInfo();
         resizeApp();
 
-        initAudio();
+        wakeAudio();
         requestMIDI();
 
         resultPending = false;
@@ -3468,6 +3515,10 @@
         combo = 0;
         maxCombo = 0;
         attemptScore = 0;
+        lapJudged = 0;
+        lapMissed = false;
+        cleanLaps = 0;
+        runSettings = null;
         hitStreak = 0;
         targetStreak = PROGRESSIONS[config.song].length * config.lapsToClear;
         blocks = [];
@@ -3532,10 +3583,10 @@
             announce('一時停止中');
         } else {
             closeSettingsPanel();
+            wakeAudio();
             lastFrameTime = performance.now();
-            if (rafId === null) {
-                rafId = requestAnimationFrame(gameLoop);
-            }
+            if (rafId !== null) cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(gameLoop);
         }
         updateControlBarUI();
     }
@@ -3561,21 +3612,16 @@
 
         dom.ingameBpmVal.innerHTML = `<span class="lbl">BPM </span>${config.bpm}`;
 
-        dom.btnBeatToggle.innerHTML = `<span class="ico">🥁 </span>ビート ${config.beatOn ? 'ON' : 'OFF'}`;
-        dom.btnBeatToggle.classList.toggle('active-on', config.beatOn);
-        dom.btnBeatToggle.setAttribute('aria-pressed', String(config.beatOn));
-
-        dom.btnMelodyToggle.innerHTML = `<span class="ico">${config.melodyOn ? '🎵' : '🔇'} </span><span class="lbl">メロディ</span><span class="lbl-narrow">旋律</span> ${config.melodyOn ? 'ON' : 'OFF'}`;
-        dom.btnMelodyToggle.classList.toggle('active-on', config.melodyOn);
-        dom.btnMelodyToggle.setAttribute('aria-pressed', String(config.melodyOn));
-
-        dom.btnNamesToggle.textContent = `音名 ${config.namesOn ? 'ON' : 'OFF'}`;
-        dom.btnNamesToggle.classList.toggle('active-on', config.namesOn);
-        dom.btnNamesToggle.setAttribute('aria-pressed', String(config.namesOn));
-
-        dom.btnKeyHintToggle.innerHTML = `<span class="lbl">鍵盤ヒント</span><span class="lbl-narrow">鍵盤</span> ${config.keyHintOn ? 'ON' : 'OFF'}`;
-        dom.btnKeyHintToggle.classList.toggle('active-on', config.keyHintOn);
-        dom.btnKeyHintToggle.setAttribute('aria-pressed', String(config.keyHintOn));
+        const chip = (btn, label, narrow, on) => {
+            btn.innerHTML = `<span class="lbl">${label}</span><span class="lbl-narrow">${narrow}</span><span class="onoff"> ${on ? 'ON' : 'OFF'}</span>`;
+            btn.classList.toggle('active-on', on);
+            btn.setAttribute('aria-pressed', String(on));
+        };
+        chip(dom.btnBeatToggle, 'ビート', 'ビート', config.beatOn);
+        chip(dom.btnMelodyToggle, 'メロディ', '旋律', config.melodyOn);
+        chip(dom.btnBassToggle, 'ベース', 'ベース', config.bassOn);
+        chip(dom.btnNamesToggle, '音名', '音名', config.namesOn);
+        chip(dom.btnKeyHintToggle, '鍵盤ヒント', '鍵盤', config.keyHintOn);
 
         dom.octDisplay.textContent = `C${baseOctave}`;
     }
@@ -3584,10 +3630,10 @@
         const songLen = PROGRESSIONS[config.song].length;
         const currentLap = Math.min(config.lapsToClear, Math.floor(hitStreak / songLen) + 1);
         dom.scoreDisplay.textContent = String(Math.max(0, score));
-        dom.lapDisplay.textContent = `${currentLap}/${config.lapsToClear}周 (${hitStreak}/${targetStreak})`;
+        dom.lapDisplay.textContent = `${currentLap}/${config.lapsToClear}周 (${hitStreak}/${targetStreak})${lapMissed ? ' ↻' : ''}`;
         // 予告表示は描画ループで毎フレーム作らず、状態が変わるここでだけ再計算する
         const remain = targetStreak - hitStreak;
-        nextKeyPreview = (isCourseMode && remain > 0 && remain <= 2) ? getNextKeyPreview() : null;
+        nextKeyPreview = (isCourseMode && !lapMissed && remain > 0 && remain <= 2) ? getNextKeyPreview() : null;
     }
 
     // 結果を記録して表に出す。返り値 { isNew, rank }
@@ -3657,7 +3703,25 @@
         return positions.map(pos => getKeyDisplayParts(getCofInfoByPos(config.song, pos), meta.isMinor).short).join('・');
     }
 
+    // じっくりモードの終わり：点・制覇・バッジは記録せず、練習した日だけ数える
+    function openPracticeResult() {
+        recordActivityDay();
+        saveJson(ACTIVITY_KEY, activity);
+        updateStreakBadge();
+        dom.resultTitle.textContent = '練習おつかれさま';
+        dom.resultDesc.textContent = 'じっくりモードは記録しません。慣れたら OFF にして挑戦しましょう。';
+        dom.resultRank.textContent = '';
+        dom.resultRank.className = 'result-rank';
+        dom.resultNew.classList.add('hidden');
+        dom.resultStats.innerHTML = '';
+        dom.resultAchv.classList.add('hidden');
+        dom.btnResultNext.classList.add('hidden');
+        dom.btnResultBack.textContent = isCourseMode ? 'コース一覧へ' : 'フリー設定へ';
+        showOverlay('result-screen');
+    }
+
     function openResultModal() {
+        if (isPractice()) { openPracticeResult(); return; }
         const isCourseRun = isCourseMode && !challengeType;
         if (isCourseRun) {
             clearedSteps.add(COURSE_STEPS[currentStepIdx].key);
@@ -3670,9 +3734,19 @@
 
         const { isNew, rank } = renderResultStats();
         const unlocked = checkAchievements({ rank, maxCombo, challengeType, speedBpm: challengeType === 'speed' ? speedBestBpm : 0 });
-        dom.resultAchv.classList.toggle('hidden', unlocked.length === 0);
-        dom.resultAchv.innerHTML = unlocked.map(a => `<span class="achv-pill" title="${a.desc}">${badgeSvg(a.id)}バッジ獲得：${a.title}</span>`).join('');
-        showConfetti(isNew || rank === 'S' || (isCourseRun && clearedSteps.size === COURSE_STEPS.length) || unlocked.length > 0);
+        // ステップのバッジ（銅・銀・金）：12キーを一度もミスせずに弾き切ったとき
+        let medal = 0, newMedal = false;
+        if (isCourseRun && missCount === 0 && runSettings) {
+            const step = COURSE_STEPS[currentStepIdx];
+            medal = medalTier(runSettings, step.bpm);
+            newMedal = medal > (medals[step.key] || 0);
+            if (newMedal) { medals[step.key] = medal; saveJson(MEDALS_KEY, medals); }
+        }
+        const pills = unlocked.map(a => `<span class="achv-pill" title="${a.desc}">${badgeSvg(a.id)}バッジ獲得：${a.title}</span>`);
+        if (medal) pills.unshift(`<span class="achv-pill"><span class="step-medal medal-${medal}">${MEDAL_NAMES[medal]}</span> ノーミス制覇${newMedal ? '（新しいバッジ）' : ''}</span>`);
+        dom.resultAchv.classList.toggle('hidden', pills.length === 0);
+        dom.resultAchv.innerHTML = pills.join('');
+        showConfetti(isNew || rank === 'S' || (isCourseRun && clearedSteps.size === COURSE_STEPS.length) || unlocked.length > 0 || newMedal);
 
         if (challengeType) {
             const labels = {
@@ -3695,7 +3769,7 @@
                 const nextStep = COURSE_STEPS[currentStepIdx + 1];
                 dom.btnResultNext.classList.remove('hidden');
                 dom.btnResultNext.textContent = `次へ ▶ Step ${nextStep.id + 1}: ${nextStep.title}`;
-                dom.resultDesc.textContent = `Step ${currentStepIdx + 1} の全12キー（復習含む）をノーミス制覇しました！`;
+                dom.resultDesc.textContent = `Step ${currentStepIdx + 1} の全12キーを制覇しました！`;
             } else {
                 dom.btnResultNext.classList.add('hidden');
                 dom.resultDesc.textContent = `全${COURSE_STEPS.length}ステップ・12キー完全制覇おめでとうございます！`;
@@ -3723,6 +3797,17 @@
     }
 
     // 「現在の拍から beatOffset 拍後」の AudioContext 時刻（lookAhead=0 前提）
+    // 音の予約でエラーが出ても、画面の進行は止めない（直前の回の予約と時刻が重なると Tone.js が例外を出すことがある）
+    let soundErrors = 0;
+    function playSound(fn) {
+        try { fn(); } catch (e) { soundErrors++; console.warn('音を鳴らせませんでした', e); }
+    }
+    // 他のアプリから戻ったときなどに止まっている音声を、ボタン操作のついでに再開する
+    function wakeAudio() {
+        if (!audioReady) { initAudio(); return; }
+        try { Promise.resolve(Tone.start()).catch(() => {}); } catch (e) { console.warn(e); }
+    }
+
     function audioTimeAtBeatOffset(beatOffset) {
         return Tone.immediate() + Math.max(0, beatOffset) * 60 / config.bpm;
     }
@@ -3757,7 +3842,7 @@
                     hint.push(MIDI_FREQ_TABLE[rootMidi + mod12(data.fullNotes[i] - data.root)]);
                 }
             }
-            hintSynth.triggerAttackRelease(hint, 1.4 * 60 / config.bpm);
+            playSound(() => hintSynth.triggerAttackRelease(hint, 1.4 * 60 / config.bpm));
         }
 
         nextChordBeat += data.beats;
@@ -3782,6 +3867,9 @@
         config.cofIdx = meta.keyOrder[nextPos];
         hitStreak = 0;
         attemptScore = 0;
+        lapJudged = 0;
+        lapMissed = false;
+        cleanLaps = 0;
         hadMissInCurrentKey = false;
         lastPlayedMidiNotes = [];
         pressedLabelDirty = true;
@@ -3807,7 +3895,7 @@
     }
 
     function handleKeyCleared(nextStartBeat) {
-        if (!hadMissInCurrentKey) recordKeyStat(true); // ミスはミスした時点で記録済み
+        if (!hadMissInCurrentKey && !isPractice()) recordKeyStat(true); // ミスは周の終わりに記録済み
         if (!isCourseMode) {
             finishSession(320);
             return;
@@ -3850,12 +3938,8 @@
             }
         } else {
             // 復習フェーズ中：ミスがあれば末尾へ再投入、ノーミスなら銀（復習で合格）に
-            if (hadMissInCurrentKey) {
-                keyStatuses[currentReviewPos] = 'review';
-                reviewQueue.push(currentReviewPos);
-            } else {
-                keyStatuses[currentReviewPos] = 'recovered';
-            }
+            // ここに来るのはノーミスの周を弾き切ったときだけ（ミスした周は同じキーをもう1周する）
+            keyStatuses[currentReviewPos] = 'recovered';
 
             if (reviewQueue.length > 0) {
                 currentReviewPos = reviewQueue.shift();
@@ -3954,13 +4038,14 @@
         combo++;
         if (combo > maxCombo) maxCombo = combo;
 
+        const practice = isPractice();
         const isReviewHit = isCourseMode && isReviewPhase;
-        const gained = isReviewHit ? 0 : pts + bonus;
+        const gained = isReviewHit || practice ? 0 : pts + bonus;
         score += gained;
         attemptScore += gained;
         updateStatsUI();
         const y = Math.max(40, hitY - blockH * 0.85);
-        addParticle(isReviewHit ? `${msg}（復習）` : `${msg} +${pts}`, y, col, 26);
+        addParticle(practice ? msg : (isReviewHit ? `${msg}（復習）` : `${msg} +${pts}`), y, col, 26);
         if (pts === 100 && bonus) {
             // 和音もタイミングも満点：左右に星を飛ばす
             for (const dir of [-1, 1]) addParticle('✦', y + 4, '#f5b301', 20, dir * 90, dir * 70);
@@ -3980,14 +4065,95 @@
         const t = audioTimeAtBeatOffset(b.targetBeat - currentBeat);
         const spb = 60 / config.bpm;
         // ベースはコードの長さいっぱい（レガート）、旋律は最大3拍
-        bassSynth.triggerAttackRelease(MIDI_FREQ_TABLE[b.data.bassMidi], b.beats * spb * 0.95, t);
+        if (config.bassOn) playSound(() => bassSynth.triggerAttackRelease(MIDI_FREQ_TABLE[b.data.bassMidi], b.beats * spb * 0.95, t));
         if (config.melodyOn) {
-            melodySynth.triggerAttackRelease(MIDI_FREQ_TABLE[b.data.melMidi], Math.min(3, b.beats) * spb * 0.9, t);
+            playSound(() => melodySynth.triggerAttackRelease(MIDI_FREQ_TABLE[b.data.melMidi], Math.min(3, b.beats) * spb * 0.9, t));
         }
     }
 
+    // じっくりモードはチャレンジには使わない
+    function isPractice() { return config.waitMode && !challengeType; }
+
+    // 判定の済んだブロックを数え、周の終わりなら進むかもう1周かを決める
+    function resolveBlock(b) {
+        lapJudged++;
+        if (b.missed) {
+            lapMissed = true;
+            hadMissInCurrentKey = true;
+            missCount++;
+            combo = 0;
+            score -= MISS_PENALTY; // 途中では負にもなる（表示と記録は0以上）
+            showMiss(b);
+            if (challengeType === 'speed') {
+                // スピードチャレンジはミスしたら終了
+                recordKeyStat(false);
+                keyStatuses[courseOrderPos] = 'review';
+                finishSession(900);
+                updateStatsUI();
+                return;
+            }
+        }
+        const songLen = PROGRESSIONS[config.song].length;
+        let keyCleared = false;
+        if (lapJudged >= songLen) {
+            if (lapMissed) {
+                // この周の点は取り消して、同じキーをもう1周（ブロックはそのまま続けて落ちてくる）
+                cleanLaps = 0;
+                score -= attemptScore;
+                recordKeyStat(false);
+                addParticle('↻ もう1周', Math.max(40, hitY - 60), COLORS.orange, 24);
+                announce('もう1周');
+            } else {
+                cleanLaps++;
+                keyCleared = cleanLaps >= config.lapsToClear;
+            }
+            attemptScore = 0;
+            lapJudged = 0;
+            lapMissed = false;
+        }
+        hitStreak = keyCleared ? targetStreak : cleanLaps * songLen + lapJudged;
+        updateStatsUI();
+        if (keyCleared) handleKeyCleared(b.targetBeat + b.beats);
+    }
+
+    function showMiss(b) {
+        const y = Math.max(40, hitY - 22);
+        addParticle(b.isBlind ? `正解: ${b.data.label}` : `MISS (${b.data.label})`, y, COLORS.danger, 24);
+        // 何が足りなかったか／余分だったかを示す（押鍵があった場合のみ）
+        const att = b.lastAttempt;
+        if (att) {
+            const parts = [];
+            if (att.missing.length) parts.push('不足: ' + att.missing.join('・'));
+            if (att.extra.length > 1) parts.push('余分: ' + att.extra.join('・'));
+            if (parts.length) addParticle(parts.join(' / '), y + 26, COLORS.textSub, 15);
+        }
+    }
+
+    // 今回の演奏でいちばんやさしかった設定（ステップのバッジの段階を決める）
+    let runSettings = null;
+    function trackRunSettings() {
+        const r = runSettings || (runSettings = { bpm: config.bpm, keyHint: false, names: false, melody: false, bass: false });
+        r.bpm = Math.min(r.bpm, config.bpm);
+        r.keyHint = r.keyHint || config.keyHintOn;
+        r.names = r.names || config.namesOn;
+        r.melody = r.melody || config.melodyOn;
+        r.bass = r.bass || config.bassOn;
+    }
+    // 1=銅、2=銀、3=金
+    function medalTier(r, stepBpm) {
+        if (!r.keyHint && !r.names && !r.melody && !r.bass && r.bpm >= stepBpm + MEDAL_GOLD_BPM) return 3;
+        if (!r.keyHint && r.bpm >= stepBpm) return 2;
+        return 1;
+    }
+
     function updateTimeline(dt) {
+        trackRunSettings();
         currentBeat += (config.bpm / 60) * dt;
+        // じっくりモード：次のコードが判定ラインに来たら、正しく弾くまで時間を進めない
+        if (isPractice()) {
+            const next = nextTargetBlock();
+            if (next && currentBeat > next.targetBeat) currentBeat = next.targetBeat;
+        }
         const aheadBeats = AUDIO_SCHEDULE_AHEAD_SEC * config.bpm / 60;
 
         // ドラム：フレーム境界ではなく正確な拍の時刻へ先行スケジュール（描画ジッタを音に乗せない）
@@ -3995,8 +4161,8 @@
             if (config.beatOn && audioReady) {
                 const t = audioTimeAtBeatOffset(nextClickBeat - currentBeat);
                 const beatInBar = nextClickBeat % 4;
-                if (beatInBar === 0 || beatInBar === 2) kickSynth.triggerAttackRelease('C1', 0.15, t);
-                hatSynth.triggerAttackRelease(0.03, t);
+                if (beatInBar === 0 || beatInBar === 2) playSound(() => kickSynth.triggerAttackRelease('C1', 0.15, t));
+                playSound(() => hatSynth.triggerAttackRelease(0.03, t));
             }
             nextClickBeat++;
         }
@@ -4005,8 +4171,7 @@
 
         const pixelsPerBeat = hitY / getLookaheadBeats();
         const windowBeats = getHitWindowBeats();
-        let clearedBlock = null;
-        let missedBlock = null;
+        let resolved = null; // このコマで判定が済んだブロック
 
         for (let i = blocks.length - 1; i >= 0; i--) {
             const b = blocks[i];
@@ -4018,10 +4183,10 @@
 
             if (!resultPending && !b.hit && !b.missed) {
                 if (Math.abs(beatDiff) <= windowBeats) {
-                    if (tryJudgeHit(b) && hitStreak >= targetStreak) clearedBlock = b;
+                    if (tryJudgeHit(b)) resolved = b;
                 } else if (beatDiff < -windowBeats) {
                     b.missed = true;
-                    missedBlock = b;
+                    resolved = b;
                 }
             }
 
@@ -4029,39 +4194,7 @@
         }
 
         // 配列を作り直す処理はループの外で行う
-        if (clearedBlock) {
-            handleKeyCleared(clearedBlock.targetBeat + clearedBlock.beats);
-        } else if (missedBlock) {
-            hitStreak = 0;
-            hadMissInCurrentKey = true;
-            missCount++;
-            combo = 0;
-            score -= attemptScore + MISS_PENALTY; // 途中では負にもなる（表示と記録は0以上）
-            attemptScore = 0;
-            recordKeyStat(false);
-            if (challengeType === 'speed') {
-                // スピードチャレンジはミスしたら終了
-                keyStatuses[courseOrderPos] = 'review';
-                finishSession(900);
-            } else {
-                // 仕様：ミスしたらそのキーの最初（1コード目）からやり直し
-                restartProgressionAt(missedBlock.targetBeat + missedBlock.beats);
-            }
-            updateStatsUI();
-            const y = Math.max(40, hitY - 22);
-            addParticle(
-                missedBlock.isBlind ? `正解: ${missedBlock.data.label}` : `MISS (${missedBlock.data.label})`,
-                y, COLORS.danger, 24
-            );
-            // 何が足りなかったか／余分だったかを示す（押鍵があった場合のみ）
-            const att = missedBlock.lastAttempt;
-            if (att) {
-                const parts = [];
-                if (att.missing.length) parts.push('不足: ' + att.missing.join('・'));
-                if (att.extra.length > 1) parts.push('余分: ' + att.extra.join('・'));
-                if (parts.length) addParticle(parts.join(' / '), y + 26, COLORS.textSub, 15);
-            }
-        }
+        if (resolved) resolveBlock(resolved);
 
         if (keyChangeBanner) {
             keyChangeBanner.elapsed += dt;
@@ -4338,6 +4471,19 @@
         }
         ctx.globalAlpha = 1.0;
 
+        if (isPractice()) {
+            const next = nextTargetBlock();
+            const att = next && next.lastAttempt;
+            if (att && currentBeat >= next.targetBeat && activePitchClasses.size > 0) {
+                const parts = [];
+                if (att.missing.length) parts.push('不足: ' + att.missing.join('・'));
+                if (att.extra.length > 1) parts.push('余分: ' + att.extra.join('・'));
+                ctx.fillStyle = COLORS.danger;
+                ctx.font = fonts.small;
+                ctx.fillText(parts.join(' / '), cx, hitY + blockH * 0.5 + 12);
+            }
+        }
+
         // 押下中ノート表示（文字列は押鍵が変わったときだけ作り直す）
         if (pressedLabelDirty) {
             pressedLabelDirty = false;
@@ -4391,9 +4537,14 @@
         const dt = Math.min((timestamp - lastFrameTime) * 0.001, 0.05);
         lastFrameTime = timestamp;
 
-        updateTimeline(dt);
-        if (!isRunning) { rafId = null; return; }
-        drawFrame();
+        // どこかで例外が出ても、次のコマは予約する（止まったまま再開できなくなるのを防ぐ）
+        try {
+            updateTimeline(dt);
+            if (!isRunning) { rafId = null; return; }
+            drawFrame();
+        } catch (e) {
+            console.error(e);
+        }
 
         rafId = (isRunning && !isPaused) ? requestAnimationFrame(gameLoop) : null;
     }
@@ -4408,7 +4559,7 @@
             noteSources.set(midiNote, sources);
             lastNoteOnBeat = currentBeat;
             if (audioReady && userSynth) {
-                userSynth.triggerAttack(MIDI_FREQ_TABLE[midiNote]);
+                playSound(() => userSynth.triggerAttack(MIDI_FREQ_TABLE[midiNote]));
             }
             const el = keyElements.get(midiNote);
             if (el) el.classList.add('active');
@@ -4426,7 +4577,7 @@
         if (sources.size === 0) {
             noteSources.delete(midiNote);
             if (audioReady && userSynth) {
-                userSynth.triggerRelease(MIDI_FREQ_TABLE[midiNote]);
+                playSound(() => userSynth.triggerRelease(MIDI_FREQ_TABLE[midiNote]));
             }
             const el = keyElements.get(midiNote);
             if (el) el.classList.remove('active');
@@ -4443,7 +4594,7 @@
     function releaseAllNotes() {
         for (const m of noteSources.keys()) {
             if (audioReady && userSynth) {
-                userSynth.triggerRelease(MIDI_FREQ_TABLE[m]);
+                playSound(() => userSynth.triggerRelease(MIDI_FREQ_TABLE[m]));
             }
             const el = keyElements.get(m);
             if (el) el.classList.remove('active');
@@ -4785,7 +4936,7 @@
             localStorage.setItem(PREFS_KEY, JSON.stringify({
                 song: dom.freeSong.value, key: dom.freeKey.value, laps: dom.freeLaps.value,
                 diff: dom.freeDiff.value, mode: dom.freeMode.value, bpm: dom.freeBpm.value,
-                blind: dom.freeBlind.value, melody: config.melodyOn, beat: config.beatOn, names: config.namesOn, keyHint: config.keyHintOn, twoRows: config.twoRows, speed: dom.freeSpeed.value,
+                blind: dom.freeBlind.value, melody: config.melodyOn, bass: config.bassOn, wait: config.waitMode, beat: config.beatOn, names: config.namesOn, keyHint: config.keyHintOn, twoRows: config.twoRows, speed: dom.freeSpeed.value,
                 courseLaps: dom.courseLapsSelect.value, octave: baseOctave, theme: currentTheme,
                 chSong: dom.chSong.value, chLevel: dom.chLevel.value, chHint: dom.chHint.value,
                 keyOrder: dom.courseOrderSelect.value
@@ -4823,6 +4974,8 @@
         }
         if (typeof pr.melody === 'boolean') config.melodyOn = dom.freeMelody.checked = pr.melody;
         if (typeof pr.beat === 'boolean') config.beatOn = dom.freeBeat.checked = pr.beat;
+        if (typeof pr.bass === 'boolean') config.bassOn = dom.freeBass.checked = pr.bass;
+        if (typeof pr.wait === 'boolean') config.waitMode = pr.wait;
         if (typeof pr.names === 'boolean') config.namesOn = pr.names;
         if (typeof pr.keyHint === 'boolean') config.keyHintOn = pr.keyHint;
         if (typeof pr.twoRows === 'boolean') config.twoRows = pr.twoRows;
@@ -4863,6 +5016,16 @@
             else if (darkMedia.addListener) darkMedia.addListener(onScheme);
         }
         dom.freeBeat.addEventListener('change', () => { config.beatOn = dom.freeBeat.checked; savePrefs(); });
+        dom.freeBass.addEventListener('change', () => { config.bassOn = dom.freeBass.checked; savePrefs(); });
+        // じっくりモードはコースとフリー練習で共通
+        dom.courseWait.checked = dom.freeWait.checked = config.waitMode;
+        for (const box of [dom.courseWait, dom.freeWait]) {
+            box.addEventListener('change', () => {
+                config.waitMode = box.checked;
+                dom.courseWait.checked = dom.freeWait.checked = box.checked;
+                savePrefs();
+            });
+        }
         dom.freeMode.addEventListener('change', updateFreeModeNote);
         dom.freeDiff.addEventListener('change', updateFreeModeNote);
 
@@ -4915,6 +5078,12 @@
             savePrefs();
         });
 
+        bindButton('btn-bass-toggle', () => {
+            config.bassOn = !config.bassOn;
+            dom.freeBass.checked = config.bassOn;
+            updateControlBarUI();
+            savePrefs();
+        });
         bindButton('btn-names-toggle', () => {
             config.namesOn = !config.namesOn;
             updateControlBarUI();

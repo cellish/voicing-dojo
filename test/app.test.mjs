@@ -22,13 +22,13 @@ test('ノーミスで 12 キーを制覇できる（メジャー ii-V-I、3和�
     assert.ok(r.state.keyStatuses.every(s => s === 'perfect'));
 });
 
-test('ミスするとそのキーの1コード目からやり直し、12キー後に復習する', () => {
+test('ミスしても戻らず最後まで弾き、同じキーをもう1周、12キー後に復習する', () => {
     const app = loadApp();
     // 王道進行の1キー目、3コード目をわざと弾かない：
-    // 2コード + ミス1 + やり直し4 + 残り11キー×4 + 復習4 = 55
+    // ミスのあった周4 + もう1周4 + 残り11キー×4 + 復習4 = 56
     const r = playCourseStep(app, stepIndex('p1-pop'), { missAt: 2 });
     assert.equal(r.done, true);
-    assert.equal(r.chords, 55);
+    assert.equal(r.chords, 56);
     assert.equal(r.state.keyStatuses[0], 'recovered', '復習でノーミスなら銀（復習で合格）');
     assert.ok(r.state.keyStatuses.slice(1).every(s => s === 'perfect'), 'ほかのキーは金（一発合格）');
 });
@@ -422,7 +422,7 @@ test('音名の ON/OFF は保存した設定を引き継ぐ', () => {
     app.T.startCourseStep(0);
     app.T.updateTimeline(1 / 60);
     app.T.drawFrame();
-    assert.equal(app.elements['btn-names-toggle'].textContent, '音名 OFF');
+    assert.match(app.elements['btn-names-toggle'].innerHTML, /音名.*OFF/);
     assert.equal(app.elements['info-key-name'].textContent, 'C Major');
 });
 
@@ -521,4 +521,107 @@ test('一時停止したまま次を始めても、再生中は一時停止の�
     assert.equal(app.T.state().isPaused, false);
     assert.equal(el['@aria-label'], '一時停止');
     assert.equal(el.classList.contains('paused-state'), false);
+});
+
+// 判定の済んだ順にコードの度数を記録しながら通しプレイする
+function degreesPlayed(app, stepKey, missAt) {
+    const seen = [];
+    app.T.startCourseStep(stepIndex(stepKey));
+    const done = new Set();
+    let t = 0, held = [];
+    for (let f = 0; f < 60 * 30 && seen.length < 12; f++) {
+        const st = app.T.state();
+        const b = st.blocks.find(x => !x.hit && !x.missed && !done.has(x) && Math.abs(x.targetBeat - st.currentBeat) < 0.3);
+        if (b && held.length === 0) {
+            done.add(b);
+            seen.push(b.data.degree);
+            if (seen.length - 1 !== missAt) {
+                held = [36 + b.data.bassPc, ...b.data.required.map(pc => 60 + pc)];
+                held.forEach(n => app.T.pressNote(n, 't'));
+            }
+        }
+        if (held.length && !b) { held.forEach(n => app.T.releaseNote(n, 't')); held = []; }
+        t += 1 / 60; app.setNow(t);
+        app.T.updateTimeline(1 / 60);
+        app.T.drawFrame();
+    }
+    return seen;
+}
+
+test('ミスしてもコード進行は戻らずに続く', () => {
+    const seen = degreesPlayed(loadApp(), 'p1-pop', 1);
+    assert.deepEqual(plain(seen.slice(0, 8)), ['IV', 'V', 'iii', 'vi', 'IV', 'V', 'iii', 'vi']);
+});
+
+test('ステップのバッジ：ノーミス制覇で付き、設定で銅・銀・金が変わる', () => {
+    const run = (prefs, opts) => {
+        const app = loadApp({ storage: { chord_master_prefs_v1: JSON.stringify(prefs) } });
+        const step = app.T.COURSE_STEPS[stepIndex('p1-maj')];
+        if (opts && opts.bpm) {
+            app.T.startCourseStep(step.id);
+            app.T.state().config.bpm = opts.bpm;
+        }
+        const r = playCourseStep(app, step.id, opts && opts.missAt !== undefined ? { missAt: opts.missAt } : {});
+        app.runPendingTimeout();
+        return { r, app };
+    };
+    const medal = (x) => x.app.T.state().medals['p1-maj'] || 0;
+    assert.equal(medal(run({ keyHint: true })), 1, '鍵盤ヒントを使うと銅');
+    assert.equal(medal(run({ keyHint: false, names: true })), 2, 'ヒントなし・標準テンポで銀');
+    assert.equal(medal(run({}, { missAt: 3 })), 0, '1回でもミスがあれば付かない');
+    // 金：ヒント・音名・旋律・ベースを切り、標準＋20 で始める
+    const gold = loadApp({ storage: { chord_master_prefs_v1: JSON.stringify({ names: false, melody: false, bass: false }) } });
+    gold.elements['course-laps-select'].value = '1';
+    const step = gold.T.COURSE_STEPS[stepIndex('p1-maj')];
+    const original = step.bpm;
+    gold.T.startCourseStep(step.id);
+    assert.equal(gold.T.state().config.bassOn, false);
+    assert.equal(gold.T.medalTier({ bpm: original + 20, keyHint: false, names: false, melody: false, bass: false }, original), 3);
+    assert.equal(gold.T.medalTier({ bpm: original + 20, keyHint: false, names: false, melody: false, bass: true }, original), 2);
+    assert.equal(gold.T.medalTier({ bpm: original - 5, keyHint: false, names: false, melody: false, bass: false }, original), 1);
+});
+
+test('じっくりモード：正しく弾くまで待ち、ミスにも記録にもならない', () => {
+    const storage = { chord_master_prefs_v1: JSON.stringify({ wait: true }) };
+    const idle = loadApp({ storage });
+    idle.T.startCourseStep(0);
+    for (let f = 0; f < 60 * 30; f++) idle.T.updateTimeline(1 / 60);
+    const st = idle.T.state();
+    assert.equal(st.missCount, 0, '30秒弾かなくてもミスにならない');
+    assert.equal(st.currentBeat, st.blocks.find(b => !b.hit).targetBeat, '最初のコードで止まる');
+
+    const app = loadApp({ storage });
+    const r = playCourseStep(app, 0);
+    app.runPendingTimeout();
+    assert.equal(r.done, true);
+    assert.equal(r.state.score, 0);
+    assert.equal(app.T.state().clearedSteps.size, 0, '制覇に数えない');
+    assert.deepEqual(plain(app.T.state().medals), {});
+    assert.equal(app.store.chord_master_records_v1, undefined);
+});
+
+test('音の予約で例外が出ても画面は進み続ける', async () => {
+    const app = loadApp();
+    app.T.startCourseStep(0);
+    await app.T.initAudio();
+    for (let f = 0; f < 60 * 6; f++) { app.setNow(100 + f / 60); app.T.updateTimeline(1 / 60); }
+    // 直前の回の予約より前の時刻から始め直す（スタブは時刻が戻ると例外を出す）
+    app.T.startCourseStep(0);
+    app.setNow(0);
+    const before = app.T.state().currentBeat;
+    for (let f = 0; f < 60 * 6; f++) app.T.updateTimeline(1 / 60);
+    assert.ok(app.T.state().soundErrors > 0, '例外が出る状況になっている');
+    assert.ok(app.T.state().currentBeat > before + 5);
+});
+
+test('ふつうの演奏では、音の予約で例外が出ない（ミスして1周やり直しても）', async () => {
+    for (const key of ['p1-canon', 'p3-citypop']) {
+        const app = loadApp();
+        app.T.startCourseStep(stepIndex(key));
+        await app.T.initAudio();
+        const r = playCourseStep(app, stepIndex(key), { missAt: 2 });
+        assert.equal(r.done, true, key);
+        assert.ok(app.audioLog.some(a => a[0] === 'bass'), key);
+        assert.equal(r.state.soundErrors, 0, key);
+    }
 });

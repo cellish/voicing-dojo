@@ -16,10 +16,10 @@ function loadScript() {
     globalThis.__t = {
         startCourseStep, startFreeSession, startChallenge, buildKeyPlan, pickWeakKeyPositions, getDailyDrill, getStreak, recordActivityDay, updateTimeline, drawFrame, pressNote, releaseNote,
         buildChordTarget, getDegreeText, getHitWindowBeats, getLookaheadBeats, resizeApp, applyTheme, initAudio,
-        transposeChordLabel, spellInKey, PROGRESSIONS, SONG_META, CIRCLE_OF_FIFTHS, COURSE_STEPS, COURSE_PHASES, ACHIEVEMENTS, badgeSvg, keyElements, computeRank, getStepBestRank,
-        state: () => ({ currentBeat, hitStreak, targetStreak, blocks, courseOrderPos, keyStatuses, isReviewPhase,
+        transposeChordLabel, spellInKey, PROGRESSIONS, SONG_META, CIRCLE_OF_FIFTHS, COURSE_STEPS, COURSE_PHASES, ACHIEVEMENTS, badgeSvg, keyElements, medalTier, computeRank, getStepBestRank,
+        state: () => ({ currentBeat, hitStreak, targetStreak, blocks, currentBeat, courseOrderPos, keyStatuses, isReviewPhase,
                         reviewQueue, resultPending, score, config, clearedSteps,
-                        combo, maxCombo, missCount, perfectCount, hitCount, records, heldNotes: Array.from(noteSources.keys()), isPaused,
+                        combo, maxCombo, missCount, perfectCount, hitCount, records, heldNotes: Array.from(noteSources.keys()), isPaused, soundErrors, medals, cleanLaps,
                         keyPlan, challengeType, speedKeysCleared, speedBestBpm, activity, keyStats, achievements })
     };
 ` + js.slice(tail);
@@ -85,7 +85,7 @@ export function loadApp({ storage = {}, width = 800 } = {}) {
     const synth = (name, mono) => class extends FakeSynth { constructor() { super(name, mono, audioLog); } };
 
     const context = vm.createContext({
-        console, Math, JSON, Number, String, Array, Object, Set, Map, Promise, Proxy, Float32Array, Error, RegExp, Infinity,
+        console: { log: console.log, error: console.error, warn() {} }, Math, JSON, Number, String, Array, Object, Set, Map, Promise, Proxy, Float32Array, Error, RegExp, Infinity,
         document: {
             documentElement: { dataset: {} }, readyState: 'complete', hidden: false, activeElement: null,
             getElementById: getEl, createElement: makeElement, createDocumentFragment: makeElement,
