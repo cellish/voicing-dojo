@@ -510,3 +510,15 @@ test('⚙ の設定：開くと一時停止し、閉じると再開する。再�
     click('btn-settings');
     assert.deepEqual([open(), paused()], [false, true]);
 });
+
+test('一時停止したまま次を始めても、再生中は一時停止のマークになる', () => {
+    const app = loadApp();
+    app.T.startCourseStep(0);
+    const el = app.elements['btn-play-pause'];
+    el.listeners.click({ detail: 0 });
+    assert.equal(el['@aria-label'], '再開');
+    app.T.startCourseStep(1);
+    assert.equal(app.T.state().isPaused, false);
+    assert.equal(el['@aria-label'], '一時停止');
+    assert.equal(el.classList.contains('paused-state'), false);
+});

@@ -1119,6 +1119,27 @@
             #top-bar #bar-settings.open .lbl-narrow { display: none; }
         }
 
+        .ctrl-chip .icon { width: 1.05em; height: 1.05em; fill: currentColor; flex: none; }
+        /* 縦向きの狭い画面：上の操作バーは2行。1行目=移動・一時停止・テンポ・周回と点、2行目=ON/OFF */
+        @media (max-width: 600px) and (orientation: portrait) {
+            #top-bar { justify-content: center; gap: 5px 4px; padding: 5px 4px; }
+            #bar-nav, #bar-play, #bar-stats { display: contents; }
+            #top-bar .ctrl-chip, #top-bar .bpm-box, #top-bar .stat-pill { order: 1; }
+            #top-bar::after { content: ''; order: 2; flex-basis: 100%; height: 0; margin-top: -5px; }
+            #top-bar #bar-settings > .ctrl-chip { order: 3; }
+            #top-bar .landscape-only { display: none; }
+            #top-bar .ctrl-chip { padding: 5px 8px; min-height: 30px; }
+            #top-bar .stat-pill { padding: 3px 6px; font-size: 0.72rem; white-space: nowrap; }
+            #top-bar .bpm-val { min-width: 24px; }
+        }
+        @media (max-width: 350px) and (orientation: portrait) {
+            #top-bar { gap: 5px 2px; padding: 5px 2px; }
+            #top-bar .ctrl-chip { padding: 4px 6px; font-size: 0.72rem; }
+            #top-bar .stat-pill { padding: 2px 4px; font-size: 0.66rem; }
+            #top-bar .bpm-box { padding-left: 1px; padding-right: 1px; gap: 0; }
+            #top-bar .bpm-btn { width: 20px; }
+            #top-bar .bpm-val { min-width: 20px; font-size: 0.74rem; }
+        }
         /* キーボード操作時のフォーカス表示（マウス・タッチでは出さない） */
         button:focus-visible, select:focus-visible, input:focus-visible, .toggle-row:focus-within {
             outline: 3px solid var(--degree);
@@ -1740,13 +1761,13 @@
         <!-- 2行目（中段）：操作メニューバー -->
         <header id="top-bar">
             <div class="bar-group" id="bar-nav">
-                <button class="ctrl-chip" id="btn-nav-home" type="button" aria-label="ホームへ戻る">◀<span class="lbl"> ホーム</span></button>
-                <button class="ctrl-chip" id="btn-nav-sub" type="button" aria-label="コース一覧">☰<span class="lbl"> コース一覧</span></button>
+                <button class="ctrl-chip" id="btn-nav-home" type="button" aria-label="ホームへ戻る"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 12h3v9h5v-6h4v6h5v-9h3z"/></svg><span class="lbl"> ホーム</span></button>
+                <button class="ctrl-chip" id="btn-nav-sub" type="button" aria-label="コース一覧"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v2.6H3zM3 10.7h18v2.6H3zM3 16.4h18V19H3z"/></svg><span class="lbl"> コース一覧</span></button>
             </div>
 
             <div class="bar-group" id="bar-play">
-                <button class="ctrl-chip" id="btn-play-pause" type="button" title="Spaceキーでも操作できます" aria-pressed="false" aria-label="一時停止">⏸<span class="lbl"> 一時停止</span></button>
-                <button class="ctrl-chip landscape-only" id="btn-settings" type="button" aria-expanded="false" aria-label="テンポと表示の設定">⚙</button>
+                <button class="ctrl-chip" id="btn-play-pause" type="button" title="Spaceキーでも操作できます" aria-pressed="false" aria-label="一時停止"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h4.4v16H6zM13.6 4H18v16h-4.4z"/></svg><span class="lbl"> 一時停止</span></button>
+                <button class="ctrl-chip landscape-only" id="btn-settings" type="button" aria-expanded="false" aria-label="テンポと表示の設定"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h10V4h3v2h5v2h-5v2h-3V8H3zM3 16h4v-2h3v2h11v2H10v2H7v-2H3z"/></svg></button>
                 <div id="bar-settings">
                 <div class="bpm-box" aria-label="BPM変更">
                     <button class="bpm-btn" id="btn-bpm-down" type="button" aria-label="テンポを5下げる">−</button>
@@ -3279,7 +3300,7 @@
         challengeType = null;
         resetKeyPlan(buildKeyPlan(config.song, dom.courseOrderSelect.value));
 
-        dom.btnNavSub.innerHTML = '☰<span class="lbl"> コース一覧</span>';
+        dom.btnNavSub.innerHTML = `${ICONS.list}<span class="lbl"> コース一覧</span>`;
         dom.btnNavSub.setAttribute('aria-label', 'コース一覧');
         dom.missionTitle.textContent = `Step ${step.id + 1}: ${step.title}`;
         dom.missionDegrees.textContent = getDegreeText(step.song, step.diff);
@@ -3329,7 +3350,7 @@
         }
         resetKeyPlan(plan || buildKeyPlan(config.song, dom.chOrderSelect.value));
 
-        dom.btnNavSub.innerHTML = '☰<span class="lbl"> チャレンジ一覧</span>';
+        dom.btnNavSub.innerHTML = `${ICONS.list}<span class="lbl"> チャレンジ一覧</span>`;
         dom.btnNavSub.setAttribute('aria-label', 'チャレンジ一覧');
         dom.missionTitle.textContent = title;
         dom.missionDegrees.textContent = getDegreeText(config.song, config.diff);
@@ -3393,7 +3414,7 @@
         const parts = getKeyDisplayParts(getCurrentKeyInfo(), meta.isMinor);
         const modeText = ({ full: 'フル', shell: 'シェル', guide: 'ガイドトーン', rootless: 'ルートレス', rootless_ab: `A/B・${config.formStart} 始まり` })[config.mode];
 
-        dom.btnNavSub.innerHTML = '☰<span class="lbl"> 設定変更</span>';
+        dom.btnNavSub.innerHTML = `${ICONS.list}<span class="lbl"> 設定変更</span>`;
         dom.btnNavSub.setAttribute('aria-label', 'フリー練習の設定変更');
         dom.missionTitle.textContent = `${meta.name}（${parts.short} / ${modeText}）`;
         dom.missionDegrees.textContent = getDegreeText(config.song, config.diff);
@@ -3426,7 +3447,6 @@
         for (const el of keyElements.values()) el.classList.remove('hint', 'hint-low');
         updatePlayInfo();
         resizeApp();
-        updateControlBarUI();
 
         initAudio();
         requestMIDI();
@@ -3434,6 +3454,7 @@
         resultPending = false;
         isRunning = true;
         isPaused = false;
+        updateControlBarUI();
         lastFrameTime = performance.now();
         rafId = requestAnimationFrame(gameLoop);
     }
@@ -3525,8 +3546,15 @@
         dom.ingameBpmVal.innerHTML = `<span class="lbl">BPM </span>${config.bpm}`;
     }
 
+    // 操作バーのマーク。文字（▶ ⏸）は端末によって絵文字の見た目になるので、図で描く
+    const ICONS = Object.freeze({
+        list: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v2.6H3zM3 10.7h18v2.6H3zM3 16.4h18V19H3z"/></svg>',
+        play: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>',
+        pause: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h4.4v16H6zM13.6 4H18v16h-4.4z"/></svg>'
+    });
+
     function updateControlBarUI() {
-        dom.btnPlayPause.innerHTML = (isPaused ? '▶<span class="lbl"> 再開</span>' : '⏸<span class="lbl"> 一時停止</span>') + '<span class="kbd-hint lbl"> (Space)</span>';
+        dom.btnPlayPause.innerHTML = (isPaused ? `${ICONS.play}<span class="lbl"> 再開</span>` : `${ICONS.pause}<span class="lbl"> 一時停止</span>`) + '<span class="kbd-hint lbl"> (Space)</span>';
         dom.btnPlayPause.setAttribute('aria-label', isPaused ? '再開' : '一時停止');
         dom.btnPlayPause.classList.toggle('paused-state', isPaused);
         dom.btnPlayPause.setAttribute('aria-pressed', String(isPaused));
