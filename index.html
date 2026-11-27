@@ -563,7 +563,23 @@
         .step-medal.medal-1 { background: #a8662f; }
         .step-medal.medal-2 { background: #6f7b8a; }
         .step-medal.medal-3 { background: #a8730a; }
-        .course-wait, .medal-rules { width: 100%; margin-bottom: 8px; font-size: 0.82rem; }
+        .medal-rules { width: 100%; margin-bottom: 8px; font-size: 0.82rem; }
+        /* STEP を押したときに出る、始め方の選択 */
+        .start-sheet { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 12px; background: rgba(0, 0, 0, 0.5); }
+        .start-sheet.hidden { display: none; }
+        .start-sheet-box { width: min(420px, 100%); max-height: 100%; overflow-y: auto; padding: 14px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); color: var(--text); display: flex; flex-direction: column; gap: 7px; }
+        .start-sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .start-sheet-head h3 { margin: 0; font-size: 0.98rem; }
+        .start-option { display: flex; flex-direction: column; gap: 2px; width: 100%; padding: 8px 12px; text-align: left; cursor: pointer; border-radius: 10px; border: 2px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; }
+        .start-option strong { font-size: 0.92rem; }
+        .start-option span { font-size: 0.74rem; color: var(--muted); }
+        .start-option[aria-checked="true"] { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
+        .start-option[aria-checked="true"] strong::before { content: '● '; color: var(--primary); }
+        .start-option[aria-checked="false"] strong::before { content: '○ '; color: var(--muted); }
+        @media (max-height: 520px) {
+            .start-sheet-box { width: min(640px, 100%); display: grid; grid-template-columns: 1fr 1fr; }
+            .start-sheet-head, .start-sheet-box > .btn-primary { grid-column: 1 / -1; }
+        }
         .medal-rules { padding: 6px 10px; border: 1px solid var(--border); border-radius: 10px; }
         .medal-rules summary { cursor: pointer; font-weight: 700; }
         .medal-rules table { border-collapse: collapse; width: 100%; }
@@ -1574,10 +1590,6 @@
                 </label>
             </div>
 
-            <label class="toggle-row course-wait">
-                <span>じっくりモード（コードが判定ラインで待つ。点・制覇・バッジには数えない）</span>
-                <input type="checkbox" id="course-wait">
-            </label>
             <details class="medal-rules">
                 <summary>ステップのバッジ（銅・銀・金）の条件</summary>
                 <p>12キーを<strong>一度も間違えずに</strong>弾き切ると、そのステップのバッジが付きます。途中で設定を変えた場合は、その回でいちばんやさしい設定で判定します。</p>
@@ -1590,6 +1602,20 @@
             </details>
 
             <div id="course-phases-container" style="width:100%;"></div>
+
+            <div class="start-sheet hidden" id="start-sheet" role="dialog" aria-modal="true" aria-labelledby="start-sheet-title">
+                <div class="start-sheet-box">
+                    <div class="start-sheet-head">
+                        <h3 id="start-sheet-title">STEP</h3>
+                        <button class="btn" id="btn-sheet-close" type="button" aria-label="閉じる">×</button>
+                    </div>
+                    <button class="start-option" id="sheet-practice" type="button" role="radio" aria-checked="false"><strong>じっくり</strong><span id="sheet-practice-note">正しく弾くまで待つ（記録しない）</span></button>
+                    <button class="start-option" id="sheet-normal" type="button" role="radio" aria-checked="true"><strong>ふつう</strong><span id="sheet-normal-note">今の設定で</span></button>
+                    <button class="start-option" id="sheet-silver" type="button" role="radio" aria-checked="false"><strong>銀に挑戦</strong><span id="sheet-silver-note"></span></button>
+                    <button class="start-option" id="sheet-gold" type="button" role="radio" aria-checked="false"><strong>金に挑戦</strong><span id="sheet-gold-note"></span></button>
+                    <button class="btn btn-primary" id="btn-sheet-start" type="button">▶︎ スタート</button>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -2337,7 +2363,7 @@
         lookaheadSec: 2.8, // コードが出現してから判定ラインに届くまでの秒数
         melodyOn: true,
         bassOn: true,    // ベースの伴奏を鳴らすか
-        waitMode: false, // じっくりモード：正しく弾くまでブロックが待つ（点・制覇・バッジには数えない）
+        waitMode: false, // この回がじっくりモードか：正しく弾くまでブロックが待つ（点・制覇・バッジには数えない）
         beatOn: true,
         namesOn: true, // ブロックにコードの構成音の音名を出すか
         keyHintOn: false, // 次に弾く音を鍵盤の色で示すか
@@ -2514,7 +2540,8 @@
         btnBassToggle: document.getElementById('btn-bass-toggle'),
         freeBass: document.getElementById('free-bass'),
         freeWait: document.getElementById('free-wait'),
-        courseWait: document.getElementById('course-wait'),
+        startSheet: document.getElementById('start-sheet'),
+        startSheetTitle: document.getElementById('start-sheet-title'),
         btnKeyHintToggle: document.getElementById('btn-keyhint-toggle'),
         btnKbdRows: document.getElementById('btn-kbd-rows'),
         infoKey: document.getElementById('info-key'),
@@ -2586,6 +2613,8 @@
         stopGameLoop();
         releaseAllNotes();
         closeSettingsPanel();
+        closeStartSheet();
+        restoreToggles();
         for (let i = 0; i < OVERLAY_IDS.length; i++) {
             const oid = OVERLAY_IDS[i];
             document.getElementById(oid).classList.toggle('hidden', oid !== id);
@@ -3184,7 +3213,7 @@
                 `;
                 card.addEventListener('click', (e) => {
                     if (e.detail > 0) e.currentTarget.blur();
-                    startCourseStep(step.id);
+                    openStartSheet(step.id);
                 });
                 grid.appendChild(card);
             }
@@ -3329,7 +3358,56 @@
     /* =========================================================================
        9. セッション開始・一時停止・UI更新
        ========================================================================= */
-    async function startCourseStep(stepId) {
+    // ---- コースの始め方（じっくり / ふつう / 銀に挑戦 / 金に挑戦）。前回選んだものを覚える ----
+    const COURSE_STYLES = Object.freeze(['practice', 'normal', 'silver', 'gold']);
+    let courseStyle = 'normal';   // 前回選んだ始め方
+    let runStyle = 'normal';      // この回の始め方
+    let savedToggles = null;      // 銀・金の回で一時的に切り替える前の、ふだんの ON/OFF
+    let lostTier = false;         // 挑戦中の段階の条件から外れたことを知らせたか
+    let sheetStepId = 0;
+    const CHALLENGE_TIER = Object.freeze({ silver: 2, gold: 3 });
+
+    function restoreToggles() {
+        if (!savedToggles) return;
+        Object.assign(config, savedToggles);
+        savedToggles = null;
+    }
+    // 銀・金の挑戦はその回だけ設定を切り替える（保存するふだんの設定は書き換えない）
+    function applyStyle(style, step) {
+        restoreToggles();
+        runStyle = style;
+        lostTier = false;
+        config.waitMode = style === 'practice';
+        config.bpm = step.bpm + (style === 'gold' ? MEDAL_GOLD_BPM : 0);
+        if (!CHALLENGE_TIER[style]) return;
+        savedToggles = { keyHintOn: config.keyHintOn, namesOn: config.namesOn, melodyOn: config.melodyOn, bassOn: config.bassOn };
+        config.keyHintOn = false;
+        if (style === 'gold') config.namesOn = config.melodyOn = config.bassOn = false;
+    }
+
+    function selectStyle(style) {
+        courseStyle = style;
+        for (const name of COURSE_STYLES) {
+            document.getElementById(`sheet-${name}`).setAttribute('aria-checked', String(name === style));
+        }
+    }
+    function openStartSheet(stepId) {
+        sheetStepId = stepId;
+        const step = COURSE_STEPS[stepId];
+        const got = medals[step.key] || 0;
+        const mark = (tier) => got >= tier ? '（取得済み ✓）' : '';
+        const now = medalTier({ bpm: step.bpm, keyHint: config.keyHintOn, names: config.namesOn, melody: config.melodyOn, bass: config.bassOn }, step.bpm);
+        dom.startSheetTitle.textContent = `STEP ${step.id + 1} ${step.title}`;
+        document.getElementById('sheet-normal-note').textContent = `今の設定で ♩${step.bpm}。ノーミスなら${MEDAL_NAMES[now]}バッジ${mark(now)}`;
+        document.getElementById('sheet-silver-note').textContent = `♩${step.bpm}・鍵盤ヒント OFF${mark(2)}`;
+        document.getElementById('sheet-gold-note').textContent = `♩${step.bpm + MEDAL_GOLD_BPM}・鍵盤ヒント/音名/旋律/ベース OFF${mark(3)}`;
+        selectStyle(courseStyle);
+        dom.startSheet.classList.remove('hidden');
+        document.getElementById('btn-sheet-start').focus({ preventScroll: true });
+    }
+    function closeStartSheet() { dom.startSheet.classList.add('hidden'); }
+
+    async function startCourseStep(stepId, style = courseStyle) {
         isCourseMode = true;
         currentStepIdx = stepId;
 
@@ -3338,7 +3416,7 @@
         config.diff = step.diff;
         config.mode = step.mode;
         config.formStart = step.formStart || 'A';
-        config.bpm = step.bpm;
+        applyStyle(style, step);
         config.lapsToClear = Number(dom.courseLapsSelect.value) || 1;
         config.lookaheadSec = Number(dom.courseSpeedSelect.value) || 2.8;
         config.blindMode = 'off';
@@ -3348,7 +3426,8 @@
 
         dom.btnNavSub.innerHTML = `${ICONS.list}<span class="lbl"> コース一覧</span>`;
         dom.btnNavSub.setAttribute('aria-label', 'コース一覧');
-        dom.missionTitle.textContent = `${config.waitMode ? '【じっくり】' : ''}Step ${step.id + 1}: ${step.title}`;
+        const tag = { practice: '【じっくり】', silver: '【銀に挑戦】', gold: '【金に挑戦】' }[style] || '';
+        dom.missionTitle.textContent = `${tag}Step ${step.id + 1}: ${step.title}`;
         dom.missionDegrees.textContent = getDegreeText(step.song, step.diff);
         dom.missionDesc.textContent = step.mission;
         dom.missionDesc.title = step.mission;
@@ -3357,6 +3436,8 @@
     }
 
     async function startChallenge(type) {
+        restoreToggles();
+        config.waitMode = false;
         isCourseMode = true;
         challengeType = type;
         config.lookaheadSec = Number(dom.courseSpeedSelect.value) || 2.8;
@@ -3439,6 +3520,8 @@
     }
 
     async function startFreeSession() {
+        restoreToggles();
+        config.waitMode = dom.freeWait.checked;
         isCourseMode = false;
         challengeType = null;
         config.song = dom.freeSong.value;
@@ -4146,8 +4229,20 @@
         return 1;
     }
 
+    // 銀・金に挑戦中に条件を外したら、止めずに一度だけ知らせる
+    function checkChallengeTier() {
+        const tier = CHALLENGE_TIER[runStyle];
+        if (!tier || lostTier || !isCourseMode || challengeType) return;
+        if (medalTier(runSettings, COURSE_STEPS[currentStepIdx].bpm) >= tier) return;
+        lostTier = true;
+        const text = `${MEDAL_NAMES[tier]}の条件から外れました`;
+        addParticle(text, Math.max(40, hitY - blockH * 2), COLORS.orange, 20);
+        announce(text);
+    }
+
     function updateTimeline(dt) {
         trackRunSettings();
+        checkChallengeTier();
         currentBeat += (config.bpm / 60) * dt;
         // じっくりモード：次のコードが判定ラインに来たら、正しく弾くまで時間を進めない
         if (isPractice()) {
@@ -4932,11 +5027,12 @@
 
     // ---- 前回の設定（フリー練習・周回数・オクターブ・ビート/メロディ）の保存と復元 ----
     function savePrefs() {
+        const t = savedToggles || config; // 銀・金の回の一時的な ON/OFF は保存しない
         try {
             localStorage.setItem(PREFS_KEY, JSON.stringify({
                 song: dom.freeSong.value, key: dom.freeKey.value, laps: dom.freeLaps.value,
                 diff: dom.freeDiff.value, mode: dom.freeMode.value, bpm: dom.freeBpm.value,
-                blind: dom.freeBlind.value, melody: config.melodyOn, bass: config.bassOn, wait: config.waitMode, beat: config.beatOn, names: config.namesOn, keyHint: config.keyHintOn, twoRows: config.twoRows, speed: dom.freeSpeed.value,
+                blind: dom.freeBlind.value, melody: t.melodyOn, bass: t.bassOn, wait: dom.freeWait.checked, style: courseStyle, beat: config.beatOn, names: t.namesOn, keyHint: t.keyHintOn, twoRows: config.twoRows, speed: dom.freeSpeed.value,
                 courseLaps: dom.courseLapsSelect.value, octave: baseOctave, theme: currentTheme,
                 chSong: dom.chSong.value, chLevel: dom.chLevel.value, chHint: dom.chHint.value,
                 keyOrder: dom.courseOrderSelect.value
@@ -4975,7 +5071,8 @@
         if (typeof pr.melody === 'boolean') config.melodyOn = dom.freeMelody.checked = pr.melody;
         if (typeof pr.beat === 'boolean') config.beatOn = dom.freeBeat.checked = pr.beat;
         if (typeof pr.bass === 'boolean') config.bassOn = dom.freeBass.checked = pr.bass;
-        if (typeof pr.wait === 'boolean') config.waitMode = pr.wait;
+        if (typeof pr.wait === 'boolean') dom.freeWait.checked = pr.wait;
+        if (COURSE_STYLES.includes(pr.style)) courseStyle = pr.style;
         if (typeof pr.names === 'boolean') config.namesOn = pr.names;
         if (typeof pr.keyHint === 'boolean') config.keyHintOn = pr.keyHint;
         if (typeof pr.twoRows === 'boolean') config.twoRows = pr.twoRows;
@@ -5017,15 +5114,16 @@
         }
         dom.freeBeat.addEventListener('change', () => { config.beatOn = dom.freeBeat.checked; savePrefs(); });
         dom.freeBass.addEventListener('change', () => { config.bassOn = dom.freeBass.checked; savePrefs(); });
-        // じっくりモードはコースとフリー練習で共通
-        dom.courseWait.checked = dom.freeWait.checked = config.waitMode;
-        for (const box of [dom.courseWait, dom.freeWait]) {
-            box.addEventListener('change', () => {
-                config.waitMode = box.checked;
-                dom.courseWait.checked = dom.freeWait.checked = box.checked;
-                savePrefs();
-            });
-        }
+        dom.freeWait.addEventListener('change', savePrefs);
+        for (const name of COURSE_STYLES) bindButton(`sheet-${name}`, () => selectStyle(name));
+        bindButton('btn-sheet-close', () => closeStartSheet());
+        bindButton('btn-sheet-start', () => {
+            savePrefs();
+            closeStartSheet();
+            startCourseStep(sheetStepId);
+        });
+        dom.startSheet.addEventListener('click', (e) => { if (e.target === dom.startSheet) closeStartSheet(); });
+        window.addEventListener('keydown', (e) => { if (e.code === 'Escape') closeStartSheet(); });
         dom.freeMode.addEventListener('change', updateFreeModeNote);
         dom.freeDiff.addEventListener('change', updateFreeModeNote);
 

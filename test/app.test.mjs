@@ -1,7 +1,7 @@
 // 実行：node --test
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadApp, playCourseStep, playChallenge } from './harness.mjs';
+import { loadApp, playCourseStep, playChallenge, playLoopFrom } from './harness.mjs';
 
 // アプリは vm の別環境で動くので、配列は JSON 経由でこちらの環境の値にしてから比べる
 const plain = (x) => JSON.parse(JSON.stringify(x));
@@ -582,7 +582,7 @@ test('ステップのバッジ：ノーミス制覇で付き、設定で銅・�
 });
 
 test('じっくりモード：正しく弾くまで待ち、ミスにも記録にもならない', () => {
-    const storage = { chord_master_prefs_v1: JSON.stringify({ wait: true }) };
+    const storage = { chord_master_prefs_v1: JSON.stringify({ style: 'practice' }) };
     const idle = loadApp({ storage });
     idle.T.startCourseStep(0);
     for (let f = 0; f < 60 * 30; f++) idle.T.updateTimeline(1 / 60);
@@ -624,4 +624,43 @@ test('ふつうの演奏では、音の予約で例外が出ない（ミスし�
         assert.ok(app.audioLog.some(a => a[0] === 'bass'), key);
         assert.equal(r.state.soundErrors, 0, key);
     }
+});
+
+test('STEP を押すと始め方を選ぶ画面が出て、選んだものを覚える', () => {
+    const app = loadApp();
+    const click = (id) => app.elements[id].listeners.click({ detail: 0 });
+    click('sheet-silver');
+    click('btn-sheet-start');
+    assert.equal(app.elements['start-sheet'].classList.contains('hidden'), true);
+    assert.match(app.elements['mission-title'].textContent, /^【銀に挑戦】/);
+    assert.equal(JSON.parse(app.store.chord_master_prefs_v1).style, 'silver');
+});
+
+test('銀・金に挑戦：その回だけ設定を切り替え、ふだんの設定は書き換えない', () => {
+    const normal = { keyHint: true, names: true, melody: true, bass: true };
+    const app = loadApp({ storage: { chord_master_prefs_v1: JSON.stringify(normal) } });
+    const idx = stepIndex('p1-maj');
+    const bpm = app.T.COURSE_STEPS[idx].bpm;
+    const toggles = () => { const c = app.T.state().config; return [c.keyHintOn, c.namesOn, c.melodyOn, c.bassOn, c.bpm]; };
+    app.T.startCourseStep(idx, 'silver');
+    assert.deepEqual(toggles(), [false, true, true, true, bpm]);
+    app.T.startCourseStep(idx, 'gold');
+    assert.deepEqual(toggles(), [false, false, false, false, bpm + 20]);
+    app.elements['btn-nav-home'].listeners.click({ detail: 0 });
+    assert.deepEqual(toggles().slice(0, 4), [true, true, true, true], '戻ると元の設定');
+
+    // 金で通すと金バッジ。途中でベースを入れると銀に下がる
+    const gold = loadApp({ storage: { chord_master_prefs_v1: JSON.stringify({ ...normal, style: 'gold' }) } });
+    playCourseStep(gold, idx);
+    gold.runPendingTimeout();
+    assert.equal(gold.T.state().medals['p1-maj'], 3);
+    assert.equal(JSON.parse(gold.store.chord_master_prefs_v1 || '{"keyHint":true}').keyHint, true);
+
+    const lost = loadApp({ storage: { chord_master_prefs_v1: JSON.stringify({ style: 'gold' }) } });
+    lost.T.startCourseStep(idx);
+    lost.elements['btn-bass-toggle'].listeners.click({ detail: 0 });
+    assert.equal(JSON.parse(lost.store.chord_master_prefs_v1).bass, true, '挑戦中の切り替えは保存しない');
+    playLoopFrom(lost);
+    lost.runPendingTimeout();
+    assert.equal(lost.T.state().medals['p1-maj'], 2);
 });

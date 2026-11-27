@@ -78,6 +78,7 @@ export function loadApp({ storage = {}, width = 800 } = {}) {
     Object.assign(getEl('free-song'), { value: 'ii_V_I_maj' });
     Object.assign(getEl('free-mode'), { value: 'full' });
     Object.assign(getEl('free-diff'), { value: 'beginner' });
+    Object.assign(getEl('free-wait'), { checked: false });
 
     const store = { ...storage };
     const audioLog = [];
@@ -118,6 +119,9 @@ export function playCourseStep(app, stepId, opts = {}) {
     app.T.startCourseStep(stepId);
     return playLoop(app, opts);
 }
+
+/** 始めてある回をそのまま弾き切る */
+export function playLoopFrom(app, opts = {}) { return playLoop(app, opts); }
 
 /** チャレンジを通しプレイする（missAt は playCourseStep と同じ） */
 export function playChallenge(app, type, opts = {}) {
