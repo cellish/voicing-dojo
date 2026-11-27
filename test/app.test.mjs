@@ -680,3 +680,16 @@ test('じっくり：鍵盤ヒントを最初から出し、ふだんの設定�
     app.T.startCourseStep(0, 'normal');
     assert.equal(hint(), false);
 });
+
+test('始め方の画面の説明は、弾き方に合っている', () => {
+    const { T } = loadApp();
+    const howTo = (key) => T.getHowTo(T.COURSE_STEPS[stepIndex(key)]);
+    for (const s of T.COURSE_STEPS) assert.ok(T.getHowTo(s).length > 15, s.key);
+    assert.match(howTo('p2-maj'), /3度と7度の2音だけ.*ルートはベースの役目なので弾きません/);
+    assert.doesNotMatch(howTo('p2-maj'), /♭5/);
+    assert.match(howTo('p2-min'), /♭5は弾かなくても/);
+    assert.match(howTo('ps-min'), /♭5も弾きます/);
+    assert.match(howTo('p1-canon'), /指定のベース音/);
+    assert.match(howTo('p3-min'), /5度を省けます/);
+    assert.match(howTo('p4-maj-ab'), /A形は3度が一番下/);
+});

@@ -570,6 +570,7 @@
         .start-sheet-box { width: min(420px, 100%); max-height: 100%; overflow-y: auto; padding: 14px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); color: var(--text); display: flex; flex-direction: column; gap: 7px; }
         .start-sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .start-sheet-head h3 { margin: 0; font-size: 0.98rem; }
+        .start-howto { margin: 0 0 3px; font-size: 0.82rem; line-height: 1.55; }
         .start-option { display: flex; flex-direction: column; gap: 2px; width: 100%; padding: 8px 12px; text-align: left; cursor: pointer; border-radius: 10px; border: 2px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; }
         .start-option strong { font-size: 0.92rem; }
         .start-option span { font-size: 0.74rem; color: var(--muted); }
@@ -578,7 +579,9 @@
         .start-option[aria-checked="false"] strong::before { content: '○ '; color: var(--muted); }
         @media (max-height: 520px) {
             .start-sheet-box { width: min(640px, 100%); display: grid; grid-template-columns: 1fr 1fr; }
-            .start-sheet-head, .start-sheet-box > .btn-primary { grid-column: 1 / -1; }
+            .start-sheet-head, .start-howto, .start-sheet-box > .btn-primary { grid-column: 1 / -1; }
+            .start-howto { font-size: 0.76rem; line-height: 1.4; margin: 0; }
+            .start-option { padding: 5px 10px; }
         }
         .medal-rules { padding: 6px 10px; border: 1px solid var(--border); border-radius: 10px; }
         .medal-rules summary { cursor: pointer; font-weight: 700; }
@@ -1609,6 +1612,7 @@
                         <h3 id="start-sheet-title">STEP</h3>
                         <button class="btn" id="btn-sheet-close" type="button" aria-label="閉じる">×</button>
                     </div>
+                    <p class="start-howto" id="sheet-howto"></p>
                     <button class="start-option" id="sheet-practice" type="button" role="radio" aria-checked="false"><strong>じっくり</strong><span id="sheet-practice-note">正しく弾くまで待つ・鍵盤ヒント ON（記録しない）</span></button>
                     <button class="start-option" id="sheet-normal" type="button" role="radio" aria-checked="true"><strong>ふつう</strong><span id="sheet-normal-note">今の設定で</span></button>
                     <button class="start-option" id="sheet-silver" type="button" role="radio" aria-checked="false"><strong>銀に挑戦</strong><span id="sheet-silver-note"></span></button>
@@ -1641,7 +1645,7 @@
                             <option value="turnaround">循環進行（I - VI - ii - V）</option>
                             <option value="pop">王道進行（IV - V - iii - vi）</option>
                             <option value="canon">カノン進行・オンコード（I - V on 7 - vi …）</option>
-                            <option value="passacaglia">パッサカリア・ヘンデル（i - iv - ♭VII - ♭III …）</option>
+                            <option value="passacaglia">パッサカリア（枯葉進行）・ヘンデル（i - iv - ♭VII - ♭III …）</option>
                             <option value="citypop">丸サ進行（IV - III - vi - v・I）</option>
                             <option value="blues">ブルース12小節（I7 - IV7 - I7 …）</option>
                             <option value="dominant_chain">ドミナントの連鎖（III7 - VI7 - II7 - V7 - I）</option>
@@ -2025,7 +2029,7 @@
         backdoor:   { name: 'バックドア（iv-♭VII-I）', isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER },
         pop:        { name: '王道進行',                isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER },
         canon:      { name: 'カノン進行（オンコード）', isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER },
-        passacaglia: { name: 'パッサカリア（ヘンデル）', isMinor: true,  baseTonicPc: 7, keyOrder: GM_START_ORDER, baseTonicLetter: 'G' },
+        passacaglia: { name: 'パッサカリア（枯葉進行）', isMinor: true,  baseTonicPc: 7, keyOrder: GM_START_ORDER, baseTonicLetter: 'G' },
         citypop:    { name: '丸サ進行',                isMinor: false, baseTonicPc: 0, keyOrder: C_START_ORDER }
     });
 
@@ -2170,70 +2174,70 @@
           mission: 'G/B なら B、C/E なら E を一番低く弾くと Perfect +100' },
 
         // Phase 2（ガイドトーン）
-        { id: 5, key: 'p2-maj', phase: 2, title: 'メジャー ii-V-I（ガイドトーン）', song: 'ii_V_I_maj', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
+        { id: 5, key: 'p2-maj', phase: 2, title: 'メジャー ii-V-I：ガイドトーン', song: 'ii_V_I_maj', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
           goal: '7度が半音下がって次の3度に。2回目の I は6th',
           mission: 'ルートは弾かない。3度＋7度の2音を近い鍵盤で繋ぐと Smooth +100' },
-        { id: 6, key: 'p2-min', phase: 2, title: 'マイナー ii-V-i（ガイドトーン）', song: 'ii_V_i_min', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
+        { id: 6, key: 'p2-min', phase: 2, title: 'マイナー ii-V-i：ガイドトーン', song: 'ii_V_i_min', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
           goal: '短調の声部進行。♭5は任意、2回目の i は6th',
           mission: '3度＋7度（iiø7 の♭5は任意）を最小移動で繋ぐと Smooth +100' },
-        { id: 7, key: 'p2-turnaround', phase: 2, title: '循環進行（ガイドトーン）', song: 'turnaround', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
+        { id: 7, key: 'p2-turnaround', phase: 2, title: '循環進行：ガイドトーン', song: 'turnaround', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
           goal: '7度が半音下がって次の3度になる流れの循環版',
           mission: 'ルートは弾かない。3度＋7度の2音を近い鍵盤で繋ぐと Smooth +100' },
-        { id: 8, key: 'p2-pop', phase: 2, title: '王道進行（ガイドトーン）', song: 'pop', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
+        { id: 8, key: 'p2-pop', phase: 2, title: '王道進行：ガイドトーン', song: 'pop', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
           goal: '最小の指移動で J-POP を伴奏',
           mission: '3度＋7度の2音。平均2.5半音以内の移動で Smooth +100' },
-        { id: 9, key: 'p2-passacaglia', phase: 2, title: 'パッサカリア（ガイドトーン）', song: 'passacaglia', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
+        { id: 9, key: 'p2-passacaglia', phase: 2, title: 'パッサカリア（枯葉進行）：ガイドトーン', song: 'passacaglia', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
           goal: 'ヘンデルの旋律つき。3度と7度が交互に入れ替わる',
           mission: '3度＋7度（iiø7 の♭5は任意）を最小移動で繋ぐと Smooth +100' },
 
         // Phase 3（シェル）
-        { id: 10, key: 'ps-maj', phase: 6, title: 'メジャー ii-V-I（シェル）', song: 'ii_V_I_maj', diff: 'intermediate', mode: 'shell', badge: 'シェル（3音）', bpm: 80,
+        { id: 10, key: 'ps-maj', phase: 6, title: 'メジャー ii-V-I：シェル', song: 'ii_V_I_maj', diff: 'intermediate', mode: 'shell', badge: 'シェル（3音）', bpm: 80,
           goal: '左手の基本形。5度は弾かない。2回目の I は6th',
           mission: 'ルートを一番下にすると Perfect +100' },
-        { id: 11, key: 'ps-min', phase: 6, title: 'マイナー ii-V-i（シェル）', song: 'ii_V_i_min', diff: 'intermediate', mode: 'shell', badge: 'iiø7 は♭5も', bpm: 80,
+        { id: 11, key: 'ps-min', phase: 6, title: 'マイナー ii-V-i：シェル', song: 'ii_V_i_min', diff: 'intermediate', mode: 'shell', badge: 'iiø7 は♭5も', bpm: 80,
           goal: '左手の形。♭5が短調らしさを出す。2回目の i は6th',
           mission: 'iiø7 は ♭5 も入れる（4音）。ルートを一番下にすると Perfect +100' },
-        { id: 12, key: 'ps-turnaround', phase: 6, title: '循環進行（シェル）', song: 'turnaround', diff: 'intermediate', mode: 'shell', badge: 'シェル（3音）', bpm: 80,
+        { id: 12, key: 'ps-turnaround', phase: 6, title: '循環進行：シェル', song: 'turnaround', diff: 'intermediate', mode: 'shell', badge: 'シェル（3音）', bpm: 80,
           goal: '5度を省くと VI7 の調外の3度がよく聞こえる',
           mission: 'ルート＋3度＋7度の3音。ルートを一番下にすると Perfect +100' },
 
         // Phase 4（4和音・フル）
-        { id: 13, key: 'p3-maj', phase: 3, title: 'メジャー ii-V-I（4和音）', song: 'ii_V_I_maj', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+        { id: 13, key: 'p3-maj', phase: 3, title: 'メジャー ii-V-I：4和音', song: 'ii_V_I_maj', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
           goal: '全構成音を弾く。2回目の I は6th',
           mission: '7th（I6 は6度）まで押さえ、最低音をルートにすると Perfect +100' },
-        { id: 14, key: 'p3-min', phase: 3, title: 'マイナー ii-V-i（4和音）', song: 'ii_V_i_min', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+        { id: 14, key: 'p3-min', phase: 3, title: 'マイナー ii-V-i：4和音', song: 'ii_V_i_min', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
           goal: 'ハーフディミニッシュと♭9の短調。2回目の i は6th',
           mission: 'V7(b9) は5度省略OK（4音でも可）。最低音をルートにすると Perfect +100' },
-        { id: 15, key: 'p3-turnaround', phase: 3, title: '循環進行（4和音）', song: 'turnaround', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+        { id: 15, key: 'p3-turnaround', phase: 3, title: '循環進行：4和音', song: 'turnaround', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
           goal: 'VI7 は ii へのセカンダリードミナント',
           mission: 'VI7 の3度は半音上がった音。最低音をルートにすると Perfect +100' },
-        { id: 16, key: 'p3-pop', phase: 3, title: '王道進行（4和音）', song: 'pop', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 85,
+        { id: 16, key: 'p3-pop', phase: 3, title: '王道進行：4和音', song: 'pop', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 85,
           goal: 'IVmaj7 の浮遊感と、iii・vi の切なさ',
           mission: '7thまで押さえ、最低音をルートにすると Perfect +100' },
-        { id: 17, key: 'p3-passacaglia', phase: 3, title: 'パッサカリア（4和音）', song: 'passacaglia', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
+        { id: 17, key: 'p3-passacaglia', phase: 3, title: 'パッサカリア（枯葉進行）：4和音', song: 'passacaglia', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 80,
           goal: '4度上行の循環を、ヘンデルの旋律とともに',
           mission: '8コードすべて7thまで。最低音をルートにすると Perfect +100' },
-        { id: 18, key: 'p3-citypop', phase: 3, title: '丸サ進行（4和音）', song: 'citypop', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 85,
+        { id: 18, key: 'p3-citypop', phase: 3, title: '丸サ進行：4和音', song: 'citypop', diff: 'intermediate', mode: 'full', badge: '4和音・フル', bpm: 85,
           goal: 'III7 と vm7-I7（IV への ii-V）のシティポップ循環',
           mission: '最終小節は vm7・I7 が2拍ずつ。最低音をルートにすると Perfect +100' },
 
         // Phase 5（5和音・ルートレス）
-        { id: 19, key: 'p4-maj', phase: 4, title: 'メジャー ii-V-I（5和音ルートレス）', song: 'ii_V_I_maj', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 80,
+        { id: 19, key: 'p4-maj', phase: 4, title: 'メジャー ii-V-I：5和音ルートレス', song: 'ii_V_I_maj', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 80,
           goal: '3度か7度が下の基本形。2回目の I は6th',
           mission: 'ルート抜きの4音。転回して最小移動で繋ぐと Smooth +100' },
-        { id: 20, key: 'p4-min', phase: 4, title: 'マイナー ii-V-i（5和音ルートレス）', song: 'ii_V_i_min', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 80,
+        { id: 20, key: 'p4-min', phase: 4, title: 'マイナー ii-V-i：5和音ルートレス', song: 'ii_V_i_min', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 80,
           goal: 'V7(b9) はルートを抜くと減7の形。2回目の i は6th',
           mission: 'ルート抜きの4音。転回して最小移動で繋ぐと Smooth +100' },
-        { id: 21, key: 'p4-turnaround', phase: 4, title: '循環進行（5和音ルートレス）', song: 'turnaround', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 80,
+        { id: 21, key: 'p4-turnaround', phase: 4, title: '循環進行：5和音ルートレス', song: 'turnaround', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 80,
           goal: 'VI7(b9) はルートを抜くと減7の形',
           mission: 'ルート抜きの4音。転回して最小移動で繋ぐと Smooth +100' },
-        { id: 22, key: 'p4-citypop', phase: 4, title: '丸サ進行（5和音ルートレス）', song: 'citypop', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 85,
+        { id: 22, key: 'p4-citypop', phase: 4, title: '丸サ進行：5和音ルートレス', song: 'citypop', diff: 'advanced', mode: 'rootless', badge: '5和音・ルートレス', bpm: 85,
           goal: '9th・♭9 を加えたプロ仕様の響き',
           mission: 'ルート抜きの4音。転回して最小移動で繋ぐと Smooth +100' },
-        { id: 23, key: 'p4-maj-ab', phase: 4, title: 'メジャー ii-V-I（A/B フォーム・A 始まり）', song: 'ii_V_I_maj', diff: 'advanced', mode: 'rootless_ab', formStart: 'A', badge: 'A/B フォーム', bpm: 80,
+        { id: 23, key: 'p4-maj-ab', phase: 4, title: 'メジャー ii-V-I：A/B フォーム（A 始まり）', song: 'ii_V_I_maj', diff: 'advanced', mode: 'rootless_ab', formStart: 'A', badge: 'A/B フォーム', bpm: 80,
           goal: 'A は3度、B は7度が下。2回目の I は6th',
           mission: 'ブロックの A（3度が下）・B（7度が下）の形で弾くと +100' },
-        { id: 24, key: 'p4-maj-ba', phase: 4, title: 'メジャー ii-V-I（A/B フォーム・B 始まり）', song: 'ii_V_I_maj', diff: 'advanced', mode: 'rootless_ab', formStart: 'B', badge: 'A/B フォーム', bpm: 80,
+        { id: 24, key: 'p4-maj-ba', phase: 4, title: 'メジャー ii-V-I：A/B フォーム（B 始まり）', song: 'ii_V_I_maj', diff: 'advanced', mode: 'rootless_ab', formStart: 'B', badge: 'A/B フォーム', bpm: 80,
           goal: '同じ進行を B→A の順で。2回目の I は6th',
           mission: 'ブロックの A（3度が下）・B（7度が下）の形で弾くと +100' },
         // Phase 6（応用：ジャズの定番進行）
@@ -2542,6 +2546,7 @@
         freeWait: document.getElementById('free-wait'),
         startSheet: document.getElementById('start-sheet'),
         startSheetTitle: document.getElementById('start-sheet-title'),
+        sheetHowTo: document.getElementById('sheet-howto'),
         btnKeyHintToggle: document.getElementById('btn-keyhint-toggle'),
         btnKbdRows: document.getElementById('btn-kbd-rows'),
         infoKey: document.getElementById('info-key'),
@@ -3204,7 +3209,7 @@
                             ? '<span class="step-status cleared">★ 12キー制覇</span>'
                             : (isRec ? '<span class="step-status next">▶ おすすめ</span>' : '')}
                     </div>
-                    <h4 class="step-title">${step.title.replace(/（(ガイドトーン|シェル|4和音|5和音ルートレス)）$/, '')}</h4>
+                    <h4 class="step-title">${step.title.replace(/：(ガイドトーン|シェル|4和音|5和音ルートレス)$/, '')}</h4>
                     <div class="step-meta">
                         ${step.badge === commonBadge ? '' : `<span class="meta-pill">${step.badge}</span>`}
                         <span class="meta-pill deg">${getDegreeText(step.song, step.diff)}</span>
@@ -3392,6 +3397,32 @@
         if (style === 'gold') config.namesOn = config.melodyOn = config.bassOn = false;
     }
 
+    // 始め方の画面に出す、そのステップの弾き方
+    function getHowTo(step) {
+        const halfDim = PROGRESSIONS[step.song].some(c => c.isHalfDim);
+        const slash = PROGRESSIONS[step.song].some(c => /\//.test(c.label));
+        if (step.mode === 'guide') {
+            return '3度と7度の2音だけを弾きます（7度の無いコードは6度）。ルートはベースの役目なので弾きません。' +
+                '前のコードから近い鍵盤を選ぶと満点です。' + (halfDim ? 'iiø7 の♭5は弾かなくてもかまいません。' : '');
+        }
+        if (step.mode === 'shell') {
+            return 'ルート・3度・7度の3音を弾きます（7度の無いコードは6度）。5度は弾きません。ルートを一番下にすると満点です。' +
+                (halfDim ? 'iiø7 だけは♭5も弾きます。' : '');
+        }
+        if (step.mode === 'rootless') {
+            return 'ルートを抜いた4音（3度・7度と、9度などの音）を弾きます。ルートはベースの役目です。' +
+                'どの音を下にしてもよく、前のコードから近い形にすると満点です。';
+        }
+        if (step.mode === 'rootless_ab') {
+            return 'ルートを抜いた4音を、指定の形で弾きます。A形は3度が一番下、B形は7度（無いコードは6度）が一番下です。' +
+                '指定どおりなら満点です。';
+        }
+        const lowest = slash ? '指定のベース音（G/B なら B）を一番下にすると満点です。' : 'ルートを一番下にすると満点です。';
+        if (step.diff === 'beginner') return `コードの3音をすべて弾きます。${lowest}`;
+        const optional5 = PROGRESSIONS[step.song].some(c => (c.seventh || []).length >= 5);
+        return `7度（または6度）まで、コードの音をすべて弾きます。${optional5 ? '5音あるコードは5度を省けます。' : ''}${lowest}`;
+    }
+
     function selectStyle(style) {
         courseStyle = style;
         for (const name of COURSE_STYLES) {
@@ -3405,6 +3436,7 @@
         const mark = (tier) => got >= tier ? '（取得済み ✓）' : '';
         const now = medalTier({ bpm: step.bpm, keyHint: config.keyHintOn, names: config.namesOn, melody: config.melodyOn, bass: config.bassOn }, step.bpm);
         dom.startSheetTitle.textContent = `STEP ${step.id + 1} ${step.title}`;
+        dom.sheetHowTo.textContent = getHowTo(step);
         document.getElementById('sheet-normal-note').textContent = `今の設定で ♩${step.bpm}。ノーミスなら${MEDAL_NAMES[now]}バッジ${mark(now)}`;
         document.getElementById('sheet-silver-note').textContent = `♩${step.bpm}・鍵盤ヒント OFF${mark(2)}`;
         document.getElementById('sheet-gold-note').textContent = `♩${step.bpm + MEDAL_GOLD_BPM}・鍵盤ヒント/音名/メロディ/ベース OFF${mark(3)}`;
