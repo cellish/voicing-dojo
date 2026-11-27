@@ -10,7 +10,7 @@
 - **アプリ名**: Voicing Dojo（旧称 Chord Master。旧フォルダ名は `chord-shooter`。今のフォルダ名・リポジトリ名は `voicing-dojo`）
 - **目的**: 上から降りてくるコードを判定ラインで鍵盤で弾き、コード進行のボイシング（押さえ方）と声部の動きを全12キーで練習する。
 - **主な機能**
-  - 12キー制覇コース（全29ステップ・6フェーズ、ミスしたキーは最後に自動復習）… `COURSE_STEPS`, `handleKeyCleared`
+  - 12キー制覇コース（全29ステップ・6フェーズ、ミスしたキーは最後にもう一度）… `COURSE_STEPS`, `handleKeyCleared`
   - フリー練習（進行・キー・難易度・ボイシング・BPM・周回・表示時間・耳コピを設定）… `startFreeSession`
   - チャレンジ（今日のドリル・スピードアップ・耳コピ・苦手キー克服）… `startChallenge`, `renderChallengeMenu`
   - 自己ベスト・ランク・コンボ・実績・連続練習日数 … `recordResult`, `computeRank`, `ACHIEVEMENTS`, `recordActivityDay`
@@ -34,7 +34,7 @@
 | `THIRD_PARTY_NOTICES.md` | 利用している他者のソフトウェア（Tone.js） |
 
 | `test/harness.mjs` | テスト用の土台：`index.html` のスクリプトを DOM・Canvas・Tone.js・localStorage のスタブの上で動かし、内部関数を取り出す（`loadApp`, `playCourseStep`, `playChallenge`） |
-| `test/app.test.mjs` | 自動テスト（`node --test`）：通しプレイ、ミス時のやり直しと復習、ベースの形、綴り、ガイドトーン、表示時間、判定幅、進捗の引き継ぎ |
+| `test/app.test.mjs` | 自動テスト（`node --test`）：通しプレイ、ミス時のもう1周と復習、ベースの形、綴り、ガイドトーン、表示時間、判定幅、進捗の引き継ぎ |
 
 ---
 
@@ -127,8 +127,8 @@ passacaglia: { name: 'パッサカリア（ヘンデル）', isMinor: true, base
 
 1. `startCourseStep` → `launchSession` → `resetTimelineState`（カウントイン後に1コード目）
 2. 毎フレーム `updateTimeline(dt)`: 拍を進める → ドラム・伴奏を予約 → 表示時間ぶん先のコードを `spawnNextBlock` → 判定幅内のブロックを `tryJudgeHit`
-3. 判定幅を過ぎても押せなければ MISS → `restartProgressionAt` でそのキーの1コード目からやり直し（`hadMissInCurrentKey = true`）
-4. 連続成功が「進行の長さ × 周回数」に達したら `handleKeyCleared` → 次のキーへ `transitionToCourseKey`（待機なし）
+3. 判定幅を過ぎても押せなければ MISS（進行は戻らない）。周の終わりに `resolveBlock` が、ノーミスの周が周回数ぶん続けば次のキー、ミスがあれば同じキーをもう1周と決める（`hadMissInCurrentKey = true`）
+4. キーを終えたら `handleKeyCleared` → 次のキーへ `transitionToCourseKey`（待機なし）
 5. 12キー後、ミスしたキー（`reviewQueue`）だけ復習 → 全部ノーミスで `finishSession` → `openResultModal`
 
 ---
@@ -147,7 +147,7 @@ passacaglia: { name: 'パッサカリア（ヘンデル）', isMinor: true, base
 | 課題・問題データ | あり | すべて `index.html` 内の JS 定数: `PROGRESSIONS`（進行）、`SONG_META`（名前・長短・原調・キー順）、`COURSE_PHASES` / `COURSE_STEPS`（コース）。外部ファイル・JSON は**なし** |
 | ファイル読み込み・書き出し | **なし** | MusicXML・MIDI ファイル・JSON の入出力なし |
 | 言語切替 | **なし** | 日本語のみ（`<html lang="ja">`）。UI 文言は HTML と JS に直書き |
-| 保存 | あり | localStorage: `chord_master_cleared_steps_v4`（クリア済みステップの固定ID配列）、`chord_master_cleared_steps_v3`（旧形式、読み込み時に移行のみ）、`chord_master_prefs_v1`（フリー設定・周回数・表示時間・オクターブ・ビート/メロディ・テーマ）、`chord_master_activity_v1`（練習した日・連続日数・今日のドリル）、`chord_master_keystats_v1`（キーごとのミス・ノーミス回数）、`chord_master_achievements_v1`（解除した実績）、`chord_master_records_v1`（自己ベスト）。詳しくは `docs/DESIGN.md` §5 … `loadClearedSteps`, `saveClearedSteps`, `savePrefs`, `loadPrefs`。`<head>` 内のインラインスクリプトもテーマを先読み |
+| 保存 | あり | localStorage: `chord_master_cleared_steps_v4`（クリア済みステップの固定ID配列）、`chord_master_cleared_steps_v3`（旧形式、読み込み時に移行のみ）、`chord_master_medals_v1`（ステップの銅・銀・金）、`chord_master_prefs_v1`（フリー設定・周回数・表示時間・オクターブ・ビート/メロディ・テーマ）、`chord_master_activity_v1`（練習した日・連続日数・今日のドリル）、`chord_master_keystats_v1`（キーごとのミス・ノーミス回数）、`chord_master_achievements_v1`（解除した実績）、`chord_master_records_v1`（自己ベスト）。詳しくは `docs/DESIGN.md` §5 … `loadClearedSteps`, `saveClearedSteps`, `savePrefs`, `loadPrefs`。`<head>` 内のインラインスクリプトもテーマを先読み |
 | PWA・オフライン | **なし** | manifest・Service Worker なし。Tone.js を CDN から読むためオフラインでは音が出ない（推測：画面自体は開ける） |
 | 著作権表示 | あり | `LICENSE`（All rights reserved）、`THIRD_PARTY_NOTICES.md`、`THIRD_PARTY_NOTICES.md` の「収録している曲・進行の権利の状態」、ホーム画面下部の `<footer class="app-foot">`。コードのコメントにパッサカリアの出典（ヘンデル HWV 432、利用者が用意した楽譜画像から書き起こし）（`PROGRESSIONS.passacaglia` の直前） |
 

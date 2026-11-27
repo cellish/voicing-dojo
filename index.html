@@ -1519,7 +1519,7 @@
                 <button class="mode-card course" id="btn-open-course" type="button">
                     <span class="card-pill">はじめての方はこちら・全29ステップ</span>
                     <h2><span class="ico">🔰 </span>12キー制覇コース</h2>
-                    <p>3和音 → ガイドトーン → シェル → 4和音 → 5和音ルートレス → ジャズの定番進行の順に、全12キーで。ミスしたキーは最後に自動で復習します。</p>
+                    <p>3和音 → ガイドトーン → シェル → 4和音 → 5和音ルートレス → ジャズの定番進行の順に、全12キーで。ミスしたキーは最後にもう一度出ます。ノーミスなら銅・銀・金のバッジ。</p>
                 </button>
 
                 <button class="mode-card" id="btn-open-challenge" type="button">
@@ -1556,16 +1556,16 @@
             <div class="sub-header">
                 <button class="btn" id="btn-course-back" type="button">◀ ホームへ</button>
                 <h2><span class="ico">🔰 </span>12キー制覇コース（全29ステップ）</h2>
-                <span class="status-badge" id="course-clear-badge">クリア: 0 / 13</span>
+                <span class="status-badge" id="course-clear-badge">クリア: 0 / 29</span>
             </div>
 
             <div class="course-toolbar">
                 <div class="course-toolbar-info">
-                    <strong style="color:var(--gold);">★ 金</strong> = 一発合格　<strong style="color:var(--text);">✓ 銀</strong> = 復習で合格　<strong>↻ 橙</strong> = 要復習（12キー終了後に再出題）<br>
-                    ミスしても止まらず最後まで弾き、ミスのあった周は同じキーをもう1周します。
+                    ミスしても止まらず最後まで弾き、ミスのあった周は同じキーをもう1周します。ミスしたキーは12キーの後にもう一度出ます。<br>
+                    プレイ中の12キーの印：<strong style="color:var(--gold);">★</strong> ノーミス　<strong style="color:var(--text);">✓</strong> 復習で合格　<strong>↻</strong> 復習待ち
                 </div>
                 <label class="laps-selector">
-                    <span>各キーのクリア周回数:</span>
+                    <span>各キーのノーミス周回数:</span>
                     <select id="course-laps-select">
                         <option value="1" selected>1周（デフォルト）</option>
                         <option value="2">2周</option>
@@ -1594,7 +1594,7 @@
                 <summary>ステップのバッジ（銅・銀・金）の条件</summary>
                 <p>12キーを<strong>一度も間違えずに</strong>弾き切ると、そのステップのバッジが付きます。途中で設定を変えた場合は、その回でいちばんやさしい設定で判定します。</p>
                 <table>
-                    <tr><th></th><th>テンポ</th><th>鍵盤ヒント</th><th>音名</th><th>旋律・ベース</th></tr>
+                    <tr><th></th><th>テンポ</th><th>鍵盤ヒント</th><th>音名</th><th>メロディ・ベース</th></tr>
                     <tr><th>銅</th><td>自由</td><td>使ってよい</td><td>表示してよい</td><td>鳴らしてよい</td></tr>
                     <tr><th>銀</th><td>標準以上</td><td>OFF</td><td>表示してよい</td><td>鳴らしてよい</td></tr>
                     <tr><th>金</th><td>標準＋20以上</td><td>OFF</td><td>OFF</td><td>両方 OFF</td></tr>
@@ -1609,7 +1609,7 @@
                         <h3 id="start-sheet-title">STEP</h3>
                         <button class="btn" id="btn-sheet-close" type="button" aria-label="閉じる">×</button>
                     </div>
-                    <button class="start-option" id="sheet-practice" type="button" role="radio" aria-checked="false"><strong>じっくり</strong><span id="sheet-practice-note">正しく弾くまで待つ（記録しない）</span></button>
+                    <button class="start-option" id="sheet-practice" type="button" role="radio" aria-checked="false"><strong>じっくり</strong><span id="sheet-practice-note">正しく弾くまで待つ・鍵盤ヒント ON（記録しない）</span></button>
                     <button class="start-option" id="sheet-normal" type="button" role="radio" aria-checked="true"><strong>ふつう</strong><span id="sheet-normal-note">今の設定で</span></button>
                     <button class="start-option" id="sheet-silver" type="button" role="radio" aria-checked="false"><strong>銀に挑戦</strong><span id="sheet-silver-note"></span></button>
                     <button class="start-option" id="sheet-gold" type="button" role="radio" aria-checked="false"><strong>金に挑戦</strong><span id="sheet-gold-note"></span></button>
@@ -1654,7 +1654,7 @@
                         <select id="free-key"></select>
                     </div>
                     <div class="field">
-                        <label for="free-laps">クリア周回数</label>
+                        <label for="free-laps">ノーミス周回数</label>
                         <select id="free-laps">
                             <option value="1" selected>1周（デフォルト）</option>
                             <option value="2">2周</option>
@@ -1722,7 +1722,7 @@
                         <input type="checkbox" id="free-bass" checked>
                     </label>
                     <label class="toggle-row">
-                        <span>じっくりモード（正しく弾くまで待つ・記録しない）</span>
+                        <span>じっくりモード（正しく弾くまで待つ・鍵盤ヒント ON・記録しない）</span>
                         <input type="checkbox" id="free-wait">
                     </label>
                 </div>
@@ -1777,7 +1777,7 @@
                         <option value="random">ランダム</option>
                     </select>
                 </label>
-                <div class="course-toolbar-info">進行とボイシングは、スピードアップ・耳コピ・苦手キー克服に使います（今日のドリルは日替わり）。</div>
+                <div class="course-toolbar-info">進行とボイシングは、スピードアップ・耳コピ・苦手キー克服に使います（今日のドリルは日替わり）。コースのステップごとの銅・銀・金は、コース一覧に表示します。</div>
             </div>
 
             <div class="course-grid challenge-grid" id="challenge-grid"></div>
@@ -2172,13 +2172,13 @@
         // Phase 2（ガイドトーン）
         { id: 5, key: 'p2-maj', phase: 2, title: 'メジャー ii-V-I（ガイドトーン）', song: 'ii_V_I_maj', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
           goal: '7度が半音下がって次の3度に。2回目の I は6th',
-          mission: 'ベースは自動。3度＋7度の2音を近い鍵盤で繋ぐと Smooth +100' },
+          mission: 'ルートは弾かない。3度＋7度の2音を近い鍵盤で繋ぐと Smooth +100' },
         { id: 6, key: 'p2-min', phase: 2, title: 'マイナー ii-V-i（ガイドトーン）', song: 'ii_V_i_min', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
           goal: '短調の声部進行。♭5は任意、2回目の i は6th',
           mission: '3度＋7度（iiø7 の♭5は任意）を最小移動で繋ぐと Smooth +100' },
         { id: 7, key: 'p2-turnaround', phase: 2, title: '循環進行（ガイドトーン）', song: 'turnaround', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
           goal: '7度が半音下がって次の3度になる流れの循環版',
-          mission: 'ベースは自動。3度＋7度の2音を近い鍵盤で繋ぐと Smooth +100' },
+          mission: 'ルートは弾かない。3度＋7度の2音を近い鍵盤で繋ぐと Smooth +100' },
         { id: 8, key: 'p2-pop', phase: 2, title: '王道進行（ガイドトーン）', song: 'pop', diff: 'intermediate', mode: 'guide', badge: 'ガイドトーン（2音）', bpm: 85,
           goal: '最小の指移動で J-POP を伴奏',
           mission: '3度＋7度の2音。平均2.5半音以内の移動で Smooth +100' },
@@ -3336,7 +3336,7 @@
             el.classList.toggle('review', !isCurr && st === 'review');
             el.classList.toggle('skip', !isCurr && st === 'skip');
 
-            el.setAttribute('aria-label', `${base}: ${isCurr ? '演奏中' : ({ perfect: '一発合格', recovered: '復習で合格', review: '要復習', skip: '今回は弾かない' })[st] || '未挑戦'}`);
+            el.setAttribute('aria-label', `${base}: ${isCurr ? '演奏中' : ({ perfect: 'ノーミス', recovered: '復習で合格', review: '復習待ち', skip: '今回は弾かない' })[st] || '未挑戦'}`);
             // 狭い画面ではキー一覧が横スクロールになるので、演奏中のキーを中央に寄せる（ページ自体はスクロールさせない）
             if (isCurr && dom.keyTracker.scrollWidth > dom.keyTracker.clientWidth) {
                 dom.keyTracker.scrollLeft = el.offsetLeft - (dom.keyTracker.clientWidth - el.offsetWidth) * 0.5;
@@ -3362,7 +3362,7 @@
     const COURSE_STYLES = Object.freeze(['practice', 'normal', 'silver', 'gold']);
     let courseStyle = 'normal';   // 前回選んだ始め方
     let runStyle = 'normal';      // この回の始め方
-    let savedToggles = null;      // 銀・金の回で一時的に切り替える前の、ふだんの ON/OFF
+    let savedToggles = null;      // じっくり・銀・金の回で一時的に切り替える前の、ふだんの ON/OFF
     let lostTier = false;         // 挑戦中の段階の条件から外れたことを知らせたか
     let sheetStepId = 0;
     const CHALLENGE_TIER = Object.freeze({ silver: 2, gold: 3 });
@@ -3372,6 +3372,12 @@
         Object.assign(config, savedToggles);
         savedToggles = null;
     }
+    // じっくりは覚えるための回なので、鍵盤ヒントを最初から出す（その回だけ）
+    function showHintForPractice() {
+        if (!config.waitMode) return;
+        savedToggles = { keyHintOn: config.keyHintOn };
+        config.keyHintOn = true;
+    }
     // 銀・金の挑戦はその回だけ設定を切り替える（保存するふだんの設定は書き換えない）
     function applyStyle(style, step) {
         restoreToggles();
@@ -3379,6 +3385,7 @@
         lostTier = false;
         config.waitMode = style === 'practice';
         config.bpm = step.bpm + (style === 'gold' ? MEDAL_GOLD_BPM : 0);
+        showHintForPractice();
         if (!CHALLENGE_TIER[style]) return;
         savedToggles = { keyHintOn: config.keyHintOn, namesOn: config.namesOn, melodyOn: config.melodyOn, bassOn: config.bassOn };
         config.keyHintOn = false;
@@ -3400,7 +3407,7 @@
         dom.startSheetTitle.textContent = `STEP ${step.id + 1} ${step.title}`;
         document.getElementById('sheet-normal-note').textContent = `今の設定で ♩${step.bpm}。ノーミスなら${MEDAL_NAMES[now]}バッジ${mark(now)}`;
         document.getElementById('sheet-silver-note').textContent = `♩${step.bpm}・鍵盤ヒント OFF${mark(2)}`;
-        document.getElementById('sheet-gold-note').textContent = `♩${step.bpm + MEDAL_GOLD_BPM}・鍵盤ヒント/音名/旋律/ベース OFF${mark(3)}`;
+        document.getElementById('sheet-gold-note').textContent = `♩${step.bpm + MEDAL_GOLD_BPM}・鍵盤ヒント/音名/メロディ/ベース OFF${mark(3)}`;
         selectStyle(courseStyle);
         dom.startSheet.classList.remove('hidden');
         document.getElementById('btn-sheet-start').focus({ preventScroll: true });
@@ -3538,6 +3545,7 @@
         config.melodyOn = dom.freeMelody.checked;
         config.beatOn = dom.freeBeat.checked;
         config.bassOn = dom.freeBass.checked;
+        showHintForPractice();
         hadMissInCurrentKey = false;
 
         const meta = SONG_META[config.song];
@@ -3554,7 +3562,7 @@
                 : config.mode === 'shell'
                     ? 'ルート＋3度＋7度の3音。ルートを一番下にすると Perfect +100'
                 : config.mode === 'guide'
-                    ? 'ベースは自動。3度＋7度を近い鍵盤で繋ぐと Smooth +100'
+                    ? 'ルートは弾かない。3度＋7度を近い鍵盤で繋ぐと Smooth +100'
                 : config.mode === 'rootless_ab'
                     ? 'ブロックの A（3度が下）・B（7度が下）の形で弾くと +100'
                     : 'ルート抜きで弾き、平均2.5半音以内の移動で Smooth +100';
@@ -3792,7 +3800,9 @@
         saveJson(ACTIVITY_KEY, activity);
         updateStreakBadge();
         dom.resultTitle.textContent = '練習おつかれさま';
-        dom.resultDesc.textContent = 'じっくりモードは記録しません。慣れたら OFF にして挑戦しましょう。';
+        dom.resultDesc.textContent = isCourseMode
+            ? 'じっくりは記録しません。慣れたら「ふつう」や銀・金に挑戦しましょう。'
+            : 'じっくりモードは記録しません。慣れたら OFF にして挑戦しましょう。';
         dom.resultRank.textContent = '';
         dom.resultRank.className = 'result-rank';
         dom.resultNew.classList.add('hidden');
@@ -3861,7 +3871,7 @@
             dom.resultTitle.textContent = 'STAGE CLEAR!';
             dom.btnResultNext.classList.add('hidden');
             dom.btnResultBack.textContent = 'フリー設定へ';
-            dom.resultDesc.textContent = `${config.lapsToClear}周ノーミス達成！`;
+            dom.resultDesc.textContent = `ノーミスの周を${config.lapsToClear}周達成！`;
         }
         if (isNew) announce('自己ベスト更新');
         showOverlay('result-screen');
@@ -5027,7 +5037,7 @@
 
     // ---- 前回の設定（フリー練習・周回数・オクターブ・ビート/メロディ）の保存と復元 ----
     function savePrefs() {
-        const t = savedToggles || config; // 銀・金の回の一時的な ON/OFF は保存しない
+        const t = { ...config, ...savedToggles }; // じっくり・銀・金の回の一時的な ON/OFF は保存しない
         try {
             localStorage.setItem(PREFS_KEY, JSON.stringify({
                 song: dom.freeSong.value, key: dom.freeKey.value, laps: dom.freeLaps.value,

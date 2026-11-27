@@ -664,3 +664,19 @@ test('銀・金に挑戦：その回だけ設定を切り替え、ふだんの�
     lost.runPendingTimeout();
     assert.equal(lost.T.state().medals['p1-maj'], 2);
 });
+
+test('じっくり：鍵盤ヒントを最初から出し、ふだんの設定は書き換えない', () => {
+    const app = loadApp({ storage: { chord_master_prefs_v1: JSON.stringify({ keyHint: false }) } });
+    const hint = () => app.T.state().config.keyHintOn;
+    app.T.startCourseStep(0, 'practice');
+    assert.equal(hint(), true);
+    app.elements['btn-beat-toggle'].listeners.click({ detail: 0 }); // 途中で保存が走っても
+    assert.equal(JSON.parse(app.store.chord_master_prefs_v1).keyHint, false);
+    app.elements['btn-nav-home'].listeners.click({ detail: 0 });
+    assert.equal(hint(), false);
+    app.elements['free-wait'].checked = true;
+    app.T.startFreeSession();
+    assert.equal(hint(), true);
+    app.T.startCourseStep(0, 'normal');
+    assert.equal(hint(), false);
+});
